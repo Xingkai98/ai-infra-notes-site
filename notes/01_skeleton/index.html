@@ -1,0 +1,2376 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="从 Transformer 骨架到推理系统的 29 篇讲义（本地预览）">
+      
+      
+      
+      
+        <link rel="prev" href="../..">
+      
+      
+        <link rel="next" href="../02_attention/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>第一层 · 骨架 —— 从文本到矩阵 - AI Infra 讲义</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#_1" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="../.." title="AI Infra 讲义" class="md-header__button md-logo" aria-label="AI Infra 讲义" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            AI Infra 讲义
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              第一层 · 骨架 —— 从文本到矩阵
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切到深色"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="切到深色" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切到浅色"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="切到浅色" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="AI Infra 讲义" class="md-nav__button md-logo" aria-label="AI Infra 讲义" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    AI Infra 讲义
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI Infra 讲义
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Notes
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Notes
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第一层 · 骨架 —— 从文本到矩阵
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第一层 · 骨架 —— 从文本到矩阵
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0. 依赖图(学习顺序)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        全景
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-transformer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. 为什么需要 Transformer
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. 维度记号(全程统一)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-token-idtokenizer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. token → id(tokenizer)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. token → id(tokenizer)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 现代分词器的三个边界(面试常追问)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-embeddingid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Embedding:id → 向量
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. 位置编码(本层重点)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. 位置编码(本层重点)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        为什么不能省
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        怎么做(原论文:正弦位置编码)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        三个必须知道的设计点
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#55-embedding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.5 数值演算:Embedding 与位置编码
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5.5 数值演算:Embedding 与位置编码">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-embeddingid-one-hot-w_e" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ① Embedding:id → one-hot × W_E → 一行向量
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-pos03d_model4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ② 正弦位置编码:pos=0..3、d_model=4
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-x-pe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ③ 位置编码相加:X + PE(逐元素、广播)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-block" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. 预告:一个 Block 长什么样
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        面试要点(合上书能否讲出来)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        常见坑
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        相关图
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        下一步
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02_attention/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二层 · 心脏 —— Self-Attention 的 Q/K/V
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03_block/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第三层 · 加强 —— Multi-Head、残差、LayerNorm、FFN
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04_architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第四层 · 组装 —— Encoder / Decoder / 掩码 / Cross-Attention
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05_modern/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第五层 · 现代变体 —— 从原论文到 LLaMA/GPT
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_inference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第六层 · 跑起来 —— 训练/推理、KV Cache、完整 forward
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_pretraining/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第七层 · 预训练 —— 目标、数据与 Scaling Law
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../08_alignment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第八层 · 对齐 —— SFT、RLHF、DPO 与安全
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09_evaluation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第九层 · 评测 —— benchmark、污染、judge 与可复现
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../10_decoding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十层 · 解码 —— 从 logits 到 token
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../11_applications/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十一层 · 应用 —— Prompt、RAG、工具与 Agent
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../12_multimodal/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十二层 · 多模态 —— VLM、扩散与语音
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../13_reasoning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十三层 · 推理模型 —— 测试时计算、长 CoT 与 RLVR
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../14_long_context/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十四层 · 长上下文 —— 位置外推、注意力模式与 KV 账本
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../15_peft_lora/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十五层 · PEFT 与 LoRA —— 用 0.1% 参数做微调
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../16_agent_rl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十六层 · Agent RL —— rollout、环境、奖励与异步训练
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../17_data_engineering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十七层 · 数据工程 —— 从原始语料到数据飞轮
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../18_interpretability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十八层 · 可解释性 —— 从探针到电路与 SAE
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../19_multimodal_deep/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十九层 · 多模态深化 —— VLM、视频/音频与扩散
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../20_ai_infra_map/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模块二 · M2-0 地图与坐标系
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（2026-10-21 补全景图 20g）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../21_single_node_ops/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模块二 · M2-1 单机与算子
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（2026-10-21 补结构图 20h/20i/20j/20k）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../22_inference_systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模块二 · M2-3 推理系统
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（2026-10-21 补结构图 20l–20q）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../23_training_systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 2 层 · M2-2 训练系统
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../24_distributed_base/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 4 层 · M2-4 分布式底座
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../25_platform_sre/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 5 层 · M2-5 平台与稳定性
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../26_frontier_edge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 6 层 · M2-6 前沿与端侧
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../27_agent_engineering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二十七层 · Agent 工程化：Context / Harness / Loop / Graph
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--v1"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../28_vllm_source_trace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二十八层 · vLLM v1 源码 trace：一次请求怎么走
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--v1"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../29_agent_eval_infra/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二十九层 · Agent 评测 Infra：从打分到可复现的评测平台
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--v1"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../worksheets/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Worksheets
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Worksheets
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0. 依赖图(学习顺序)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        全景
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-transformer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. 为什么需要 Transformer
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. 维度记号(全程统一)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-token-idtokenizer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. token → id(tokenizer)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. token → id(tokenizer)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 现代分词器的三个边界(面试常追问)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-embeddingid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Embedding:id → 向量
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. 位置编码(本层重点)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. 位置编码(本层重点)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        为什么不能省
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        怎么做(原论文:正弦位置编码)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        三个必须知道的设计点
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#55-embedding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.5 数值演算:Embedding 与位置编码
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5.5 数值演算:Embedding 与位置编码">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-embeddingid-one-hot-w_e" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ① Embedding:id → one-hot × W_E → 一行向量
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-pos03d_model4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ② 正弦位置编码:pos=0..3、d_model=4
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-x-pe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ③ 位置编码相加:X + PE(逐元素、广播)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-block" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. 预告:一个 Block 长什么样
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        面试要点(合上书能否讲出来)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        常见坑
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        相关图
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        下一步
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="_1">第一层 · 骨架 —— 从文本到矩阵<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<blockquote>
+<p>本层回答:一句话到底是怎么变成一堆数字(张量)送进模型的。</p>
+</blockquote>
+<h2 id="0">0. 依赖图(学习顺序)<a class="headerlink" href="#0" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p>根节点是<strong>可以无条件接受</strong>的事实;箭头表示「前者支撑后者」。学习顺序 = 从根到汇点的拓扑序。
+Obsidian 手机端可直接渲染下图。</p>
+</blockquote>
+<pre class="mermaid"><code>graph TD
+  R["RNN 的致命伤:串行 + 长距离依赖衰减(§1)"] --&gt; S["Transformer:可并行 + 短路径(§1)"]
+  A["文本是离散符号(根事实:神经网络只认数字,不依赖 Transformer)"] --&gt; B["Tokenizer&lt;br/&gt;文本 → token id"]
+  B --&gt; C["Embedding&lt;br/&gt;id → 向量"]
+  D["语序改变语义"] --&gt; E["必须注入位置信息"]
+  F["Self-Attention 对输入顺序置换等变&lt;br/&gt;(第二层展开)"] --&gt; E
+  E --&gt; G["位置编码"]
+  C --&gt; H["X: [B, T, d_model]"]
+  G --&gt; H
+  N["§2 维度记号:B / T / d_model(§4、§5.5 全靠它)"] --&gt; H
+  H --&gt; I["进入 Transformer Block"]</code></pre>
+<h2 id="_2">全景<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p><img alt="Transformer 全景数据流" src="../../diagrams/01_pipeline.landscape.png" /></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>文本 → ①Tokenizer → ②Embedding → ③ + 位置编码 → ④Transformer Block ×N → ⑤LM Head → 下一个 token 概率
+</code></pre></div>
+<h2 id="1-transformer">1. 为什么需要 Transformer<a class="headerlink" href="#1-transformer" title="Permanent link">&para;</a></h2>
+<p>前一代主力 RNN/LSTM 的致命伤有两条:<strong>串行</strong>——第 t 步必须等第 t-1 步,无法并行;以及<strong>长距离依赖丢失</strong>——信息靠 <code>h</code> 一路"背"过去,序列一长就衰减,反向传播时<strong>梯度也会消失/爆炸</strong>(RNN 的经典病症)。</p>
+<p><img alt="RNN 串行 vs Transformer 并行" src="../../diagrams/02_rnn_vs_transformer.landscape.png" /></p>
+<p>Transformer 的两个核心收益(面试直接能用):</p>
+<ul>
+<li><strong>可并行</strong>:没有循环依赖,整句一次矩阵乘搞定 → 能吃海量数据。</li>
+<li><strong>短路径</strong>:这里的“路径长度”指计算图上两个位置之间要经过的边数——RNN 需沿 <code>h</code> 逐步传 <code>O(T)</code> 步,Transformer 任意两个位置都只隔一次 attention,恒为 1 步,长距离依赖不再衰减。</li>
+</ul>
+<p>代价:attention 对序列长度 <code>T</code> 是 <strong>O(T²)</strong>,这是长上下文研究的根源。</p>
+<h2 id="2">2. 维度记号(全程统一)<a class="headerlink" href="#2" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>记号</th>
+<th>含义</th>
+<th>例</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>B</code></td>
+<td>batch size</td>
+<td>2</td>
+</tr>
+<tr>
+<td><code>T</code></td>
+<td>序列长度(token 数)</td>
+<td>5</td>
+</tr>
+<tr>
+<td><code>d_model</code></td>
+<td>隐藏维度</td>
+<td>512 / 768 / 4096</td>
+</tr>
+</tbody>
+</table>
+<p><strong>主干形状恒为 <code>[B, T, d_model]</code></strong> —— 后面每个部件都是在这个形状上做手术。</p>
+<h2 id="3-token-idtokenizer">3. token → id(tokenizer)<a class="headerlink" href="#3-token-idtokenizer" title="Permanent link">&para;</a></h2>
+<p>神经网络只认数字,先把文本切成 token(BPE / SentencePiece)再映射成整数 id。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>"我爱学习"  ──tokenizer──►  [151, 5287, 3120]     # 示意:虚构 id,非特定分词器/词表的真实输出;每个整数 = 词表下标
+</code></pre></div>
+<p>上例 4 个汉字只出 3 个 id,说明有两个相邻字被合并成了一个 token(具体哪两个取决于分词器与词表)。</p>
+<p>BPE 要点:从字符开始,按频率反复合并高频相邻对。最小示例:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>初始(按字符切):  l o w e r &lt;/w&gt;  ← 语料里 "lower" 只出现 2 次(低频,会被拆开)
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>统计相邻对频次:  (l,o) (o,w) (w,e) (e,r) (r,&lt;/w&gt;) …
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>合并最高频的一对,比如 (e,r) → "er"(只为演示合并语法,合并顺序与下文真实语料无关):
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>             l o w er &lt;/w&gt;      ← 只合并了 (e,r),&lt;/w&gt; 仍是独立符号
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>再合并 (er,&lt;/w&gt;) → "er&lt;/w&gt;"(原文漏写的这一步):
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>             l o w er&lt;/w&gt;
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>再合并 (l,o) → "lo",再 (lo,w) → "low":
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>             low er&lt;/w&gt;
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>最终"lower" 可能切成 ["low", "er&lt;/w&gt;"] 两个 token(低频词,未合并到整词);更低频的生僻词则拆到字符级。
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>注意:上面的 (e,r) 不是真实语料的首轮选择——下文小语料里 (e,r) 只出现 2 次,首轮 9 次并列的是 (e,s)/(s,t)/(t,&lt;/w&gt;)。
+</code></pre></div>
+<p>这样<strong>常见词</strong>占一个 token、<strong>生僻词</strong>拆成子词,词表规模可控,又能表示任意新词。</p>
+<p><img alt="BPE:字符 → 相邻对计数 → 合并 → 重切分" src="../../diagrams/01b_bpe.landscape.png" /></p>
+<p>图里用一个小语料(<code>low×5 · lower×2 · newest×6 · widest×3</code>)走一遍真实机制:</p>
+<ol>
+<li><strong>先按字符切</strong>,并在词尾加 <code>&lt;/w&gt;</code>(词边界标记)。如果没有它,词尾的 <code>w</code> 和词内的 <code>w</code> 无法区分,词尾位置也就丢失了。</li>
+<li><strong>统计所有相邻对</strong>的频次:例如 <code>(e,s)</code> 出现在 <code>newest</code> 的 6 份和 <code>widest</code> 的 3 份里,共 9 次。</li>
+<li><strong>合并最高频的一对</strong>(注意:本例 <code>(e,s)</code>、<code>(s,t)</code>、<code>(t,&lt;/w&gt;)</code> 各 9 次并列,按实现规则取 <code>(e,s)</code>)成一个新 token:<code>(e,s) → es</code>,于是 <code>n e w e s t &lt;/w&gt;</code> 变成 <code>n e w es t &lt;/w&gt;</code>。</li>
+<li><strong>重切分、重复</strong>:新 token <code>es</code> 以后作为一个整体参与下一轮计数,直到词表达到目标大小。</li>
+</ol>
+<blockquote>
+<p>并列时怎么选?<strong>各实现规则不同</strong>(有的按首次出现,有的按字典序);具体顺序不影响核心机制,核心始终是"数频次 → 合并最高频 → 更新切分"。推理时不再统计新语料,而是按训练好的合并规则顺序应用。</p>
+</blockquote>
+<h3 id="31">3.1 现代分词器的三个边界(面试常追问)<a class="headerlink" href="#31" title="Permanent link">&para;</a></h3>
+<p>上图是 <strong>word-level BPE</strong> 的教学简化。真实模型常见三种实现:</p>
+<table>
+<thead>
+<tr>
+<th>实现</th>
+<th>代表</th>
+<th>单位</th>
+<th>未登录词(OOV)</th>
+<th>中文/多语</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>byte-level BPE</strong></td>
+<td>GPT-2 / Llama 3</td>
+<td>UTF-8 <strong>字节</strong></td>
+<td>无 UNK:任何字符都能用字节表示</td>
+<td>常用汉字占 3 字节(生僻字 4);但「→ 多个 token」只是 GPT-2 级约 50k 词表的结论,128k 词表(如 Llama 3)里大量常用汉字本身就是单 token(此格无来源,勿当 byte-level BPE 通则)</td>
+</tr>
+<tr>
+<td><strong>SentencePiece(BPE / Unigram)</strong></td>
+<td>T5(Unigram)、LLaMA 1–2(BPE)</td>
+<td>原文本(空格记 <code>▁</code>)</td>
+<td>通常可回退到字符/字节(需 <code>byte_fallback</code>);否则仍可能 <code>&lt;unk&gt;</code></td>
+<td>直接在多语文本上训练,覆盖更好</td>
+</tr>
+<tr>
+<td><strong>WordPiece</strong></td>
+<td>BERT</td>
+<td>子词(<code>##</code> 表词内延续)</td>
+<td>仍有 <code>[UNK]</code></td>
+<td>英文中心,中文常被切碎</td>
+</tr>
+</tbody>
+</table>
+<p><strong>词表大小的取舍</strong>(面试很爱问):</p>
+<ul>
+<li>词表大 → 同样文本 token 数少、序列短、训练/推理省;但 embedding 与 LM Head 是 <code>V × d_model</code>,参数和显存变大。</li>
+<li>词表小 → 参数省,但序列变长、注意力 <code>O(T²)</code> 更贵;低频子词欠训练。</li>
+<li>还要预留 special token(<code>&lt;bos&gt;</code>、<code>&lt;eos&gt;</code>、<code>&lt;pad&gt;</code>、角色标记等),它们也占词表。</li>
+</ul>
+<p><strong>推理时遇到新词</strong>:不是"查不到就失败",而是按训练好的 merge 顺序把新词切成已知子词/字节。<strong>byte-level BPE 无 UNK</strong>;SentencePiece 通常能回退到字符/字节(需 <code>byte_fallback</code> 等配置),否则仍可能出 <code>&lt;unk&gt;</code>;WordPiece 则<strong>可能</strong>有 <code>[UNK]</code>(是否出现取决于是否切到未登录字符)。</p>
+<h2 id="4-embeddingid">4. Embedding:id → 向量<a class="headerlink" href="#4-embeddingid" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span><span class="o">,</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">B</span><span class="p">,</span> <span class="n">T</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">5</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="n">vocab_size</span><span class="p">,</span> <span class="n">d_model</span> <span class="o">=</span> <span class="mi">30000</span><span class="p">,</span> <span class="mi">512</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="n">tok_emb</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span><span class="n">vocab_size</span><span class="p">,</span> <span class="n">d_model</span><span class="p">)</span>      <span class="c1"># 本质 [vocab_size, d_model] 的可训练矩阵</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="n">ids</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">vocab_size</span><span class="p">,</span> <span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">T</span><span class="p">))</span>       <span class="c1"># [B, T]</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="n">x</span> <span class="o">=</span> <span class="n">tok_emb</span><span class="p">(</span><span class="n">ids</span><span class="p">)</span>                                 <span class="c1"># [B, T, d_model]</span>
+</code></pre></div>
+<p><strong>关键:<code>nn.Embedding</code> 等价于「对 id 做 one-hot(长度 vocab_size),再乘那个大矩阵」</strong>,实现上直接取第 id 行,省掉 one-hot 的浪费。它是可学习参数,训练后语义相近的词向量会靠近。</p>
+<blockquote>
+<p>参数量体感(高频追问):嵌入层参数 = <code>vocab_size × d_model</code>。典型 <code>vocab=50000, d_model=768</code> → 约 <strong>3800 万</strong>,往往占小模型参数量的一大块。这也是为什么大模型常用<strong>权重共享</strong>:让最后的 LM Head 复用这个矩阵,省掉一份 <code>vocab × d_model</code>。</p>
+</blockquote>
+<h2 id="5">5. 位置编码(本层重点)<a class="headerlink" href="#5" title="Permanent link">&para;</a></h2>
+<h3 id="_3">为什么不能省<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
+<p>self-attention 对输入是<strong>置换等变</strong>的:把输入的向量打乱顺序,输出只是跟着换位置,集合内部关系不变。</p>
+<p><img alt="为什么必须有位置编码" src="../../diagrams/04_position_encoding.landscape.png" /></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>attention 眼里:  {狗, 咬, 人}  和  {人, 咬, 狗}  是同一个东西
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>现实里:          "狗咬人" ≠ "人咬狗"
+</code></pre></div>
+<p>所以必须<strong>显式注入位置信息</strong>。</p>
+<blockquote>
+<p>术语澄清(两个词挨着容易混):<strong>置换等变(equivariant)</strong> = 打乱输入,输出只跟着<strong>同样地</strong>打乱(内部关系不变);<strong>置换不变(invariant)</strong> = 输出完全不受打乱影响。注意力是<strong>等变</strong>——它照样"能算",但<strong>它不知道谁在前谁在后</strong>,语序信息在它眼里丢失了。所以缺的不是"能力",是"顺序信息"。</p>
+</blockquote>
+<h3 id="_4">怎么做(原论文:正弦位置编码)<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>PE(pos, 2i)   = sin( pos / 10000^(2i/d_model) )
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>PE(pos, 2i+1) = cos( pos / 10000^(2i/d_model) )
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">positional_encoding</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">d_model</span><span class="p">):</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>    <span class="n">pos</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">T</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>        <span class="c1"># [T, 1]</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>    <span class="n">i</span>   <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">d_model</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>         <span class="c1"># [d_model/2]</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>    <span class="n">div</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="mf">10000.0</span><span class="p">,</span> <span class="n">i</span> <span class="o">/</span> <span class="n">d_model</span><span class="p">)</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>    <span class="n">pe</span>  <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">d_model</span><span class="p">)</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>    <span class="n">pe</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">pos</span> <span class="o">/</span> <span class="n">div</span><span class="p">)</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>    <span class="n">pe</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">pos</span> <span class="o">/</span> <span class="n">div</span><span class="p">)</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>    <span class="k">return</span> <span class="n">pe</span>                                         <span class="c1"># [T, d_model]</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="n">x</span> <span class="o">=</span> <span class="n">tok_emb</span><span class="p">(</span><span class="n">ids</span><span class="p">)</span> <span class="o">+</span> <span class="n">positional_encoding</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">d_model</span><span class="p">)</span>    <span class="c1"># 相加,广播到 [B, T, d_model]</span>
+</code></pre></div>
+<p>直觉:每个位置叠一串<strong>不同频率的正弦波</strong>当"指纹"。低维频率高、区分相邻位置;高维频率低、编码大尺度位置。</p>
+<h3 id="_5">三个必须知道的设计点<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>相加,不是拼接</strong>:不增维、不增计算;值域有界 <code>[-1,1]</code> 数值稳。论文只给了「位置编码与嵌入同为 <code>d_model</code>,故可相加」,并未论证拼接更差;sin/cos 的「可分离」是公式自身性质、拼接也保留,不能算作相加更优的理由。</li>
+<li><strong>为什么用 sin/cos</strong>:<code>PE(pos+k)</code> 可写成 <code>PE(pos)</code> 的固定线性变换 → 论文只是假设(§3.5:We hypothesize)这能让模型易学"相隔 k 位"这种相对关系(并未证明);无参数;理论上可外推更长序列。
+  (补充:原论文其实也试了<strong>可学习</strong>位置编码,二者效果"几乎相同"(nearly identical);选正弦是为了可能的外推能力,而非它明显更优。)
+  ⚠️ <strong>别夸大成"能外推现在就能用"</strong>:正弦 PE 的<strong>实际外推效果有限</strong>——训练长度之外性能会掉,后来针对外推的补救是位置插值一族(PI/NTK/YaRN,第五层)。RoPE 的出发点与此不同:它让位置信息显式进入 Q/K 的旋转、天然携带相对位置(本讲义 §5 表格也如此描述),并非为修正弦 PE 的外推掉点而提出。所以"理论上可外推"不等于"实践已经解决长序列"。</li>
+<li><strong>现代演进</strong>(第五层展开):</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>方案</th>
+<th>代表</th>
+<th>做法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>可学习位置编码</td>
+<td>GPT / BERT</td>
+<td><code>nn.Embedding(T_max, d_model)</code>,简单、外推差</td>
+</tr>
+<tr>
+<td><strong>RoPE</strong></td>
+<td>LLaMA 系(主流)</td>
+<td>在 attention 里对 Q、K 做<strong>旋转</strong>,天然编码相对位置</td>
+</tr>
+<tr>
+<td>ALiBi</td>
+<td>Bloom 等</td>
+<td>直接给 attention 分数加随距离递减的偏置,零参数</td>
+</tr>
+</tbody>
+</table>
+<h2 id="55-embedding">5.5 数值演算:Embedding 与位置编码<a class="headerlink" href="#55-embedding" title="Permanent link">&para;</a></h2>
+<h3 id="1-embeddingid-one-hot-w_e">① Embedding:id → one-hot × W_E → 一行向量<a class="headerlink" href="#1-embeddingid-one-hot-w_e" title="Permanent link">&para;</a></h3>
+<p>取 <code>V=6, d_model=4, token id=3</code>。one-hot 只在索引 3(第 4 格)为 1:
+<code>[0,0,0,1,0,0]</code>。乘 <code>W_E [6,4]</code> 后,结果就是 <code>W_E</code> 的第 3 行:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>x[0][0] = Σ_r one-hot[r]·W_E[r][0] = 1×W_E[3][0] = 1
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>x = W_E[3] = [1, 2, 0, 1]
+</code></pre></div>
+<p><img alt="Embedding:one-hot × W_E 等价于取一行" src="../../diagrams/15a_embedding.landscape.png" /></p>
+<p>关键:one-hot 的 1、<code>W_E</code> 第 3 行、输出 <code>x</code> 用同一种颜色——实现里根本不用构造 one-hot,
+直接按 id 查表即可。</p>
+<h3 id="2-pos03d_model4">② 正弦位置编码:pos=0..3、d_model=4<a class="headerlink" href="#2-pos03d_model4" title="Permanent link">&para;</a></h3>
+<p>按原论文公式逐格计算:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>PE(pos, 2i)   = sin(pos / 10000^(2i/d_model))
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>PE(pos, 2i+1) = cos(pos / 10000^(2i/d_model))
+</code></pre></div>
+<ul>
+<li><code>j=0</code>(维度 0/1):除数 <code>10000^(2j/d_model)=10000^0=1</code>,角度 = <code>pos/1 = pos</code>。</li>
+<li><code>j=1</code>(维度 2/3):除数 <code>10000^(2j/d_model)=10000^(1/2)=100</code>,频率 = 1/除数 = <code>0.01</code>,角度 = <code>pos/100 = 0.01·pos</code>。</li>
+</ul>
+<blockquote>
+<p>记号:<code>j</code> 是「第几对维度」的编号;§5 代码里的 <code>i</code> 是实际维度下标(<code>i=0,2,4…</code>),对应 <code>j=i/2</code>,两者不要混用。</p>
+</blockquote>
+<p><img alt="正弦位置编码的逐格数值" src="../../diagrams/15b_posenc.landscape.png" /></p>
+<p>逐格结果(<code>pos=0..3</code>,除数 j=0 为 1、j=1 为 100):</p>
+<p>pos=0: PE[0,0]=sin(0)=0.00   PE[0,1]=cos(0)=1.00   PE[0,2]=sin(0)=0.00   PE[0,3]=cos(0)=1.00
+pos=1: PE[1,0]=sin(1)=0.84   PE[1,1]=cos(1)=0.54   PE[1,2]=sin(0.01)=0.01 PE[1,3]=cos(0.01)=1.00
+pos=2: PE[2,0]=sin(2)=0.91   PE[2,1]=cos(2)=-0.42  PE[2,2]=sin(0.02)=0.02 PE[2,3]=cos(0.02)=1.00
+pos=3: PE[3,0]=sin(3)=0.14   PE[3,1]=cos(3)=-0.99  PE[3,2]=sin(0.03)=0.03 PE[3,3]=cos(0.03)=1.00</p>
+<h3 id="3-x-pe">③ 位置编码相加:X + PE(逐元素、广播)<a class="headerlink" href="#3-x-pe" title="Permanent link">&para;</a></h3>
+<p>先明确记号:<code>X = tok_emb(ids)</code>,形状 <code>[B, T, d_model]</code>;下面取 batch=0、token=0、第 0 维。</p>
+<p><img alt="位置编码逐元素相加" src="../../diagrams/15c_pos_add.landscape.png" /></p>
+<p>只示范 <code>[0][0][0]</code> 一格:<code>X[0][0][0]=1</code>(即 ① 的 <code>W_E[3][0]</code>),<code>PE[0][0]=0.00</code>,相加得 <code>1.00</code>。
+<code>PE</code> 只有一份 <code>[T, d_model]</code>,沿 batch 维广播;相加不拼接、不增维,形状仍是
+<code>[B, T, d_model]</code>。</p>
+<h2 id="6-block">6. 预告:一个 Block 长什么样<a class="headerlink" href="#6-block" title="Permanent link">&para;</a></h2>
+<p><img alt="一个 Transformer Block 内部(Pre-LN)" src="../../diagrams/03_block_internal.landscape.png" /></p>
+<p>每个 Block = <code>多头自注意力</code> + <code>前馈网络</code>,各自外套 <strong>残差连接</strong>与 <strong>LayerNorm</strong>(现代主流 Pre-LN:先归一化再进子层)。第二、三层细拆。</p>
+<h2 id="_6">面试要点(合上书能否讲出来)<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>Transformer 相比 RNN 好在哪?</strong> → 可并行 + 任意位置路径长度恒为 1。</li>
+<li><strong>位置编码为什么必需?</strong> → self-attention 置换等变,不注入位置就分不清语序。</li>
+<li><strong>PE 为什么相加而不是拼接?</strong> → 不增维、不增计算、值域有界数值稳;论文只给了「位置编码与嵌入同为 <code>d_model</code>,故可相加」,并未论证拼接更差(「可分离」是 sin/cos 公式本身的性质,拼接同样保留,不能当相加更优的理由)。</li>
+<li><strong>sin/cos 的设计动机?</strong> → 相对位置可线性表示、无参数、可外推。</li>
+<li><strong><code>nn.Embedding</code> 是什么?</strong> → 可训练查表矩阵,等价于 one-hot × W。</li>
+<li><strong>BPE 怎么处理新词?词表大小怎么选?</strong> → 按已学 merge 顺序切成子词/字节,不依赖整词表;词表大省序列但 embedding/LM Head 变大,词表小则序列长、低频子词欠训练。</li>
+</ol>
+<h2 id="_7">常见坑<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<ul>
+<li>把 BPE 当成“按词频切词”:它合并的是<strong>相邻单元</strong>,不是统计整词频率;<code>&lt;/w&gt;</code>/byte-level 等边界处理会改变结果。</li>
+<li>以为子词一定没有 OOV:byte-level BPE 无 UNK;SentencePiece 需要 <code>byte_fallback</code> 等配置才能回退,否则仍可能 <code>&lt;unk&gt;</code>;WordPiece 则可能有 <code>[UNK]</code>。</li>
+<li>把位置编码“理论上可外推”当成“实践已解决”:正弦 PE 直接外推到训练长度之外通常会掉点,现代靠 RoPE 扩展(第五层)。</li>
+<li>把位置编码“相加”误解成“拼接”:相加不改变 <code>d_model</code>,拼接会加宽特征维,后续层都要改。</li>
+<li>以为 <code>nn.Embedding</code> 只是固定索引表:它是可训练参数,和 LM Head 共享时是同一份矩阵。</li>
+</ul>
+<h2 id="_8">相关图<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<p><code>01_pipeline</code> · <code>01b_bpe</code> · <code>02_rnn_vs_transformer</code> · <code>03_block_internal</code> · <code>04_position_encoding</code>
+· <code>15a_embedding</code> · <code>15b_posenc</code> · <code>15c_pos_add</code>(均在 <code>diagrams/</code>,横竖双版本)</p>
+<h2 id="_9">下一步<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<p>第二层 · 心脏:<strong>Self-Attention 的 Q/K/V</strong> —— 缩放点积、为何除以 √d_k、注意力如何一步步算出。</p>
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.top", "navigation.indexes", "content.code.copy", "search.suggest", "search.highlight", "toc.follow"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+        <script src="../../javascripts/mathjax.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs" type="module"></script>
+      
+    
+  </body>
+</html>

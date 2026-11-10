@@ -1,0 +1,3373 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="从 Transformer 骨架到推理系统的 29 篇讲义（本地预览）">
+      
+      
+      
+      
+        <link rel="prev" href="../20_ai_infra_map/">
+      
+      
+        <link rel="next" href="../22_inference_systems/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>模块二 · M2-1 单机与算子 - AI Infra 讲义</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#m2-1" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="../.." title="AI Infra 讲义" class="md-header__button md-logo" aria-label="AI Infra 讲义" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            AI Infra 讲义
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              模块二 · M2-1 单机与算子
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切到深色"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="切到深色" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切到浅色"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="切到浅色" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="AI Infra 讲义" class="md-nav__button md-logo" aria-label="AI Infra 讲义" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    AI Infra 讲义
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI Infra 讲义
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Notes
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Notes
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01_skeleton/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第一层 · 骨架 —— 从文本到矩阵
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02_attention/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二层 · 心脏 —— Self-Attention 的 Q/K/V
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03_block/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第三层 · 加强 —— Multi-Head、残差、LayerNorm、FFN
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04_architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第四层 · 组装 —— Encoder / Decoder / 掩码 / Cross-Attention
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05_modern/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第五层 · 现代变体 —— 从原论文到 LLaMA/GPT
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_inference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第六层 · 跑起来 —— 训练/推理、KV Cache、完整 forward
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_pretraining/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第七层 · 预训练 —— 目标、数据与 Scaling Law
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../08_alignment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第八层 · 对齐 —— SFT、RLHF、DPO 与安全
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09_evaluation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第九层 · 评测 —— benchmark、污染、judge 与可复现
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../10_decoding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十层 · 解码 —— 从 logits 到 token
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../11_applications/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十一层 · 应用 —— Prompt、RAG、工具与 Agent
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../12_multimodal/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十二层 · 多模态 —— VLM、扩散与语音
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../13_reasoning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十三层 · 推理模型 —— 测试时计算、长 CoT 与 RLVR
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../14_long_context/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十四层 · 长上下文 —— 位置外推、注意力模式与 KV 账本
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../15_peft_lora/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十五层 · PEFT 与 LoRA —— 用 0.1% 参数做微调
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../16_agent_rl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十六层 · Agent RL —— rollout、环境、奖励与异步训练
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../17_data_engineering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十七层 · 数据工程 —— 从原始语料到数据飞轮
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../18_interpretability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十八层 · 可解释性 —— 从探针到电路与 SAE
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../19_multimodal_deep/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十九层 · 多模态深化 —— VLM、视频/音频与扩散
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../20_ai_infra_map/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模块二 · M2-0 地图与坐标系
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（2026-10-21 补全景图 20g）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模块二 · M2-1 单机与算子
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（2026-10-21 补结构图 20h/20i/20j/20k）"></span>
+  
+
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模块二 · M2-1 单机与算子
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（2026-10-21 补结构图 20h/20i/20j/20k）"></span>
+  
+
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0. 依赖图（学习顺序）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. 为什么先学单机
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-gpu" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. GPU 架构与访存层次
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. GPU 架构与访存层次">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 关键部件
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 访存层次（数量级直觉）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-cuda" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. CUDA 执行模型
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. CUDA 执行模型">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 三层并行
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-kernel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 一个最小 Kernel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.3 同步与流水
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-roofline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Roofline：判断瓶颈的第一工具
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Roofline：判断瓶颈的第一工具">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 公式
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 三类典型算子
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#43-roofline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.3 一个可验算的 Roofline 例子
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-gemm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. 访存优化与 GEMM
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. 访存优化与 GEMM">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#51" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.1 三个基本问题
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#52-gemm-tiling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.2 GEMM 分块（tiling）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#53-tensor-core" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.3 为什么 Tensor Core 要求对齐
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#54-reduction-layernorm-softmax" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.4 Reduction 算子：LayerNorm / Softmax
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-attention-kernel-flashattention" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Attention Kernel 与 FlashAttention
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. Attention Kernel 与 FlashAttention">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#61-attention" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.1 标准 Attention 的问题
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#62-flashattention" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.2 FlashAttention 的核心
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-moe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. MoE 算子
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. 精度与量化
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. 精度与量化">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#81" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.1 常见数值格式
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#82" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.2 混合精度
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#83" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.3 量化基本式
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-profiling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Profiling：不要猜，先测
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="9. Profiling：不要猜，先测">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#91" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.1 工具分工
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#92-profile" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.2 读 Profile 的顺序
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#93" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.3 常见性能陷阱
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. 编译与工具链
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="10. 编译与工具链">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#101-ir" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10.1 计算图与 IR
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#102" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10.2 主流工具
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#103" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10.3 选型直觉
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#104-ai" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10.4 AI 芯片工具链与软硬件协同（边界说明）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        面试要点
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        常见坑
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3060" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        动手清单（30–60 分钟）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        相关图
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        下一步
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../22_inference_systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模块二 · M2-3 推理系统
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（2026-10-21 补结构图 20l–20q）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../23_training_systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 2 层 · M2-2 训练系统
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../24_distributed_base/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 4 层 · M2-4 分布式底座
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../25_platform_sre/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 5 层 · M2-5 平台与稳定性
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../26_frontier_edge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 6 层 · M2-6 前沿与端侧
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../27_agent_engineering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二十七层 · Agent 工程化：Context / Harness / Loop / Graph
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--v1"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../28_vllm_source_trace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二十八层 · vLLM v1 源码 trace：一次请求怎么走
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--v1"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../29_agent_eval_infra/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二十九层 · Agent 评测 Infra：从打分到可复现的评测平台
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--v1"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../worksheets/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Worksheets
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Worksheets
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0. 依赖图（学习顺序）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. 为什么先学单机
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-gpu" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. GPU 架构与访存层次
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. GPU 架构与访存层次">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 关键部件
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 访存层次（数量级直觉）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-cuda" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. CUDA 执行模型
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. CUDA 执行模型">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 三层并行
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-kernel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 一个最小 Kernel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.3 同步与流水
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-roofline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Roofline：判断瓶颈的第一工具
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Roofline：判断瓶颈的第一工具">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 公式
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 三类典型算子
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#43-roofline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.3 一个可验算的 Roofline 例子
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-gemm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. 访存优化与 GEMM
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. 访存优化与 GEMM">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#51" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.1 三个基本问题
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#52-gemm-tiling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.2 GEMM 分块（tiling）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#53-tensor-core" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.3 为什么 Tensor Core 要求对齐
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#54-reduction-layernorm-softmax" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.4 Reduction 算子：LayerNorm / Softmax
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-attention-kernel-flashattention" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Attention Kernel 与 FlashAttention
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. Attention Kernel 与 FlashAttention">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#61-attention" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.1 标准 Attention 的问题
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#62-flashattention" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.2 FlashAttention 的核心
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-moe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. MoE 算子
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. 精度与量化
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. 精度与量化">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#81" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.1 常见数值格式
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#82" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.2 混合精度
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#83" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.3 量化基本式
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-profiling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Profiling：不要猜，先测
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="9. Profiling：不要猜，先测">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#91" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.1 工具分工
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#92-profile" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.2 读 Profile 的顺序
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#93" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.3 常见性能陷阱
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. 编译与工具链
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="10. 编译与工具链">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#101-ir" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10.1 计算图与 IR
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#102" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10.2 主流工具
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#103" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10.3 选型直觉
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#104-ai" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10.4 AI 芯片工具链与软硬件协同（边界说明）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        面试要点
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        常见坑
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3060" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        动手清单（30–60 分钟）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        相关图
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        下一步
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="m2-1">M2-1 · 单机与算子（地基）<a class="headerlink" href="#m2-1" title="Permanent link">&para;</a></h1>
+<blockquote>
+<p>本层回答：一块 GPU 内部到底发生了什么？为什么同样的 FLOPs，有的 Kernel 快 10 倍？
+训练和推理的性能上限，最终都由这一层的「访存 + 计算 + 并行」决定。</p>
+<p><strong>前置（按节）</strong>：<code>notes/02_attention.md §4</code>（缩放点积）、<code>notes/03_block.md §5</code>（Block 组装）、
+<code>notes/05_modern.md §3</code>（GQA，可选）、<code>notes/06_inference.md §3–5</code>（KV Cache / prefill-decode）。</p>
+<p><strong>建议路径（每次 45 分钟）</strong>：
+① §2–3（GPU 架构 / CUDA 执行模型）；② §4–5（Roofline / 访存 / GEMM）；
+③ §6–7（Attention / MoE Kernel）；④ §8–10（精度 / Profiling / 编译）。</p>
+<p><strong>深度标注</strong>：§2–6、§8–9 为必学；§7 MoE、§10 编译为加分；芯片指令集/PTX/SASS 为了解。</p>
+</blockquote>
+<h2 id="0">0. 依赖图（学习顺序）<a class="headerlink" href="#0" title="Permanent link">&para;</a></h2>
+<pre class="mermaid"><code>graph TD
+  A["GPU 架构与访存层次"] --&gt; B["CUDA 执行模型&lt;br/&gt;grid / block / warp"]
+  B --&gt; C["Roofline&lt;br/&gt;计算密集 vs 访存密集"]
+  A --&gt; C
+  C --&gt; D["访存优化&lt;br/&gt;coalescing / tiling / bank conflict"]
+  D --&gt; E["GEMM 与基础算子"]
+  E --&gt; F["Attention Kernel&lt;br/&gt;FlashAttention / IO-aware"]
+  E --&gt; G["MoE Kernel&lt;br/&gt;路由 / gather-scatter / 负载均衡"]
+  C --&gt; H["精度与量化&lt;br/&gt;FP16/BF16/FP8/INT8"]
+  F --&gt; I["Profiling&lt;br/&gt;定位并优化一个 Kernel 的瓶颈"]
+  G --&gt; I
+  H --&gt; I
+  E --&gt; J["编译与工具链（旁支）&lt;br/&gt;MLIR/TVM/XLA/Triton/CUTLASS"]
+  J -.-&gt; I</code></pre>
+<blockquote>
+<p>汇点是 <strong>Profiling</strong>：先测再优化。编译/工具链是从算子与图优化分出的旁支，
+不是 Profiling 的下游（<code>J -.-&gt; I</code> 表示它反过来帮助定位/实现优化）。</p>
+</blockquote>
+<h2 id="1">1. 为什么先学单机<a class="headerlink" href="#1" title="Permanent link">&para;</a></h2>
+<p>AI Infra 的所有上层系统，最终都要落到单卡上的 Kernel：</p>
+<ul>
+<li>训练系统的 MFU，取决于每个 Kernel 的实际吞吐；</li>
+<li>推理系统的吞吐和延迟，取决于 Attention/GEMM/访存效率；</li>
+<li>量化、投机解码、PagedAttention，最终都要有 Kernel 支持；</li>
+<li>集群层面的问题，也常表现为「单机 Kernel 没跑满」。</li>
+</ul>
+<p><strong>一句话：不理解单机，就无法判断瓶颈到底在计算、访存、通信还是调度。</strong></p>
+<h2 id="2-gpu">2. GPU 架构与访存层次<a class="headerlink" href="#2-gpu" title="Permanent link">&para;</a></h2>
+<p>GPU 不是「更快的 CPU」，而是<strong>为吞吐设计的并行处理器</strong>：</p>
+<ul>
+<li>大量 SIMT 核心，用并行度隐藏延迟；</li>
+<li>强调带宽和吞吐，而不是单线程延迟；</li>
+<li>有复杂的显存层次，数据搬运往往比计算更贵。</li>
+</ul>
+<h3 id="21">2.1 关键部件<a class="headerlink" href="#21" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>部件</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SM（Streaming Multiprocessor）</td>
+<td>GPU 的基本计算单元，内含 CUDA Core、Tensor Core、寄存器、Shared Memory、调度器</td>
+</tr>
+<tr>
+<td>CUDA Core</td>
+<td>通用标量/向量计算</td>
+</tr>
+<tr>
+<td>Tensor Core</td>
+<td>矩阵乘加单元，FP16/BF16/FP8/INT8 的高吞吐来源</td>
+</tr>
+<tr>
+<td>寄存器</td>
+<td>每线程私有，最快但数量有限</td>
+</tr>
+<tr>
+<td>Shared Memory</td>
+<td>每个 block 共享，可编程管理，用来做数据复用</td>
+</tr>
+<tr>
+<td>L1/L2 Cache</td>
+<td>硬件缓存，L2 全局共享</td>
+</tr>
+<tr>
+<td>HBM</td>
+<td>显存放数据的地方，容量大、带宽高，但延迟远高于片上</td>
+</tr>
+<tr>
+<td>NVLink / PCIe</td>
+<td>GPU 之间、GPU 与 CPU 之间的互联</td>
+</tr>
+</tbody>
+</table>
+<h3 id="22">2.2 访存层次（数量级直觉）<a class="headerlink" href="#22" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>层级</th>
+<th>延迟（数量级）</th>
+<th>带宽（数量级）</th>
+<th>特点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>寄存器</td>
+<td>~1 cycle</td>
+<td>极高</td>
+<td>每线程私有，用多了会降低 occupancy</td>
+</tr>
+<tr>
+<td>Shared Memory</td>
+<td>~20–30 cycles</td>
+<td>每 SM 很高</td>
+<td>软件管理，GEMM/Attention 的复用核心</td>
+</tr>
+<tr>
+<td>L1 Cache</td>
+<td>~30 cycles</td>
+<td>高</td>
+<td>与 Shared Memory 共享片上资源</td>
+</tr>
+<tr>
+<td>L2 Cache</td>
+<td>~200 cycles</td>
+<td>数 TB/s</td>
+<td>全 GPU 共享</td>
+</tr>
+<tr>
+<td>HBM</td>
+<td>~400–800 cycles</td>
+<td>1.5–3.5 TB/s</td>
+<td>容量大，但相对计算很慢</td>
+</tr>
+<tr>
+<td>NVLink</td>
+<td>—</td>
+<td>数百 GB/s 到 ~1 TB/s</td>
+<td>多卡通信</td>
+</tr>
+<tr>
+<td>PCIe</td>
+<td>—</td>
+<td>数十 GB/s</td>
+<td>GPU-CPU / 跨节点常见瓶颈</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>具体数字随架构变化，这里只记数量级和相对关系。<strong>面试时更重要的是：知道 HBM 比片上慢一到两个数量级，所以「少搬数据」往往比「少算」更值钱。</strong></p>
+</blockquote>
+<p><img alt="GPU 访存层次：容量、延迟、带宽" src="../../diagrams/20h_memory.landscape.png" /></p>
+<p>图里的口径（A100/H100 级，数量级）：</p>
+<ul>
+<li>寄存器约 <code>256 KB / SM</code>，延迟约 1 cycle；</li>
+<li>Shared Memory 与 L1 共享片上容量，H100 最多约 <code>228 KB / SM</code> 可配置给 Shared；</li>
+<li>L2 约 <code>40–50 MB</code>（A100 40 MB、H100 50 MB），全 GPU 共享；</li>
+<li>HBM 单卡 <code>40–80 GB</code>，带宽 <code>1.55–3.35 TB/s</code>（A100 40GB 1.55、A100 80GB 2.0、H100 SXM 3.35）；</li>
+<li>NVLink 4 约 <code>900 GB/s 双向</code>（H100），PCIe 4 x16 约 <code>64 GB/s 双向</code>。</li>
+</ul>
+<blockquote>
+<p><strong>单位口径</strong>：厂商常用十进制 <code>GB/TB</code>（1 GB = 10^9 B），操作系统/<code>nvidia-smi</code> 常显示二进制 <code>GiB</code>
+（1 GiB = 2^30 B = 1.0737 GB）。算显存账本时先统一单位，再比较“权重 vs KV”，
+否则会凭空多出 7% 的误差。带宽同理：<code>1.55 TB/s = 1550 GB/s ≈ 1443 GiB/s</code>。</p>
+</blockquote>
+<h2 id="3-cuda">3. CUDA 执行模型<a class="headerlink" href="#3-cuda" title="Permanent link">&para;</a></h2>
+<h3 id="31">3.1 三层并行<a class="headerlink" href="#31" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Grid
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a> └── Block（多个，可调度到不同 SM）
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>      └── Warp（32 个线程，SIMT 执行）
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>           └── Thread
+</code></pre></div>
+<ul>
+<li>一个 <strong>warp = 32 个线程</strong>（NVIDIA），同一 warp 的线程执行同一条指令（<strong>SIMT</strong>：单指令多线程）；</li>
+<li><strong>occupancy</strong> = 一个 SM 上同时驻留的 warp 数 / 最大值。occupancy 高，能更好地隐藏访存延迟；</li>
+<li>但 occupancy 不是越高越好：寄存器、Shared Memory 用得多，会限制驻留 warp 数。</li>
+</ul>
+<p><strong>occupancy 算例</strong>：SM 有 64K 寄存器、100 KB Shared Memory（示例值，非真实上限）；block 256 线程、每线程 64 寄存器、
+每 block 32 KB Shared Memory →</p>
+<ul>
+<li>寄存器限制：<code>256 × 64 = 16K</code> 寄存器/block → <code>64K / 16K = 4</code> blocks；</li>
+<li>Shared Memory 限制：<code>100 / 32 ≈ 3</code> blocks；</li>
+<li>取小者 3 blocks；每 block 8 warps → 24 warps；若 SM 最大 64 warps，occupancy = 24/64 = 37.5%。</li>
+</ul>
+<p><img alt="occupancy 账本：寄存器 vs Shared Memory" src="../../diagrams/20e_occupancy.landscape.png" /></p>
+<p>图里把两条约束分开算再取小者：寄存器 <code>64K/16K=4</code> blocks，Shared Memory
+<code>100/32=3.125 → 3</code> blocks，最终 <code>3</code> blocks、<code>24/64=37.5%</code>。</p>
+<h3 id="32-kernel">3.2 一个最小 Kernel<a class="headerlink" href="#32-kernel" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kr">__global__</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">vec_add</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="o">*</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="o">*</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="o">*</span><span class="w"> </span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">n</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">blockIdx</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="nb">blockDim</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">threadIdx</span><span class="p">.</span><span class="n">x</span><span class="p">;</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">n</span><span class="p">)</span><span class="w"> </span><span class="n">c</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">b</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="p">}</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="c1">// launch: n 个元素，每 block 256 线程</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="n">vec_add</span><span class="o">&lt;&lt;&lt;</span><span class="p">(</span><span class="n">n</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">256</span><span class="p">,</span><span class="w"> </span><span class="mi">256</span><span class="o">&gt;&gt;&gt;</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">);</span>
+</code></pre></div>
+<p>这段代码的性能关键不是 <code>+</code>，而是：</p>
+<ul>
+<li>相邻线程访问相邻地址 → <strong>合并访问（coalescing）</strong>；</li>
+<li>线程数足够多 → 能隐藏 HBM 延迟；</li>
+<li>分支尽量少 → 避免 warp divergence。</li>
+</ul>
+<h3 id="33">3.3 同步与流水<a class="headerlink" href="#33" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>__syncthreads()</code>：block 内同步，GEMM 分块时常用；</li>
+<li>Stream：多个 Kernel 可以并发；</li>
+<li>CUDA Graph：把一串 Kernel 录成图，减少 launch 开销，推理引擎常用；</li>
+<li>异步拷贝（<code>cp.async</code> / TMA）：把数据搬运和计算重叠。</li>
+</ul>
+<h2 id="4-roofline">4. Roofline：判断瓶颈的第一工具<a class="headerlink" href="#4-roofline" title="Permanent link">&para;</a></h2>
+<h3 id="41">4.1 公式<a class="headerlink" href="#41" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>可达性能 ≤ min(峰值算力, 算术强度 × 峰值带宽)
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>算术强度 AI = FLOPs / 搬运的字节数
+</code></pre></div>
+<ul>
+<li><strong>计算密集（compute-bound）</strong>：AI 高，性能上限由峰值算力决定；</li>
+<li><strong>访存密集（memory-bound）</strong>：AI 低，性能上限由带宽决定。</li>
+</ul>
+<h3 id="42">4.2 三类典型算子<a class="headerlink" href="#42" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>算子</th>
+<th>算术强度</th>
+<th>瓶颈</th>
+<th>优化方向</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Elementwise（add/relu）</td>
+<td>很低（读+写）</td>
+<td>带宽</td>
+<td>合并访问、向量化、融合</td>
+</tr>
+<tr>
+<td>GEMM</td>
+<td>高（随矩阵规模增长）</td>
+<td>大矩阵偏算力</td>
+<td>tiling、Tensor Core、流水</td>
+</tr>
+<tr>
+<td>Attention（prefill）</td>
+<td>中等</td>
+<td>大 T 偏算力，小 T 偏访存</td>
+<td>FlashAttention、分块</td>
+</tr>
+<tr>
+<td>Attention（decode, batch=1）</td>
+<td>很低</td>
+<td>带宽（权重 + KV）</td>
+<td>batching、量化、KV 压缩</td>
+</tr>
+</tbody>
+</table>
+<h3 id="43-roofline">4.3 一个可验算的 Roofline 例子<a class="headerlink" href="#43-roofline" title="Permanent link">&para;</a></h3>
+<p>以 A100 为例（数量级）：FP16 峰值约 312 TFLOPS，HBM 带宽约 1.55 TB/s →</p>
+<p><strong>ridge point</strong>（Roofline 拐点）= 峰值算力 ÷ 峰值带宽：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>ridge point ≈ 312e12 / 1.55e12 ≈ 201 FLOP/byte
+</code></pre></div>
+<ul>
+<li><strong>4096³ FP16 GEMM</strong>：FLOPs ≈ <code>2 × 4096³ ≈ 1.37e11</code>；搬运字节 ≈ <code>3 × 4096² × 2 ≈ 1.0e8</code>；
+  AI ≈ <strong>1365 FLOP/byte</strong> ≫ 201 → <strong>compute-bound</strong>。</li>
+<li><strong>70B decode（batch=1）</strong>：每 token 约 <code>2 × 70e9 = 1.4e11</code> FLOPs；要读 FP16 权重约 140 GB；
+  AI ≈ <strong>1 FLOP/byte</strong> ≪ 201 → <strong>memory-bound</strong>。</li>
+</ul>
+<blockquote>
+<p>注：A100 80GB 版带宽约 2 TB/s，ridge ≈ 150+；上面用的是 40GB SXM 口径，实际以本机 GPU 为准。</p>
+<p>这两个例子是面试里最实用的「一眼判断」：大 GEMM 偏算力，decode 偏带宽。</p>
+<p><strong>batch 的影响</strong>：decode 每步读一次权重 <code>2N</code> 字节，但可以同时算 <code>B</code> 个 token，
+所以算术强度近似 <code>AI ≈ B</code>（忽略 KV）。<code>B ≈ ridge</code> 时 decode 从 memory-bound 翻到
+compute-bound；A100 上约 <code>B ≈ 201</code>。这解释了“为什么增大 batch 能提高 decode 吞吐”，
+但 batch 太大会拉高延迟、增加 KV 显存，吞吐和延迟要一起看。</p>
+<p>图号按主题编排:正文里 <code>20c</code>(Roofline)先于 <code>20b</code>(量化)出现,编号不代表学习步骤。</p>
+</blockquote>
+<p><img alt="Roofline 数值例子：大 GEMM vs 70B decode" src="../../diagrams/20c_roofline.landscape.png" /></p>
+<p>图里把每个数都展开：GEMM 的 <code>FLOPs=2×4096³=1.37e11</code>、<code>Bytes=3×4096²×2=1.01e8</code>、
+<code>AI=1365</code>;decode 的 <code>FLOPs=1.4e11</code>、<code>Bytes=1.4e11</code>、<code>AI=1</code>。
+两者分居 ridge(<code>≈201</code>)两侧,所以一个 compute-bound、一个 memory-bound。</p>
+<blockquote>
+<p><strong>decode 阶段是典型的 memory-bound</strong>：每生成一个 token，要把模型权重和 KV Cache 从 HBM 读一遍，算力大量闲置。这就是为什么推理优化里 batching、量化、GQA 如此重要。</p>
+</blockquote>
+<h2 id="5-gemm">5. 访存优化与 GEMM<a class="headerlink" href="#5-gemm" title="Permanent link">&para;</a></h2>
+<h3 id="51">5.1 三个基本问题<a class="headerlink" href="#51" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>合并访问</strong>：一个 warp 的 32 个线程访问连续地址，硬件可以合并成少量内存事务；</li>
+<li><strong>Bank conflict</strong>：Shared Memory 分成多个 bank，同一 warp 访问同一 bank 的不同地址会串行化；</li>
+<li><strong>数据复用</strong>：把反复使用的数据搬到 Shared Memory/寄存器，减少 HBM 往返。</li>
+</ol>
+<p><strong>一个小例子</strong>：Shared Memory 有 32 个 bank、每个 bank 4 B 宽。若 32 个线程访问
+<code>smem[tid * 32]</code>，地址步长是 32 个 word，所有线程落到同一个 bank → <strong>32 路冲突</strong>，
+一次访问要串行 32 次。把数组按 <code>33</code> 填充（<code>smem[tid * 33]</code>）或按 bank 数重排，
+就能让线程分散到不同 bank。面试里能说出“步长是 bank 数的整数倍会冲突”就够用了。</p>
+<h3 id="52-gemm-tiling">5.2 GEMM 分块（tiling）<a class="headerlink" href="#52-gemm-tiling" title="Permanent link">&para;</a></h3>
+<p>矩阵乘 <code>C[M,N] = A[M,K] @ B[K,N]</code> 的核心是<strong>分块 + 复用</strong>：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1">// 每个 block 负责 C 的一个 tile</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="c1">// 沿 K 维分块：A_tile [BM, BK], B_tile [BK, BN], C_tile [BM, BN]</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">k0</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">k0</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">K</span><span class="p">;</span><span class="w"> </span><span class="n">k0</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">BK</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span><span class="n">load</span><span class="w"> </span><span class="n">A_tile</span><span class="p">,</span><span class="w"> </span><span class="n">B_tile</span><span class="w"> </span><span class="n">into</span><span class="w"> </span><span class="n">shared</span><span class="w"> </span><span class="n">memory</span><span class="p">;</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">    </span><span class="nf">__syncthreads</span><span class="p">();</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="n">each</span><span class="w"> </span><span class="kr">thread</span><span class="o">:</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">        </span><span class="n">accumulate</span><span class="w"> </span><span class="n">C_tile</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">A_tile</span><span class="w"> </span><span class="err">@</span><span class="w"> </span><span class="n">B_tile</span><span class="p">;</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">    </span><span class="nf">__syncthreads</span><span class="p">();</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="p">}</span>
+</code></pre></div>
+<p><strong>维度与 Shared Memory 账本</strong>（BM=128, BN=128, BK=16, FP16）：</p>
+<ul>
+<li><code>A_tile [BM, BK]</code> = <code>[128, 16]</code>，<code>B_tile [BK, BN]</code> = <code>[16, 128]</code>，<code>C_tile [BM, BN]</code> = <code>[128, 128]</code>；</li>
+<li>Shared Memory ≈ <code>(128×16 + 16×128) × 2 B = 8 KiB</code>；</li>
+<li>每个 tile 被 block 内多个线程复用，HBM 读取次数从「每线程重复读」降到「每 block 读一次」。</li>
+</ul>
+<p><img alt="GEMM tiling 的 Shared Memory 账本" src="../../diagrams/20f_tiling.landscape.png" /></p>
+<p>账本：<code>A_tile 128×16=2048</code> 元素 = <code>4 KiB</code>，<code>B_tile 16×128=2048</code> 元素 = <code>4 KiB</code>，
+Shared 合计 <code>(2048+2048)×2 B=8192 B=8 KiB</code>；<code>C_tile 128×128</code> 放寄存器/累加器，
+不占 Shared Memory。注意:20e 的 16K 是整块总预算;C_tile 的 16K 只是累加器,加上 A/B/临时寄存器后整块超过 16K,occupancy 会低于 4 blocks。</p>
+<p><img alt="GEMM tiling：分块、K 循环与复用账本" src="../../diagrams/20i_gemm_reuse.landscape.png" /></p>
+<p>图里把“为什么省 HBM”算成每个输出元素的读取次数（M=N=K=4096、BM=BN=128、BK=16、FP16）：</p>
+<ul>
+<li><strong>朴素实现</strong>：每个 <code>C</code> 元素要读 <code>A</code> 的 <code>K</code> 个 + <code>B</code> 的 <code>K</code> 个 = <code>2K = 8192</code> 次；</li>
+<li><strong>tiled</strong>：每块读 <code>(BM+BN)×K = 1,048,576</code> 个，共 <code>(M/BM)(N/BN) = 1024</code> 块，
+  平均到每个输出 <code>K(1/BM+1/BN) = 64</code> 次；</li>
+<li>两者相差 <code>8192 / 64 = 128×</code>；块内每个 A/B 元素被复用 <code>BM</code> 或 <code>BN</code> 次（tile 复用因子
+  <code>BM·BN/(BM+BN) = 64</code>）；</li>
+<li>Shared 每块 <code>(BM×BK + BK×BN)×2 B = 8 KiB</code>，这是能放进片上、又能保持较高 occupancy 的折中。</li>
+</ul>
+<blockquote>
+<p>注意区分两个“复用”，不要混：</p>
+<ul>
+<li><strong>单个元素的复用次数</strong>：一个 A 元素被 <code>BN=128</code> 个输出复用，一个 B 元素被 <code>BM=128</code> 个输出复用；</li>
+<li><strong>块内平均复用因子</strong> <code>BM·BN/(BM+BN)=64</code>，是“总乘加数 ÷ 总加载元素数”；</li>
+<li><strong>总读取减少倍数</strong> <code>2BM·BN/(BM+BN)=128</code>，还额外乘了朴素实现每个输出读 A、B 两遍。</li>
+</ul>
+<p>面试时说“平均每个输出从 2K 次读取降到 64 次，约 128×”最准确。</p>
+</blockquote>
+<p>优化层次：</p>
+<ol>
+<li>朴素实现：每个线程直接读 HBM，访存爆炸；</li>
+<li>Shared Memory tiling：一个 tile 的数据被多个线程复用；</li>
+<li>Register blocking：每个线程算多个输出，进一步提高复用；</li>
+<li>双缓冲 / 异步拷贝：搬下一块的同时算当前块；</li>
+<li>Tensor Core：用 <code>mma</code> 指令做矩阵乘加；</li>
+<li>CUTLASS / Triton：工业级模板或 DSL，自动处理很多细节。</li>
+</ol>
+<h3 id="53-tensor-core">5.3 为什么 Tensor Core 要求对齐<a class="headerlink" href="#53-tensor-core" title="Permanent link">&para;</a></h3>
+<p>Tensor Core 一次处理一个矩阵块（如 16×16×16），要求：</p>
+<ul>
+<li>数据类型匹配（FP16/BF16/FP8/INT8）；</li>
+<li>维度/步长满足对齐要求；</li>
+<li>数据布局符合指令预期。</li>
+</ul>
+<p>不满足时，编译器可能退回普通 CUDA Core，性能差距可达数倍。</p>
+<h3 id="54-reduction-layernorm-softmax">5.4 Reduction 算子：LayerNorm / Softmax<a class="headerlink" href="#54-reduction-layernorm-softmax" title="Permanent link">&para;</a></h3>
+<p>这两个算子的共同点：沿某一维做 reduction（均值/方差/最大值/求和），再逐元素变换。</p>
+<p>优化要点：</p>
+<ul>
+<li>一次读入、片上 reduction（warp shuffle / shared memory）；</li>
+<li>向量化加载，尽量合并访问；</li>
+<li>与相邻算子融合（如 <code>LayerNorm + residual</code>、<code>Softmax + dropout</code>）；</li>
+<li>数值稳定：softmax 先减最大值；LayerNorm 的 <code>E[x²] - E[x]²</code> 省一遍读取，但在 FP16/大均值时
+  可能发生抵消，精度敏感时用两遍算法或 Welford。</li>
+</ul>
+<p>一个简化的 Triton softmax（一行一个 block）：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nd">@triton</span><span class="o">.</span><span class="n">jit</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">softmax_kernel</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">BLOCK</span><span class="p">:</span> <span class="n">tl</span><span class="o">.</span><span class="n">constexpr</span><span class="p">):</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    <span class="n">offs</span> <span class="o">=</span> <span class="n">tl</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">BLOCK</span><span class="p">)</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="n">mask</span> <span class="o">=</span> <span class="n">offs</span> <span class="o">&lt;</span> <span class="n">n</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>    <span class="n">vals</span> <span class="o">=</span> <span class="n">tl</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">offs</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">mask</span><span class="p">,</span> <span class="n">other</span><span class="o">=-</span><span class="nb">float</span><span class="p">(</span><span class="s2">"inf"</span><span class="p">))</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>    <span class="n">vals</span> <span class="o">=</span> <span class="n">vals</span> <span class="o">-</span> <span class="n">tl</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">vals</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>    <span class="n">num</span> <span class="o">=</span> <span class="n">tl</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>    <span class="n">den</span> <span class="o">=</span> <span class="n">tl</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">num</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>    <span class="n">tl</span><span class="o">.</span><span class="n">store</span><span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="n">offs</span><span class="p">,</span> <span class="n">num</span> <span class="o">/</span> <span class="n">den</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">mask</span><span class="p">)</span>
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="c1"># host 侧（仅演示 n &lt;= BLOCK；n 更大时要多 block 循环）</span>
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="c1"># assert n &lt;= BLOCK</span>
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="c1"># softmax_kernel[(1,)](x, y, n, BLOCK=triton.next_power_of_2(n))</span>
+<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a><span class="c1"># assert torch.allclose(y, torch.softmax(x, dim=0), atol=1e-5)</span>
+</code></pre></div>
+<blockquote>
+<p>真实的高性能实现还要处理：多行/多 block、行内 reduction、warp-level 原语、向量化与边界。</p>
+</blockquote>
+<p>LayerNorm 的参考实现（一行一个 token，<code>d_model</code> 维做 reduction）：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">layernorm</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">):</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>    <span class="n">mu</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdim</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>    <span class="n">var</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">unbiased</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">keepdim</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>    <span class="n">x_hat</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">mu</span><span class="p">)</span> <span class="o">/</span> <span class="n">torch</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">var</span> <span class="o">+</span> <span class="n">eps</span><span class="p">)</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>    <span class="k">return</span> <span class="n">x_hat</span> <span class="o">*</span> <span class="n">gamma</span> <span class="o">+</span> <span class="n">beta</span>
+</code></pre></div>
+<blockquote>
+<p>两遍算法（先均值、再方差）数值稳；一遍 <code>E[x²]-E[x]²</code> 少读一遍，但大均值/FP16 时
+容易发生抵消。kernel 实现常用 Welford 或分块统计，把 reduction 放在片上完成。</p>
+<p><strong>高性能 LayerNorm kernel 的骨架</strong>：一行/一个 tile 一个 block → 向量化加载 →
+warp shuffle 或 shared memory 做两级 reduction（均值/方差）→ 片上归一化 + 仿射 →
+一次写回；常和 residual add 融合。面试问“怎么写高性能 LayerNorm”，答这四步比背 API 有用。</p>
+</blockquote>
+<h2 id="6-attention-kernel-flashattention">6. Attention Kernel 与 FlashAttention<a class="headerlink" href="#6-attention-kernel-flashattention" title="Permanent link">&para;</a></h2>
+<h3 id="61-attention">6.1 标准 Attention 的问题<a class="headerlink" href="#61-attention" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">S</span> <span class="o">=</span> <span class="n">Q</span> <span class="o">@</span> <span class="n">K</span><span class="o">.</span><span class="n">T</span> <span class="o">/</span> <span class="n">sqrt</span><span class="p">(</span><span class="n">d_head</span><span class="p">)</span>   <span class="c1"># [T, T] 写回 HBM;缩放不能省</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="n">P</span> <span class="o">=</span> <span class="n">softmax</span><span class="p">(</span><span class="n">S</span><span class="p">)</span>               <span class="c1"># [T, T]</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="n">O</span> <span class="o">=</span> <span class="n">P</span> <span class="o">@</span> <span class="n">V</span>                    <span class="c1"># [T, d]</span>
+</code></pre></div>
+<p>中间矩阵 <code>S/P</code> 是 <code>T × T</code>：</p>
+<ul>
+<li>T=8K 时，单头 FP16 的 <code>S</code> 就是 128 MiB（≈134 MB）；</li>
+<li>写回 HBM 再读出来做 softmax，产生大量<strong>不必要的显存流量</strong>；</li>
+<li>计算量仍是 <code>O(T²d)</code>，但<strong>访存</strong>成为瓶颈。</li>
+</ul>
+<h3 id="62-flashattention">6.2 FlashAttention 的核心<a class="headerlink" href="#62-flashattention" title="Permanent link">&para;</a></h3>
+<p>不把 <code>T×T</code> 矩阵写回 HBM，而是<strong>分块 + online softmax</strong>：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="k">for</span> <span class="n">each</span> <span class="n">Q_block</span><span class="p">:</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>    <span class="n">m</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="n">O</span> <span class="o">=</span> <span class="o">-</span><span class="n">inf</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>          <span class="c1"># running max / normalizer / output</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>    <span class="k">for</span> <span class="n">each</span> <span class="n">K_block</span><span class="p">,</span> <span class="n">V_block</span><span class="p">:</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>        <span class="n">S</span> <span class="o">=</span> <span class="n">Q_block</span> <span class="o">@</span> <span class="n">K_block</span><span class="o">.</span><span class="n">T</span> <span class="o">/</span> <span class="n">sqrt</span><span class="p">(</span><span class="n">d_head</span><span class="p">)</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>        <span class="n">m_new</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">rowmax</span><span class="p">(</span><span class="n">S</span><span class="p">))</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>        <span class="n">l</span> <span class="o">=</span> <span class="n">exp</span><span class="p">(</span><span class="n">m</span> <span class="o">-</span> <span class="n">m_new</span><span class="p">)</span> <span class="o">*</span> <span class="n">l</span> <span class="o">+</span> <span class="n">rowsum</span><span class="p">(</span><span class="n">exp</span><span class="p">(</span><span class="n">S</span> <span class="o">-</span> <span class="n">m_new</span><span class="p">))</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>        <span class="n">O</span> <span class="o">=</span> <span class="n">exp</span><span class="p">(</span><span class="n">m</span> <span class="o">-</span> <span class="n">m_new</span><span class="p">)</span> <span class="o">*</span> <span class="n">O</span> <span class="o">+</span> <span class="n">exp</span><span class="p">(</span><span class="n">S</span> <span class="o">-</span> <span class="n">m_new</span><span class="p">)</span> <span class="o">@</span> <span class="n">V_block</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>        <span class="n">m</span> <span class="o">=</span> <span class="n">m_new</span>
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>    <span class="n">O</span> <span class="o">=</span> <span class="n">O</span> <span class="o">/</span> <span class="n">l</span>
+</code></pre></div>
+<p>关键点：</p>
+<ul>
+<li><strong>计算量不变</strong>（仍是 <code>O(T²d)</code>），变的是<strong>访存</strong>；</li>
+<li><code>m/l</code> 是 online softmax 的 running statistics，保证分块结果与完整 softmax 等价；</li>
+<li><strong>峰值显存/激活占用</strong>从 <code>O(T²)</code> 降到 <code>O(Td)</code>（不再物化 <code>T×T</code> 矩阵）；</li>
+<li><strong>HBM 读写量</strong>约 <code>Θ(T²d²/M)</code>（M 为 SRAM 容量；SRAM = 片上存储，含寄存器/Shared Memory），
+  对 T 仍是<strong>二次方</strong>，只是常数项更小——
+  <strong>不要说成 O(Td) 流量</strong>；</li>
+<li>例：T=8K、d=128 时，标准 attention 的 <code>T×T</code> 分数矩阵单头 FP16 就是
+  <code>8192²×2B = 128 MiB</code>；FlashAttention 不物化它，但 IO 仍随 T² 增长；</li>
+<li>FlashAttention-2/3 进一步优化并行切分、warp 调度和低精度。</li>
+</ul>
+<p><img alt="FlashAttention：分块 + online softmax 数值链" src="../../diagrams/20j_flash_attn.landscape.png" /></p>
+<p>图右侧用 <code>T=3</code>、<code>s=[2,4,6]</code>、<code>v=[1,2,3]</code> 走了一遍 online softmax，数字可手算复核：</p>
+<ul>
+<li>块 1：<code>s=[2,4]</code>，<code>m=4</code>，<code>p=[0.1353,1.0000]</code>，<code>l=1.1353</code>，<code>O=2.1353</code>；</li>
+<li>块 2：<code>s=[6]</code>，<code>m_new=6</code>，<code>rescale=e^(4-6)=0.1353</code>，
+  <code>l=0.1353×1.1353+1=1.1537</code>，<code>O=0.1353×2.1353+1×3=3.2890</code>；</li>
+<li>最终 <code>O/l=3.2890/1.1537=2.8509</code>；全量 softmax 权重 <code>[0.0159,0.1173,0.8668]</code>，
+  加权和同为 <code>2.8509</code>，验证分块结果与完整 softmax 等价。</li>
+</ul>
+<blockquote>
+<p>注意口径：FLOPs 仍是 <code>O(T²d)</code>；峰值显存/激活从 <code>O(T²)</code> 降到 <code>O(Td)</code>；
+HBM IO 约 <code>Θ(T²d²/M)</code>（M 为片上容量），对 T 仍是二次方，只是常数更小。
+<strong>不要说成 O(T) 流量，也不要说成降低计算复杂度。</strong></p>
+<p>对照标准 attention 的 HBM IO：读 Q/K/V 约 <code>Θ(Td)</code>，写回并重读 <code>T×T</code> 的 S/P 约 <code>Θ(T²)</code>，
+合计 <code>Θ(T² + Td)</code>。FlashAttention 把 <code>T²</code> 项压到 <code>Θ(T²d²/M)</code>；只有 <code>M ≫ d²</code> 时
+<code>T²d²/M</code> 才明显小于 <code>T²</code>。这才是“同样的 FLOPs，少搬很多数据”的准确条件。</p>
+<p>面试高频：<strong>FlashAttention 不是「近似算法」，也不减少 FLOPs；它通过 IO-aware 的分块和 online softmax，减少 HBM 读写，从而更快、更省显存。</strong></p>
+</blockquote>
+<h2 id="7-moe">7. MoE 算子<a class="headerlink" href="#7-moe" title="Permanent link">&para;</a></h2>
+<p>MoE（Mixture of Experts）把 FFN 换成多个专家，每个 token 只激活 top-k 个：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>gate = softmax(W_g @ x)
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>topk = top_k(gate, k)
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>y = sum_{i in topk} gate_i * Expert_i(x)
+</code></pre></div>
+<p>Kernel 层面的难点：</p>
+<ol>
+<li><strong>路由与分发</strong>：按专家把 token gather 到一起；</li>
+<li><strong>Grouped GEMM</strong>：每个专家一个 GEMM，但批量大小不同，需要分组/变长 GEMM；</li>
+<li><strong>负载均衡</strong>：热门专家 token 多、冷门专家少 → 需要 <strong>capacity factor</strong>（每专家容量系数）、
+   <strong>token dropping</strong>（容量溢出的 token 被丢弃或绕过）、<strong>load-balancing loss</strong>（路由概率均衡惩罚）；</li>
+<li><strong>AllToAll</strong>：专家并行（EP）时，token 要跨 GPU 发送；</li>
+<li><strong>融合</strong>：路由、gather/scatter、GEMM、scatter-add 尽量融合，减少访存。</li>
+</ol>
+<p><img alt="MoE：多 token 路由与 4 专家 grouped GEMM" src="../../diagrams/20k_moe_grouped.landscape.png" /></p>
+<p>图里用 <code>T=6</code>、<code>d=4</code>、<code>E=4</code>、<code>top-2</code> 走了一遍系统链路：</p>
+<ol>
+<li><strong>路由</strong>：每个 token 选 top-2 专家，得到 12 个 <code>(token, 专家)</code> 对；</li>
+<li><strong>permute</strong>：按专家把 token 重排成 4 段连续 buffer，<code>offset=[0,3,6,10,12]</code>；</li>
+<li><strong>grouped GEMM</strong>：每个专家一段 <code>X_e [n_e,d] @ W_e [d,d_out]</code>，<code>n_e</code> 分别为 <code>3/3/4/2</code>，
+   一次 kernel 算完变长分组，避免 pad 到 <code>max_n</code> 或 4 次 launch；</li>
+<li><strong>scatter-add</strong>：按原 token 聚合 <code>y_t = Σ w'_{t,e} · Y_e</code>。</li>
+</ol>
+<p><strong>容量与负载均衡</strong>：capacity factor 为 1.0 时，每专家容量 <code>ceil(T·k/E)=ceil(12/4)=3</code>；
+本例 E2 分到 4 个 token，超出 1 个，需要 <strong>drop</strong>（丢弃）或 <strong>bypass</strong>（绕过残差）。
+热门专家会造成 capacity 溢出、通信热点和显存不均；<code>load-balancing loss</code>、容量因子、
+专家并行（EP）的 AllToAll 都是围绕这个问题。</p>
+<blockquote>
+<p><strong>训练 vs 推理</strong>：训练时可以用 capacity factor + token drop 来控制单卡显存和计算量，
+丢掉的 token 由 aux loss 惩罚；推理通常<strong>不丢 token</strong>（会影响输出质量），容量不足时
+排队、改路由或扩专家。现代变体还有 <strong>expert-choice</strong>（专家选 token）、<strong>shared expert</strong>
+（常驻共享专家）和 <strong>aux-loss-free</strong> 负载均衡（用 bias 调整路由，而不是加辅助损失）。</p>
+<p><strong><code>gate_i</code> 与 <code>w'</code> 的关系</strong>：代码里的 <code>gate_i</code> 是 softmax 后的原始路由权重；图里的 <code>w'</code>
+是在 top-k 选出后再归一化的权重（<code>w'_i = gate_i / Σ_{j∈topk} gate_j</code>）。实现时常做这一步，
+让被选中的专家权重和为 1；两种写法都常见，比较时要看是否重归一化。</p>
+<p>MoE 的「参数量大、计算量小」是它的卖点，但系统上会被<strong>负载不均、通信、显存</strong>拖累——这也是 M2-2 专家并行的核心问题。</p>
+</blockquote>
+<h2 id="8">8. 精度与量化<a class="headerlink" href="#8" title="Permanent link">&para;</a></h2>
+<h3 id="81">8.1 常见数值格式<a class="headerlink" href="#81" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>格式</th>
+<th style="text-align: right;">字节</th>
+<th>指数/尾数位</th>
+<th>特点</th>
+<th>典型用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FP32</td>
+<td style="text-align: right;">4</td>
+<td>8 / 23</td>
+<td>精度高、慢、占显存</td>
+<td>基准、累加</td>
+</tr>
+<tr>
+<td>TF32</td>
+<td style="text-align: right;">4（19 位有效）</td>
+<td>8 / 10</td>
+<td>NVIDIA 张量核心加速</td>
+<td>训练/推理折中</td>
+</tr>
+<tr>
+<td>FP16</td>
+<td style="text-align: right;">2</td>
+<td>5 / 10</td>
+<td>范围小，最大约 65504，可能溢出</td>
+<td>混合精度训练、推理</td>
+</tr>
+<tr>
+<td>BF16</td>
+<td style="text-align: right;">2</td>
+<td>8 / 7</td>
+<td>范围与 FP32 接近，精度略低</td>
+<td>现代训练/推理主流</td>
+</tr>
+<tr>
+<td>FP8 E4M3</td>
+<td style="text-align: right;">1</td>
+<td>4 / 3</td>
+<td>需要 scaling；范围小、精度较高</td>
+<td>H100 起推理/部分训练</td>
+</tr>
+<tr>
+<td>FP8 E5M2</td>
+<td style="text-align: right;">1</td>
+<td>5 / 2</td>
+<td>范围更大、精度更低</td>
+<td>梯度/对范围敏感的场景</td>
+</tr>
+<tr>
+<td>INT8 / INT4</td>
+<td style="text-align: right;">1 / 0.5</td>
+<td>—</td>
+<td>需要 scale/zero-point</td>
+<td>推理、端侧</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>“字节数”不等于“有效精度”</strong>：BF16 和 FP16 都是 2 B，但 BF16 指数位与 FP32 相同（范围大），
+尾数只有 7 位（精度低）；FP16 反过来。训练默认用 BF16 主要是为了范围稳定，不是为了更高精度。
+FP8 的 E4M3/E5M2 也不是“一种格式”，选哪种取决于你要范围还是精度。</p>
+</blockquote>
+<h3 id="82">8.2 混合精度<a class="headerlink" href="#82" title="Permanent link">&para;</a></h3>
+<ul>
+<li>计算用 FP16/BF16，累加用 FP32；</li>
+<li>FP16 需要 loss scaling 防止梯度下溢；BF16 范围大，通常不需要；</li>
+<li>FP8 需要 per-tensor/per-block scaling，且对异常值敏感。</li>
+</ul>
+<h3 id="83">8.3 量化基本式<a class="headerlink" href="#83" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>q = clamp(round(x / s) + z, q_min, q_max)
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>x_hat = (q - z) * s
+</code></pre></div>
+<ul>
+<li><strong>per-tensor / per-channel / per-group</strong>：粒度越细，精度越好，元数据越多；</li>
+<li><strong>weight-only（W4A16）</strong>：只量化权重，适合 decode 的访存瓶颈；</li>
+<li><strong>W8A8 / FP8</strong>：权重和激活都量化，需要校准；</li>
+<li><strong>outlier</strong>：少数极大值会拉大 scale，常用保留 outlier、混合精度、per-group 解决。</li>
+</ul>
+<p><img alt="量化逐步：scale / zero-point → q → 反量化" src="../../diagrams/20b_quant.landscape.png" /></p>
+<p>图里用 4 个值走完 <code>s → zp → q → x_hat</code> 的每一步：<code>x=[-1.73,-0.42,0.67,2.38]</code>、
+<code>s=(2.38-(-1.73))/255=0.016118</code>、<code>zp=-21</code>,得到 <code>q=[-128,-47,21,127]</code>;
+最大绝对误差 <code>0.0069 &lt; s/2 = 0.0081</code>。</p>
+<blockquote>
+<p>量化不是「免费加速」：它用精度换带宽/算力，必须做<strong>精度评测</strong>（ perplexity、任务指标、长尾 case）。</p>
+</blockquote>
+<h2 id="9-profiling">9. Profiling：不要猜，先测<a class="headerlink" href="#9-profiling" title="Permanent link">&para;</a></h2>
+<h3 id="91">9.1 工具分工<a class="headerlink" href="#91" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>工具</th>
+<th>看什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Nsight Systems</td>
+<td>时间线：CPU/GPU 是否空转、Kernel 顺序、NCCL、数据拷贝</td>
+</tr>
+<tr>
+<td>Nsight Compute</td>
+<td>单个 Kernel：occupancy、内存吞吐、计算吞吐、stall 原因</td>
+</tr>
+<tr>
+<td>torch.profiler</td>
+<td>Python/PyTorch 层：算子耗时、显存、调用栈</td>
+</tr>
+<tr>
+<td>nvidia-smi / DCGM</td>
+<td>利用率、显存、温度、功耗、ECC</td>
+</tr>
+</tbody>
+</table>
+<h3 id="92-profile">9.2 读 Profile 的顺序<a class="headerlink" href="#92-profile" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>先看时间线</strong>：GPU 有没有空转？是不是在等数据/通信？</li>
+<li><strong>找 Top Kernel</strong>：哪些 Kernel 占了大头？</li>
+<li><strong>看 Kernel 类型</strong>：GEMM、Attention、elementwise、reduce、copy？</li>
+<li><strong>算 Roofline</strong>：它是 compute-bound 还是 memory-bound？</li>
+<li><strong>看指标</strong>：occupancy 够不够？内存吞吐是否接近峰值？warp stall 在哪？</li>
+<li><strong>做实验</strong>：改 block size、tile size、向量化、融合，重新测。</li>
+</ol>
+<h3 id="93">9.3 常见性能陷阱<a class="headerlink" href="#93" title="Permanent link">&para;</a></h3>
+<ul>
+<li>benchmark 没 warmup、没同步，测到的是 launch 开销；</li>
+<li>比较不同 batch size / 精度 / 输入长度，结论不可比；</li>
+<li>只看平均延迟，不看 P99；</li>
+<li>把理论峰值当成可达性能；</li>
+<li>忽略数据搬运和 Kernel launch 开销。</li>
+</ul>
+<h2 id="10">10. 编译与工具链<a class="headerlink" href="#10" title="Permanent link">&para;</a></h2>
+<h3 id="101-ir">10.1 计算图与 IR<a class="headerlink" href="#101-ir" title="Permanent link">&para;</a></h3>
+<p>深度学习框架先把模型变成计算图，再在图上做优化（<strong>IR</strong> = 中间表示；<strong>pass</strong> = 一次图变换）：</p>
+<ul>
+<li>常量折叠、死代码消除；</li>
+<li>算子融合（如 <code>LayerNorm + residual</code>、<code>GEMM + bias + activation</code>）；</li>
+<li>布局转换（NCHW/NHWC、转置）；</li>
+<li>内存规划（复用 buffer、减少峰值显存）；</li>
+<li>并行/流水调度。</li>
+</ul>
+<h3 id="102">10.2 主流工具<a class="headerlink" href="#102" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>工具</th>
+<th>机制/定位</th>
+<th>代价</th>
+<th>何时选</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MLIR</td>
+<td>多层 IR + 可插拔 pass</td>
+<td>学习曲线陡</td>
+<td>自研编译器/新硬件</td>
+</tr>
+<tr>
+<td>TVM</td>
+<td>图优化 + schedule + auto-tuning</td>
+<td>调优耗时</td>
+<td>跨硬件部署</td>
+</tr>
+<tr>
+<td>XLA</td>
+<td>JIT + 图优化</td>
+<td>动态形状/生态限制</td>
+<td>TensorFlow/JAX</td>
+</tr>
+<tr>
+<td>Triton</td>
+<td>Python DSL 写 Kernel</td>
+<td>极致性能不如手写</td>
+<td>快速迭代、中等性能</td>
+</tr>
+<tr>
+<td>CUTLASS</td>
+<td>CUDA C++ 模板库</td>
+<td>模板复杂</td>
+<td>工业级 GEMM/Attention</td>
+</tr>
+<tr>
+<td>TileLang</td>
+<td>面向 tile 的 Kernel DSL</td>
+<td>生态较新</td>
+<td>实验性 Kernel</td>
+</tr>
+</tbody>
+</table>
+<p><strong>一个融合例子</strong>：<code>GEMM → bias add → GELU</code> 在图上融合成一个 Kernel，省掉中间结果的 HBM 往返；
+<code>LayerNorm + residual</code> 同理。融合的代价是 Kernel 更复杂、寄存器/Shared Memory 压力更大。</p>
+<p><strong>一个布局例子</strong>：卷积的 NCHW → NHWC 变换，本质是把通道维放到最内层，让相邻线程读到
+相邻通道；GEMM 则希望 K 维连续（K-major），才能向量化加载并喂给 Tensor Core。
+布局变换本身可能引入一次全局 copy——所以编译器要判断“变换的收益是否大于搬运成本”，
+不能看到不连续就无脑插 transpose。</p>
+<h3 id="103">10.3 选型直觉<a class="headerlink" href="#103" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>追求极致性能、可控性</strong>：手写 CUDA/CUTLASS；</li>
+<li><strong>快速迭代、中等性能</strong>：Triton；</li>
+<li><strong>整图优化、跨算子融合</strong>：MLIR/TVM/XLA；</li>
+<li><strong>新硬件适配</strong>：芯片工具链 + 编译器后端。</li>
+</ul>
+<blockquote>
+<p>编译器不是魔法：它只能在 IR 层面做等价变换，真正的性能上限仍由硬件和算法决定。
+PTX 是 NVIDIA 的虚拟指令集，SASS 是实际机器码；了解即可，面试更常问「编译器如何从高层 IR 生成 Kernel」。</p>
+</blockquote>
+<h3 id="104-ai">10.4 AI 芯片工具链与软硬件协同（边界说明）<a class="headerlink" href="#104-ai" title="Permanent link">&para;</a></h3>
+<p>本层以 NVIDIA GPU 为主。AI 芯片方向还要补：</p>
+<ul>
+<li>芯片 Runtime、算子库、量化工具、模型转换与评测；</li>
+<li>Ascend C / BangC 等厂商 DSL；</li>
+<li>软硬件协同：模型结构 ↔ 数值格式 ↔ 互联拓扑 ↔ 指令集；</li>
+<li>HPC：多节点强扩展、通信与计算重叠。</li>
+</ul>
+<p>这些内容在 <strong>M2-6（前沿与端侧）</strong>展开；面试算子岗时至少要能说清「工具链各层解决什么问题」。</p>
+<h2 id="_1">面试要点<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>为什么 GPU 快？</strong> → 大量并行核心 + 高带宽，用吞吐换延迟；适合数据并行。</li>
+<li><strong>Shared Memory 和 L1 的区别？</strong> → Shared Memory 由软件显式管理、可预测；L1 由硬件缓存、不可控。</li>
+<li><strong>什么是 occupancy？越高越好吗？</strong> → 驻留 warp 数 / 最大 warp 数；高 occupancy 有助于隐藏延迟，但受寄存器/Shared Memory 限制，不是绝对越高越好。</li>
+<li><strong>GEMM 为什么要 tiling？</strong> → 提高数据复用，减少 HBM 往返；配合寄存器分块和 Tensor Core。</li>
+<li><strong>FlashAttention 为什么快？</strong> → 不减少 FLOPs，减少 HBM 读写；分块 + online softmax，IO-aware。</li>
+<li><strong>怎么判断 compute-bound 还是 memory-bound？</strong> → 算算术强度，和机器 roofline 对比；再看 profiler 的计算/内存吞吐。</li>
+<li><strong>MoE 算子的难点？</strong> → 路由、gather/scatter、grouped GEMM、负载均衡、AllToAll。</li>
+<li><strong>FP16 和 BF16 怎么选？</strong> → FP16 精度高但范围小；BF16 范围大、训练更稳，现代训练常用 BF16。</li>
+<li><strong>量化为什么会掉精度？</strong> → scale 截断、outlier、激活分布变化；需要校准和精度评测。</li>
+<li><strong>编译器能做什么优化？</strong> → 常量折叠、算子融合、布局转换、内存规划、代码生成。</li>
+</ol>
+<h2 id="_2">常见坑<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>把 FlashAttention 说成「降低计算复杂度」</strong>：它降低的是访存，计算仍是 O(T²d)。</li>
+<li><strong>忽略合并访问和 bank conflict</strong>：同样的 FLOPs，访存方式不同可能差数倍。</li>
+<li><strong>只看理论峰值</strong>：实际可达性能受 occupancy、访存、指令依赖限制。</li>
+<li><strong>benchmark 不 warmup/不同步</strong>：测到的是噪声。</li>
+<li><strong>量化只看速度不看精度</strong>：必须做任务级评测。</li>
+<li><strong>把编译器当银弹</strong>：图优化无法弥补算法/数据布局的根本问题。</li>
+<li><strong>忽略 Kernel launch 和 Python 开销</strong>：小算子多时，框架开销可能超过计算。</li>
+</ul>
+<h2 id="3060">动手清单（30–60 分钟）<a class="headerlink" href="#3060" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p>环境：任意 NVIDIA GPU；没有 Nsight Compute 时用 <code>torch.profiler</code> 替代；
+ridge point 用<strong>本机 GPU</strong> 的峰值算力/带宽算，不要直接套 A100 数字。</p>
+</blockquote>
+<ol>
+<li><strong>Roofline 实测</strong>：用 <code>torch.profiler</code> 跑一个 4096³ FP16 matmul（先 warmup 10 次，
+   用 <code>torch.cuda.synchronize()</code> 或 CUDA events 计时），算实际 TFLOPS 和算术强度，
+   和本机 ridge point 比较。</li>
+<li><strong>Triton softmax</strong>：实现上面的 softmax kernel，用 <code>torch.softmax</code> 做 <code>allclose</code> 正确性检查，
+   再扫不同 <code>BLOCK</code> 大小，记录延迟和带宽。</li>
+<li><strong>Profile 一个 Kernel</strong>：用 Nsight Compute 看 occupancy、memory throughput、stall 原因，
+   写一句「瓶颈是 compute 还是 memory，下一步改什么」。</li>
+</ol>
+<p>验收标准：能对一个 Kernel 给出「瓶颈判断 + 一个可验证的优化方向」，且 softmax 结果数值正确，
+而不是只报一个耗时数字。</p>
+<h2 id="_3">相关图<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p>结构/机制图：</p>
+<ul>
+<li><code>20h_memory</code> — GPU 访存层次：容量、延迟、带宽（A100/H100 数量级）；</li>
+<li><code>20i_gemm_reuse</code> — GEMM tiling：分块、K 循环、复用账本；</li>
+<li><code>20j_flash_attn</code> — FlashAttention：分块 + online softmax 数值链；</li>
+<li><code>20k_moe_grouped</code> — MoE：多 token 路由、permute、4 专家 grouped GEMM、容量控制。</li>
+</ul>
+<p>数值/账本图：</p>
+<ul>
+<li><code>20c_roofline</code> — Roofline 数值例子(GEMM vs 70B decode，含 ridge 对比轴)；</li>
+<li><code>20b_quant</code> — INT8 量化的逐步账本(scale / zero-point / 误差)；</li>
+<li><code>20e_occupancy</code> — occupancy 账本（寄存器 vs Shared Memory）；</li>
+<li><code>20f_tiling</code> — GEMM tiling 的 Shared Memory 账本。</li>
+</ul>
+<h2 id="_4">下一步<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>推理线</strong>：M2-3 推理系统 → M2-4 分布式底座 → M2-5 平台与稳定性。</li>
+<li><strong>训练线</strong>（若还没走推理线）：M2-4 分布式底座 → M2-2 训练系统 → M2-5。</li>
+<li>不要从 M2-3 直接跳到 M2-2 而跳过 M2-4；训练系统需要网络/存储/调度基础。</li>
+</ul>
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.top", "navigation.indexes", "content.code.copy", "search.suggest", "search.highlight", "toc.follow"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+        <script src="../../javascripts/mathjax.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs" type="module"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,3627 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="从 Transformer 骨架到推理系统的 29 篇讲义（本地预览）">
+      
+      
+      
+      
+        <link rel="prev" href="../26_frontier_edge/">
+      
+      
+        <link rel="next" href="../28_vllm_source_trace/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>第二十七层 · Agent 工程化：Context / Harness / Loop / Graph - AI Infra 讲义</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#agent-context-harness-loop-graph" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="../.." title="AI Infra 讲义" class="md-header__button md-logo" aria-label="AI Infra 讲义" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            AI Infra 讲义
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              第二十七层 · Agent 工程化：Context / Harness / Loop / Graph
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切到深色"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="切到深色" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切到浅色"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="切到浅色" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="AI Infra 讲义" class="md-nav__button md-logo" aria-label="AI Infra 讲义" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    AI Infra 讲义
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI Infra 讲义
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Notes
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Notes
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01_skeleton/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第一层 · 骨架 —— 从文本到矩阵
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02_attention/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二层 · 心脏 —— Self-Attention 的 Q/K/V
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03_block/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第三层 · 加强 —— Multi-Head、残差、LayerNorm、FFN
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04_architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第四层 · 组装 —— Encoder / Decoder / 掩码 / Cross-Attention
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05_modern/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第五层 · 现代变体 —— 从原论文到 LLaMA/GPT
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_inference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第六层 · 跑起来 —— 训练/推理、KV Cache、完整 forward
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_pretraining/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第七层 · 预训练 —— 目标、数据与 Scaling Law
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../08_alignment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第八层 · 对齐 —— SFT、RLHF、DPO 与安全
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09_evaluation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第九层 · 评测 —— benchmark、污染、judge 与可复现
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../10_decoding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十层 · 解码 —— 从 logits 到 token
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../11_applications/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十一层 · 应用 —— Prompt、RAG、工具与 Agent
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../12_multimodal/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十二层 · 多模态 —— VLM、扩散与语音
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../13_reasoning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十三层 · 推理模型 —— 测试时计算、长 CoT 与 RLVR
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../14_long_context/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十四层 · 长上下文 —— 位置外推、注意力模式与 KV 账本
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../15_peft_lora/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十五层 · PEFT 与 LoRA —— 用 0.1% 参数做微调
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../16_agent_rl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十六层 · Agent RL —— rollout、环境、奖励与异步训练
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../17_data_engineering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十七层 · 数据工程 —— 从原始语料到数据飞轮
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../18_interpretability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十八层 · 可解释性 —— 从探针到电路与 SAE
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../19_multimodal_deep/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十九层 · 多模态深化 —— VLM、视频/音频与扩散
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../20_ai_infra_map/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模块二 · M2-0 地图与坐标系
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（2026-10-21 补全景图 20g）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../21_single_node_ops/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模块二 · M2-1 单机与算子
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（2026-10-21 补结构图 20h/20i/20j/20k）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../22_inference_systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模块二 · M2-3 推理系统
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（2026-10-21 补结构图 20l–20q）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../23_training_systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 2 层 · M2-2 训练系统
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../24_distributed_base/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 4 层 · M2-4 分布式底座
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../25_platform_sre/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 5 层 · M2-5 平台与稳定性
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../26_frontier_edge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 6 层 · M2-6 前沿与端侧
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二十七层 · Agent 工程化：Context / Harness / Loop / Graph
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--v1"></span>
+  
+
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二十七层 · Agent 工程化：Context / Harness / Loop / Graph
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--v1"></span>
+  
+
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0. 依赖图（学习顺序）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-agent-prompt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. 一句话：Agent 不是“更长的 Prompt”
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-agent-workflow-chatbot-rpa-function-calling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. 边界：Agent / Workflow / Chatbot / RPA / Function Calling
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-context-harness-loop-graph" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. 四层框架：Context → Harness → Loop → Graph
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. 四层框架：Context → Harness → Loop → Graph">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 五层演进 ↔ 四层结构
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Context 工程：注意力预算
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Context 工程：注意力预算">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 上下文的四类内容
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 上下文压缩：触发 → 策略 → 校验 → 恢复
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#43" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.3 常见坑
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#44-prefix-cache-agent-workload" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.4 压缩与 prefix cache / Agent workload
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-harness-mcp" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Harness 工程：工具、MCP、沙箱、权限
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Harness 工程：工具、MCP、沙箱、权限">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#51" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.1 工具调用
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#52-mcpmodel-context-protocol" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.2 MCP（Model Context Protocol）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#53" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.3 沙箱
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#54" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.4 权限：四层护栏
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#55" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.5 模型集成与降级
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-loop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Loop 工程：计划、验证、重试、停止
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. Loop 工程：计划、验证、重试、停止">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#60" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.0 任务拆解
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#601-react-plan-execute-reflexion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.0.1 规划范式：ReAct / Plan-Execute / Reflexion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#61" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.1 停止条件
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#62" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.2 验证
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#63" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.3 重试
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#64" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.4 状态机
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#65-replan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.5 重规划（replan）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-graph-agent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Graph 工程：多 Agent 协作
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7. Graph 工程：多 Agent 协作">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#71" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.1 角色分工
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#72" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.2 通信
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#73" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.3 终止权
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#74" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.4 常见坑
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-skills" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Skills、记忆与状态
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. Skills、记忆与状态">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#81-skills" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.1 Skills
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#82" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.2 记忆
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#83" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.3 状态恢复
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. 评测与可观测
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="9. 评测与可观测">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#91" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.1 四层评测
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#92" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.2 指标
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#93" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.3 方法
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. 安全与成本
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="10. 安全与成本">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#101" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10.1 安全
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#102" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10.2 成本
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11-asterwynd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11. Asterwynd 项目映射
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="11. Asterwynd 项目映射">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#111-star" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11.1 项目 STAR（面试直接用）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#112-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11.2 项目追问 10 问
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12. 面试要点
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        13. 常见坑
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#14-6090" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        14. 动手清单（60–90 分钟）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        15. 下一步
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../28_vllm_source_trace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二十八层 · vLLM v1 源码 trace：一次请求怎么走
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--v1"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../29_agent_eval_infra/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二十九层 · Agent 评测 Infra：从打分到可复现的评测平台
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--v1"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../worksheets/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Worksheets
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Worksheets
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0. 依赖图（学习顺序）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-agent-prompt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. 一句话：Agent 不是“更长的 Prompt”
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-agent-workflow-chatbot-rpa-function-calling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. 边界：Agent / Workflow / Chatbot / RPA / Function Calling
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-context-harness-loop-graph" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. 四层框架：Context → Harness → Loop → Graph
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. 四层框架：Context → Harness → Loop → Graph">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 五层演进 ↔ 四层结构
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Context 工程：注意力预算
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Context 工程：注意力预算">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 上下文的四类内容
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 上下文压缩：触发 → 策略 → 校验 → 恢复
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#43" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.3 常见坑
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#44-prefix-cache-agent-workload" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.4 压缩与 prefix cache / Agent workload
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-harness-mcp" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Harness 工程：工具、MCP、沙箱、权限
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Harness 工程：工具、MCP、沙箱、权限">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#51" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.1 工具调用
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#52-mcpmodel-context-protocol" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.2 MCP（Model Context Protocol）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#53" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.3 沙箱
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#54" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.4 权限：四层护栏
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#55" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.5 模型集成与降级
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-loop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Loop 工程：计划、验证、重试、停止
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. Loop 工程：计划、验证、重试、停止">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#60" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.0 任务拆解
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#601-react-plan-execute-reflexion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.0.1 规划范式：ReAct / Plan-Execute / Reflexion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#61" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.1 停止条件
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#62" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.2 验证
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#63" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.3 重试
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#64" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.4 状态机
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#65-replan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.5 重规划（replan）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-graph-agent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Graph 工程：多 Agent 协作
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7. Graph 工程：多 Agent 协作">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#71" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.1 角色分工
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#72" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.2 通信
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#73" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.3 终止权
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#74" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.4 常见坑
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-skills" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Skills、记忆与状态
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. Skills、记忆与状态">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#81-skills" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.1 Skills
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#82" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.2 记忆
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#83" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.3 状态恢复
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. 评测与可观测
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="9. 评测与可观测">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#91" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.1 四层评测
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#92" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.2 指标
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#93" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.3 方法
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. 安全与成本
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="10. 安全与成本">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#101" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10.1 安全
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#102" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10.2 成本
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11-asterwynd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11. Asterwynd 项目映射
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="11. Asterwynd 项目映射">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#111-star" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11.1 项目 STAR（面试直接用）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#112-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11.2 项目追问 10 问
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12. 面试要点
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        13. 常见坑
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#14-6090" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        14. 动手清单（60–90 分钟）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        15. 下一步
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="agent-context-harness-loop-graph">第二十七层 · Agent 工程化：Context / Harness / Loop / Graph<a class="headerlink" href="#agent-context-harness-loop-graph" title="Permanent link">&para;</a></h1>
+<blockquote>
+<p>本层是 <strong>1C（应用）与 M2-6（Agent Runtime）之间的补丁</strong>：把“会用 Agent”升级成“能设计、能排障、能评估 Agent 系统”。
+前置：<code>notes/11_applications.md</code>（工具/RAG/记忆/Agent Loop）、<code>notes/16_agent_rl.md</code>（rollout/沙箱/RL）、<code>notes/26_frontier_edge.md §2</code>（Agent Runtime）。
+外部资产：Obsidian <code>AI Agent面试准备/</code> 的 Wiki、面试 Q&amp;A、Asterwynd 讲稿；本讲义只做结构化综合，不复制原文。</p>
+</blockquote>
+<h2 id="0">0. 依赖图（学习顺序）<a class="headerlink" href="#0" title="Permanent link">&para;</a></h2>
+<pre class="mermaid"><code>flowchart TD
+    A["LLM 基础：上下文/工具调用/结构化输出"] --&gt; B["Agent 边界：Agent vs Workflow"]
+    B --&gt; C["运行循环：Plan → Act → Observe → Verify"]
+    C --&gt; D["Context 工程：预算/裁剪/压缩/记忆"]
+    C --&gt; E["Harness：工具/MCP/沙箱/权限/trace"]
+    D --&gt; F["Loop 工程：重试/停止/状态机"]
+    E --&gt; F
+    F --&gt; G["Graph 工程：多 Agent/路由/终止权"]
+    G --&gt; H["评测与可观测：trace/replay/pass@k"]
+    H --&gt; I["目标：能设计并排障一个生产级 Agent"]</code></pre>
+<p><strong>建议 45 分钟路径</strong>：§2 边界 → §3 四层框架 → §4 Context → §5 Harness → §6 Loop → §7 Graph → §9 评测 → §11 Asterwynd 映射。</p>
+<blockquote>
+<p>与 <code>notes/11</code> 的 delta：11 讲单 Agent 基本循环（ReAct/工具/RAG/记忆/guardrails）；27 新增四层框架、多 Agent Graph、状态恢复、trace/replay、评测 Infra 与项目复盘。不要用 27 替代 11。</p>
+</blockquote>
+<p><strong>前置（按节）</strong>：</p>
+<ul>
+<li>§2–§3：知道 LLM 的上下文窗口、tool calling、JSON 输出（<code>notes/11 §1–2</code>）。</li>
+<li>§5：知道容器/沙箱的基本概念（<code>notes/26 §2</code>）。</li>
+<li>§9：知道 pass@k、LLM-as-judge（<code>notes/09</code>）。</li>
+</ul>
+<hr />
+<h2 id="1-agent-prompt">1. 一句话：Agent 不是“更长的 Prompt”<a class="headerlink" href="#1-agent-prompt" title="Permanent link">&para;</a></h2>
+<p><strong>Agent = LLM + 上下文 + 工具 + 循环 + 验证 + 停止条件。</strong></p>
+<p>它的工程难点不在“模型会不会调用工具”，而在：</p>
+<ul>
+<li>模型<strong>看到什么</strong>（Context）；</li>
+<li>它能<strong>做什么、不能做什么</strong>（Harness）；</li>
+<li>它<strong>什么时候继续、什么时候停</strong>（Loop）；</li>
+<li>多个 Agent 如何<strong>分工、通信、收场</strong>（Graph）。</li>
+</ul>
+<p>一个能跑 Demo 的 Agent 和一个生产级 Agent 的差距，通常不是模型能力，而是这四层的工程约束。</p>
+<hr />
+<h2 id="2-agent-workflow-chatbot-rpa-function-calling">2. 边界：Agent / Workflow / Chatbot / RPA / Function Calling<a class="headerlink" href="#2-agent-workflow-chatbot-rpa-function-calling" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>形态</th>
+<th>谁决定下一步</th>
+<th>是否有循环</th>
+<th>典型场景</th>
+<th>失败模式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Chatbot</strong></td>
+<td>人</td>
+<td>否</td>
+<td>FAQ、客服问答</td>
+<td>答错、幻觉</td>
+</tr>
+<tr>
+<td><strong>Workflow</strong></td>
+<td>人预先写死</td>
+<td>有，但固定</td>
+<td>审批流、ETL、编排</td>
+<td>分支漏、异常没兜底</td>
+</tr>
+<tr>
+<td><strong>RPA</strong></td>
+<td>规则/脚本</td>
+<td>有，固定</td>
+<td>点击、填表、搬运</td>
+<td>UI 变了就挂</td>
+</tr>
+<tr>
+<td><strong>Function Calling</strong></td>
+<td>模型选函数</td>
+<td>单次/少量</td>
+<td>查天气、查订单</td>
+<td>参数错、工具错</td>
+</tr>
+<tr>
+<td><strong>Agent</strong></td>
+<td>模型 + 工程约束</td>
+<td>有，动态</td>
+<td>Coding Agent、研究 Agent、运维 Agent</td>
+<td>空转、跑偏、越权、成本失控</td>
+</tr>
+</tbody>
+</table>
+<p><strong>面试一句话</strong>：</p>
+<blockquote>
+<p>Agent 和 Workflow 的核心区别不是“有没有 LLM”，而是<strong>谁决定下一步</strong>：Workflow 是人把路径写死，Agent 是模型在工程约束内动态选择；一旦动态选择，就必须补上循环、验证、停止、权限和可观测。</p>
+</blockquote>
+<hr />
+<h2 id="3-context-harness-loop-graph">3. 四层框架：Context → Harness → Loop → Graph<a class="headerlink" href="#3-context-harness-loop-graph" title="Permanent link">&para;</a></h2>
+<p><img alt="Agent 工程四层" src="../../diagrams/27a_agent_layers.landscape.png" /></p>
+<blockquote>
+<p>手机版：<code>../diagrams/27a_agent_layers.portrait.png</code></p>
+<p>两种视角：本讲义按<strong>工程边界/依赖图</strong>讲 Context → Harness → Loop → Graph；Obsidian Wiki 的“Harness 外层 / Graph 中间 / Loop 内层”是<strong>运行时嵌套</strong>视角。<strong>上下文内容/预算/压缩归 Context；Harness 只提供存储/检索/工具执行机制</strong>。</p>
+</blockquote>
+<p>从内向外：</p>
+<table>
+<thead>
+<tr>
+<th>层</th>
+<th>解决什么</th>
+<th>核心问题</th>
+<th>典型失败</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Context</strong></td>
+<td>模型看到什么</td>
+<td>注意力预算、记忆、裁剪、压缩、prefix cache</td>
+<td>目标丢失、上下文污染、关键信息被挤掉</td>
+</tr>
+<tr>
+<td><strong>Harness</strong></td>
+<td>模型能做什么</td>
+<td>工具 schema、MCP、权限、沙箱、trace</td>
+<td>参数错、越权、工具失败没兜底</td>
+</tr>
+<tr>
+<td><strong>Loop</strong></td>
+<td>能否持续</td>
+<td>触发、计划、验证、重试、停止</td>
+<td>停不下来、空转、重试风暴</td>
+</tr>
+<tr>
+<td><strong>Graph</strong></td>
+<td>多 Agent 如何协作</td>
+<td>角色、通信、共享状态、终止权</td>
+<td>状态乱、子 Agent 泄漏、互相甩锅</td>
+</tr>
+</tbody>
+</table>
+<p><strong>排障顺序</strong>：先看 Context（模型是否知道目标），再看 Harness（工具是否可用/权限是否够），再看 Loop（是否该停），最后看 Graph（是否是多 Agent 协作问题）。不要一上来就怪模型。</p>
+<h3 id="31">3.1 五层演进 ↔ 四层结构<a class="headerlink" href="#31" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>五层演进</th>
+<th>落在四层哪里</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prompt Engineering</td>
+<td>Context</td>
+<td>角色/风格/输出约束</td>
+</tr>
+<tr>
+<td>Context Engineering</td>
+<td>Context（内容/预算/压缩）+ Harness（存储/检索机制）</td>
+<td>上下文组装与检索</td>
+</tr>
+<tr>
+<td>Skills</td>
+<td>Context + Harness</td>
+<td>程序记忆 + 工具组合</td>
+</tr>
+<tr>
+<td>Loop</td>
+<td>Loop</td>
+<td>触发/验证/重试/停止</td>
+</tr>
+<tr>
+<td>Graph</td>
+<td>Graph</td>
+<td>多 Agent/状态流/路由</td>
+</tr>
+</tbody>
+</table>
+<p><strong>记法</strong>：五层是“历史演进”，四层是“工程边界”。面试先讲四层定位瓶颈，再用五层解释为什么会有这些层。</p>
+<hr />
+<h2 id="4-context">4. Context 工程：注意力预算<a class="headerlink" href="#4-context" title="Permanent link">&para;</a></h2>
+<p>Context 不是“把资料都塞进去”，而是<strong>在有限窗口里做优先级编排</strong>。</p>
+<h3 id="41">4.1 上下文的四类内容<a class="headerlink" href="#41" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>例子</th>
+<th>生命周期</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>系统约束</strong></td>
+<td>角色、权限、输出格式、红线</td>
+<td>长期稳定</td>
+</tr>
+<tr>
+<td><strong>任务状态</strong></td>
+<td>目标、计划、已完成步骤、待办</td>
+<td>单次任务</td>
+</tr>
+<tr>
+<td><strong>工作记忆</strong></td>
+<td>最近工具结果、错误、观察</td>
+<td>短期</td>
+</tr>
+<tr>
+<td><strong>知识/记忆</strong></td>
+<td>RAG 文档、用户偏好、历史经验</td>
+<td>按需检索</td>
+</tr>
+</tbody>
+</table>
+<h3 id="42">4.2 上下文压缩：触发 → 策略 → 校验 → 恢复<a class="headerlink" href="#42" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>触发</strong>：窗口用到 85–90% 或固定 token 预算时触发；不要等 OOM。</li>
+<li><strong>策略</strong>：</li>
+<li>滑动窗口保留最近 10 条消息；</li>
+<li>结构化摘要固定字段：<code>goal / constraints / progress / pending / decisions / key_context</code>；</li>
+<li>tool_call 与 tool_result 成对保留/成对丢弃；</li>
+<li>长工具结果只留摘要 + 原始消息 ID。</li>
+<li><strong>校验</strong>：压缩前后检查目标/约束/待办是否还在；保留原始消息 ID 可回溯；限制最大压缩次数，避免“摘要的摘要”。</li>
+<li><strong>恢复</strong>：压缩后如果任务跑偏，用 checkpoint + 原始 ID 回滚；不要只靠模型“回忆”。压缩过程中崩溃/超时，未完成的新摘要不替换原上下文，从上一个 checkpoint 重试。</li>
+</ol>
+<p><strong>数字例子</strong>：128K 窗口在约 109K token（85%）或固定 90K 预算时触发；保留最近 10 条消息；摘要目标 500–1000 token；连续压缩最多 2–3 次，之后必须回滚或把任务拆小。验证方式：用压缩后的上下文重放当前任务，检查 <code>goal/constraints/pending/decisions</code> 和 tool_call/result 配对是否还在。</p>
+<blockquote>
+<p>压缩不是“写一段自然语言总结”，而是<strong>有 schema 的状态转移</strong>。</p>
+</blockquote>
+<h3 id="43">4.3 常见坑<a class="headerlink" href="#43" title="Permanent link">&para;</a></h3>
+<ul>
+<li>压缩把<strong>任务目标</strong>压没了 → 模型开始做别的事。</li>
+<li>工具结果太长，把关键错误挤出窗口。</li>
+<li>多轮对话中重复注入相同长文，浪费预算。</li>
+<li>上下文里混入不可信内容（网页/工具输出）→ prompt injection（指令注入）。</li>
+<li>工具返回过期/错误观察 → poisoned observation；要标来源/时间戳，冲突时重新验证。</li>
+<li>长上下文中间信息被忽略 → context rot / lost-in-the-middle；关键信息放前面或重复 grounding。</li>
+<li>多条历史指令冲突 → 要检测冲突并明确以哪条为准，不要静默覆盖。</li>
+</ul>
+<p><strong>自检</strong>：如果模型“变笨了”，先问：它是没看到目标，还是看到了太多无关内容？</p>
+<h3 id="44-prefix-cache-agent-workload">4.4 压缩与 prefix cache / Agent workload<a class="headerlink" href="#44-prefix-cache-agent-workload" title="Permanent link">&para;</a></h3>
+<p><strong>最小前置</strong>（没读过 <code>notes/22 §5</code> 也能继续）：</p>
+<ul>
+<li><strong>prefix cache</strong>：推理引擎把已算过的前缀 KV 按块缓存，下一轮按块匹配最长公共前缀；连续相同的前缀块可部分命中，不同部分不能复用。</li>
+<li><strong>OOM</strong>：显存不足，通常是权重 + KV + 激活超了；压缩/限流/量化都是缓解手段。</li>
+<li><strong>TTFT</strong>：首 token 延迟（请求发出到第一个输出 token）；<strong>KV</strong>：每层的 K/V 缓存，随上下文长度线性增长。</li>
+<li><strong>thinking token</strong>：推理模型在最终答案前生成的内部分析 token，会计成本，但很多模型不把它暴露给用户。</li>
+<li><strong>max_num_seqs</strong>：引擎一次最多同时跑的请求数；子 Agent 并发会撞这个上限。</li>
+<li><strong>pass^k</strong>：k 次独立尝试全部成功（和 pass@k 的“至少一次”相反）。</li>
+</ul>
+<p>压缩不是纯文本操作，它会改变推理后端的缓存命中：</p>
+<ul>
+<li><strong>稳定前缀</strong>（system prompt、工具 schema、长期规则）放前面，动态内容放后面；压缩时不要重写稳定前缀，否则 prefix cache 整段失效。</li>
+<li>压缩重写历史 → 从改写点之后的块失效（未改动的稳定前缀仍可命中），下一轮要重新 prefill；省下的 token 成本要和重算成本一起算。</li>
+<li>尽量在 <strong>turn 边界</strong> 压缩，避免每步都改上下文；压缩后记录 <code>cache_hit_rate</code> 和首步 TTFT，确认收益。</li>
+<li>回滚同样会击穿缓存：回滚后从 checkpoint 重建，别假设 KV 还在。</li>
+</ul>
+<p><strong>Agent workload 的推理特征</strong>（也是 28 的输入）：</p>
+<ul>
+<li>每步新增 prefill（工具结果/观察），系统前缀稳定，适合 prefix cache；</li>
+<li>工具结果会快速膨胀，必须截断/摘要；</li>
+<li>子 Agent 并发会撞上 <code>max_num_seqs</code>/KV 上限，需要配额和排队；</li>
+<li>流式 tool call、结构化输出需要约束解码；thinking token 会放大成本，评测要单独记。</li>
+</ul>
+<hr />
+<h2 id="5-harness-mcp">5. Harness 工程：工具、MCP、沙箱、权限<a class="headerlink" href="#5-harness-mcp" title="Permanent link">&para;</a></h2>
+<p>Harness 是模型在执行环境里的“身体”。</p>
+<h3 id="51">5.1 工具调用<a class="headerlink" href="#51" title="Permanent link">&para;</a></h3>
+<p>一个可靠的工具调用链要覆盖：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>工具选择 → 参数生成 → schema 校验 → 权限检查 → 执行 → 结果截断/结构化 → 错误分类 → 重试/补偿
+</code></pre></div>
+<p>关键设计：</p>
+<ul>
+<li><strong>schema 要窄</strong>：参数越少、类型越明确，模型越不容易编。</li>
+<li><strong>参数校验</strong>：JSON schema + 业务校验；不要直接执行模型给的字符串。</li>
+<li><strong>幂等</strong>：写操作要带 idempotency key；失败可重试。</li>
+<li><strong>补偿</strong>：不可回滚的操作要有反向操作或人工确认。</li>
+<li><strong>结果截断</strong>：工具返回大结果时先摘要/分页，避免撑爆上下文。</li>
+<li><strong>并行工具调用</strong>：模型一次可能返回 k 个 tool_call；按依赖分组——无依赖的并行、有写冲突/先后依赖的串行；结果按 call_id 合并，单个失败要决定整体重试还是部分补偿，预算按调用分摊。流式 tool call 要等参数 JSON 完整再执行，别边拼边跑。</li>
+</ul>
+<h3 id="52-mcpmodel-context-protocol">5.2 MCP（Model Context Protocol）<a class="headerlink" href="#52-mcpmodel-context-protocol" title="Permanent link">&para;</a></h3>
+<p>MCP 解决的是<strong>工具/资源的标准化接入</strong>：</p>
+<ul>
+<li>工具发现：Agent 不需要为每个工具写死适配；</li>
+<li>权限边界：server 端决定暴露哪些工具；</li>
+<li>审计：工具调用可统一记录；</li>
+<li>隔离：不同租户/任务使用不同 server。</li>
+</ul>
+<p><strong>协议层</strong>：host（IDE/Agent 宿主）→ client（每个 server 一个连接）→ server（暴露工具/资源）；transport 常用 stdio（本地）或 streamable HTTP（远程）；初始化时做 capability negotiation；认证/OAuth/凭据隔离；有 start/stop/restart 生命周期。MCP 是 function calling 的标准化接入层，不替代工具治理与安全。</p>
+<p><strong>MCP 威胁模型（5 条）</strong>：</p>
+<ol>
+<li><strong>工具描述投毒</strong>：server 的工具描述里藏指令，诱导模型调用危险工具。</li>
+<li><strong>返回内容注入</strong>：工具结果里含“忽略之前指令”，把数据当指令。</li>
+<li><strong>供应链</strong>：<code>@latest</code> / 未固定版本的 server 可能在运行中变更行为。</li>
+<li><strong>运行时工具变更</strong>：tool list 在会话中变化，模型按旧 schema 调用。</li>
+<li><strong>confused deputy / 凭据滥用</strong>：server 用高权限凭据替低权限调用者执行。</li>
+</ol>
+<p><strong>接入五步审查</strong>：固定版本 → 最小工具集 → 权限/凭据隔离 → 输入输出审查 → 审计与回滚。</p>
+<p><strong>面试追问</strong>：MCP 不是“更安全的工具调用”，它只是协议；安全仍要靠权限、沙箱、审计和最小暴露面。</p>
+<h3 id="53">5.3 沙箱<a class="headerlink" href="#53" title="Permanent link">&para;</a></h3>
+<p>沙箱要回答四个问题：</p>
+<ol>
+<li><strong>隔离什么</strong>：文件、网络、进程、设备、凭据。</li>
+<li><strong>怎么隔离</strong>：容器 / gVisor / Firecracker / microVM / 用户态内核 / WASM / 独立 VM。</li>
+<li><strong>生命周期</strong>：创建、预热、执行、回收、超时。</li>
+<li><strong>怎么观测</strong>：命令、文件变更、网络请求、资源用量。</li>
+</ol>
+<p><strong>取舍</strong>：容器轻但隔离弱；gVisor 相对 Docker 有 syscall 兼容性缺口和性能开销，但比 microVM 部署轻；Firecracker 隔离强、启动快，但生态/运维复杂。没有“最好”，只有“按风险分级”。</p>
+<h3 id="54">5.4 权限：四层护栏<a class="headerlink" href="#54" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>最小权限</strong>：默认只读，写操作显式授权。</li>
+<li><strong>风险分级</strong>：读文件 &lt; 写文件 &lt; 执行命令 &lt; 访问网络 &lt; 改生产配置。</li>
+<li><strong>人工确认</strong>：高风险操作必须有人确认。</li>
+<li><strong>凭据隔离</strong>：不要把长期 token 放进模型上下文。</li>
+</ul>
+<p>这四条是<strong>通用参考模型</strong>（可称“四层护栏”），不是 Asterwynd 项目的实际实现；项目口径见 §11.2。</p>
+<h3 id="55">5.5 模型集成与降级<a class="headerlink" href="#55" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>协议适配</strong>：OpenAI-compatible / Anthropic Messages 等协议做适配层，统一 <code>tool_calls</code>、流式 chunk、usage、错误码；不要在每个业务里手写两套。</li>
+<li><strong>路由/降级</strong>：按任务类型/租户/成本选模型；超时、限流、5xx 触发 fallback 或小模型降级；熔断 + 预算，避免重试风暴。</li>
+<li><strong>能力差异</strong>：不同模型的工具调用格式、上下文窗口、thinking token 不同；适配层要版本化并写测试。</li>
+</ul>
+<hr />
+<h2 id="6-loop">6. Loop 工程：计划、验证、重试、停止<a class="headerlink" href="#6-loop" title="Permanent link">&para;</a></h2>
+<p>Loop 是 Agent 的心跳：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>观察 → 计划 → 行动 → 观察结果 → 验证 → 继续/重试/停止
+</code></pre></div>
+<h3 id="60">6.0 任务拆解<a class="headerlink" href="#60" title="Permanent link">&para;</a></h3>
+<p>拆解的目标不是“分得越细越好”，而是<strong>每个子任务都可验证、可恢复、可观测</strong>。</p>
+<table>
+<thead>
+<tr>
+<th>子任务契约</th>
+<th>要写什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>输入</td>
+<td>文件/数据/上下文引用</td>
+</tr>
+<tr>
+<td>输出</td>
+<td>产物路径/结构/格式</td>
+</tr>
+<tr>
+<td>验收</td>
+<td>测试/断言/rubric</td>
+</tr>
+<tr>
+<td>预算</td>
+<td>步数/token/时间/金额</td>
+</tr>
+<tr>
+<td>恢复点</td>
+<td>checkpoint / 幂等键 / 重试策略</td>
+</tr>
+<tr>
+<td>owner</td>
+<td>哪个 Agent/工具负责</td>
+</tr>
+</tbody>
+</table>
+<p>粒度：一个子任务最好能在 <strong>1–3 个工具调用</strong>内完成；太小调度开销大，太大失败难归因。串行/并行边界按依赖和写冲突划，不要按“看起来平均”划。</p>
+<h3 id="601-react-plan-execute-reflexion">6.0.1 规划范式：ReAct / Plan-Execute / Reflexion<a class="headerlink" href="#601-react-plan-execute-reflexion" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>范式</th>
+<th>怎么做</th>
+<th>适合</th>
+<th>主要失败模式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>ReAct</strong></td>
+<td>边想边做：Thought → Action → Observation 循环</td>
+<td>探索型任务、工具反馈会改变下一步</td>
+<td>原地打转、没有全局计划、长任务漂移</td>
+</tr>
+<tr>
+<td><strong>Plan-Execute</strong></td>
+<td>先出全局计划，再按子任务执行；执行中按需 replan</td>
+<td>步骤可预先分解、依赖清晰的任务</td>
+<td>计划过时、工具能力变化、计划与执行脱节</td>
+</tr>
+<tr>
+<td><strong>Reflexion</strong></td>
+<td>执行后反思失败原因，把教训写回下一次尝试</td>
+<td>可重试、有明确成败信号的任务</td>
+<td>没有可靠反馈时反思是幻觉；成本随尝试次数上升</td>
+</tr>
+</tbody>
+</table>
+<p>选型：<strong>反馈密集、路径不确定 → ReAct；步骤可预判、要控预算 → Plan-Execute；有测试/评分信号、可多轮试错 → Reflexion</strong>。生产里通常是组合：Plan 给骨架，ReAct 做局部探索，Reflexion 只在有 verifier 时开启。</p>
+<h3 id="61">6.1 停止条件<a class="headerlink" href="#61" title="Permanent link">&para;</a></h3>
+<p>必须有<strong>可判定的停止条件</strong>：</p>
+<ul>
+<li>任务完成（测试通过、文件生成、答案满足 rubric）；</li>
+<li>达到最大步数 / 最大 token / 最大时间 / 最大成本；</li>
+<li>连续失败且没有新信息 → 先 replan；replan 用尽/无进展 → stop；</li>
+<li>需要人工确认；</li>
+<li>检测到越权/危险操作。</li>
+</ul>
+<p><strong>没有停止条件的 Agent 不是 Agent，是失控循环。</strong></p>
+<h3 id="62">6.2 验证<a class="headerlink" href="#62" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>工具结果验证</strong>：命令退出码、测试结果、schema 校验。</li>
+<li><strong>任务验证</strong>：单元测试、断言、rubric、LLM judge（辅助）。</li>
+<li><strong>过程验证</strong>：是否重复调用同一工具、是否在原地打转。</li>
+</ul>
+<h3 id="63">6.3 重试<a class="headerlink" href="#63" title="Permanent link">&para;</a></h3>
+<ul>
+<li>区分<strong>可重试</strong>（网络抖动、临时限流）和<strong>不可重试</strong>（参数错、权限不足）。</li>
+<li>重试要退避 + 上限；不要“失败就再来一次”。</li>
+<li>重试要保留上次错误，避免模型重复同一个错误。</li>
+</ul>
+<h3 id="64">6.4 状态机<a class="headerlink" href="#64" title="Permanent link">&para;</a></h3>
+<p>一个生产级 Agent 通常有：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>CREATED → RUNNING ⇄ WAITING_TOOL；RUNNING → NEEDS_HUMAN → RUNNING（审批通过）/ FAILED|CANCELLED（拒绝）；RUNNING → DONE / FAILED / CANCELLED
+</code></pre></div>
+<p>状态要持久化，支持断线重连、幂等恢复、取消和超时。</p>
+<h3 id="65-replan">6.5 重规划（replan）<a class="headerlink" href="#65-replan" title="Permanent link">&para;</a></h3>
+<p>计划不是一次写死的。触发重规划的典型信号：</p>
+<ul>
+<li>同一子任务验证连续失败 N 次（不是重试能解决的参数/权限问题）；</li>
+<li>工具能力缺失或 schema 变了，原计划不可执行；</li>
+<li>子任务超预算（步数/token/时间/金额）；</li>
+<li>发现新的依赖或写冲突，原 DAG 不再成立。</li>
+</ul>
+<p><strong>失败后的决策顺序</strong>：瞬时/可重试错误 → retry；同一子任务失败 N 次且没有新证据 → replan；replan 用尽、连续无进展或全局预算耗尽/越权 → stop。</p>
+<p>重规划的输入/输出：</p>
+<ul>
+<li><strong>输入</strong>：已完成 checkpoint、失败证据（trace/错误）、剩余预算、当前 DAG；</li>
+<li><strong>输出</strong>：只重算受影响的子图，保留已完成且验证过的节点；不要整盘推倒；</li>
+<li><strong>校验</strong>：新 DAG 无环、预算合计不超、每个节点仍有验收标准和恢复点。</li>
+</ul>
+<p><strong>面试点</strong>：重规划和重试的区别——重试是同一计划再执行一次，重规划是改计划；两者都要可观测、可回滚。</p>
+<hr />
+<h2 id="7-graph-agent">7. Graph 工程：多 Agent 协作<a class="headerlink" href="#7-graph-agent" title="Permanent link">&para;</a></h2>
+<p>多 Agent 不是“多个模型一起聊天”，而是<strong>把任务拆成有边界的节点</strong>。</p>
+<h3 id="71">7.1 角色分工<a class="headerlink" href="#71" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Planner</strong>：拆任务、定顺序、定义验收。</li>
+<li><strong>Executor</strong>：在干净上下文里执行单个子任务。</li>
+<li><strong>Reviewer / Auditor</strong>：只读校验，防止执行者自证。</li>
+<li><strong>Router</strong>：按任务类型路由到不同 Agent/工具。</li>
+</ul>
+<h3 id="72">7.2 通信<a class="headerlink" href="#72" title="Permanent link">&para;</a></h3>
+<p><strong>消息不能只传自由文本。</strong> 信封至少包含：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>msg_id, task_id, trace_id, sender, receiver,
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>message_type, permissions, deadline, payload_ref
+</code></pre></div>
+<ul>
+<li><code>msg_id</code> 用于幂等：重复投递不能重复执行。</li>
+<li><code>trace_id</code> 必须由基础设施透传，不能靠 Agent 自觉。</li>
+<li>负载可以是文本/结构化结果/文件引用；大结果放对象存储，消息里只传引用。</li>
+<li>接收方要校验发送方权限和任务归属。</li>
+</ul>
+<p><strong>共享状态三种并发方案</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>方案</th>
+<th>做法</th>
+<th>适用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>锁</td>
+<td>悲观锁/租约</td>
+<td>写多/临界区长、冲突高、重试代价大</td>
+</tr>
+<tr>
+<td>reducer</td>
+<td>事件归并（如 LangGraph reducer）</td>
+<td>事件流、可重放</td>
+</tr>
+<tr>
+<td>版本号</td>
+<td>CAS/乐观锁</td>
+<td>读多写少、冲突低</td>
+</tr>
+</tbody>
+</table>
+<p><strong>面试追问</strong>：为什么信封和负载分离？因为路由/权限/幂等/审计需要结构化字段，而负载可能很大且不可信。</p>
+<h3 id="73">7.3 终止权<a class="headerlink" href="#73" title="Permanent link">&para;</a></h3>
+<p><strong>谁有资格喊停？</strong> 通常是：</p>
+<ul>
+<li>预算/步数/超时控制器；</li>
+<li>Reviewer 的否决；</li>
+<li>人工；</li>
+<li>安全策略。</li>
+</ul>
+<p>不要让执行 Agent 自己决定“我完成了”而没有外部验证。</p>
+<h3 id="74">7.4 常见坑<a class="headerlink" href="#74" title="Permanent link">&para;</a></h3>
+<ul>
+<li>子 Agent 没有生命周期管理 → 资源泄漏。</li>
+<li>多 Agent 互相转发，没人对最终结果负责。</li>
+<li>共享上下文太大 → 每个 Agent 都被污染。</li>
+<li>没有全局 trace → 出问题无法定位。</li>
+</ul>
+<hr />
+<h2 id="8-skills">8. Skills、记忆与状态<a class="headerlink" href="#8-skills" title="Permanent link">&para;</a></h2>
+<h3 id="81-skills">8.1 Skills<a class="headerlink" href="#81-skills" title="Permanent link">&para;</a></h3>
+<p>Skill 是<strong>程序记忆</strong>：把重复出现的流程、规则、工具组合固化下来。</p>
+<p><strong>声明 → 触发 → 版本 → 治理 → 评测</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>要做什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>声明</td>
+<td>名称/描述/输入输出/依赖工具/权限/示例</td>
+</tr>
+<tr>
+<td>触发</td>
+<td>触发条件、误触发/漏触发测试、与相似 skill 的边界</td>
+</tr>
+<tr>
+<td>版本</td>
+<td>语义版本；变更记录；可回滚</td>
+</tr>
+<tr>
+<td>治理</td>
+<td>owner、权限清单、依赖固定版本、弃用策略</td>
+</tr>
+<tr>
+<td>评测</td>
+<td>固定任务集，比较有无 skill 的成功率/步数/成本</td>
+</tr>
+</tbody>
+</table>
+<p><strong>运行时怎么选中 skill</strong>：skill 描述本身就是路由信号——按任务检索/embedding 取 top-k，再让模型在候选里选；描述要写清“何时用/何时不用”，否则会和相似 skill 或工具互相抢。skill 列表也占上下文，加载前算 token 预算；误触发用负样本测，漏触发用正样本测，冲突用“相似 skill 的边界任务”测。</p>
+<p>不要把“所有东西”塞进一个 skill；一个 skill 只解决一类可复用流程。</p>
+<h3 id="82">8.2 记忆<a class="headerlink" href="#82" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>存什么</th>
+<th>检索方式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>短期上下文</td>
+<td>当前任务对话</td>
+<td>直接放窗口</td>
+</tr>
+<tr>
+<td>任务状态</td>
+<td>计划、进度、待办</td>
+<td>结构化存储</td>
+</tr>
+<tr>
+<td>长期记忆</td>
+<td>用户偏好、历史经验</td>
+<td>检索 + 去重 + 整合</td>
+</tr>
+<tr>
+<td>知识库</td>
+<td>文档、代码、FAQ</td>
+<td>RAG</td>
+</tr>
+</tbody>
+</table>
+<p><strong>记忆的难点不是“存”，而是“什么时候取、取多少、怎么去重、怎么证明有用”。</strong> 这里的“记忆”是广义（含知识库）；狭义 memory 只指状态/偏好/经验，知识库/RAG 单列。</p>
+<p><strong>怎么证明记忆有用</strong>：固定任务集，做有/无记忆两组；控制模型、上下文 token 预算、检索 top-k 和工具版本一致；重复 N 次；看任务成功率、平均步数、token/成本、P95 的配对差值。注意混淆因素：检索质量、提示长度、任务难度；不要把“上下文更长”误当成“记忆更好”。</p>
+<h3 id="83">8.3 状态恢复<a class="headerlink" href="#83" title="Permanent link">&para;</a></h3>
+<p><strong>run-state 至少要存</strong>：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>run_id, task_id, stage, status, owner, lease_expiry,
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>epoch/fencing_token, idempotency_key, side_effect_log,
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>last_checkpoint, attempt
+</code></pre></div>
+<p>恢复流程：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>租约过期/进程崩溃
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>→ 扫描 stale run
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>→ 读 side_effect_log 对账（哪些请求已发出、哪些文件已改）
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>→ 用 idempotency_key 查询下游是否已执行
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>→ 已执行：标记完成；未执行：重试
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>→ 不可回滚：走补偿（Saga：每步都有反向操作/补偿的分布式事务模式）
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>→ 继续下一个 checkpoint
+</code></pre></div>
+<ul>
+<li><strong>租约 + fencing token</strong>：worker 定期续租；过期才允许接管。租约本身防不住“旧 worker 暂停后复活继续写”，所以每次写操作要携带单调递增的 <code>epoch</code>/fencing token，下游拒绝旧 epoch；恢复时以 <code>epoch + idempotency_key</code> 对账。</li>
+<li><strong>执行键</strong>：<code>sha256(stage + item + input)</code>，同一操作重复调用不重复执行。</li>
+<li><strong>副作用日志</strong>：每次外部写操作先写日志再执行（或事务表），恢复时以此对账。</li>
+<li><strong>并发隔离</strong>：不同 run 的 state 不共享；共享资源用锁/配额。</li>
+<li><strong>状态存哪</strong>：小规模用 DB/Redis 存 run_state + 事件日志；长任务/多步骤用 durable workflow engine（Temporal 类）管重试、定时器和恢复；不要把关键状态只放在进程内存或对话历史里。</li>
+<li><strong>恢复成本</strong>：恢复不是免费的——重新加载上下文要重新 prefill、重读工具产物、重新拿沙箱；按 checkpoint 粒度估算 RTO 和 token 成本。</li>
+<li><strong>哪些不可恢复</strong>：没有幂等键的外部副作用、已被删除的文件、已发送的通知；这些必须人工对账/补偿，不能假装重放能解决。</li>
+<li><strong>不要盲目重放写操作</strong>：先对账，再决定重试/补偿/人工。</li>
+</ul>
+<hr />
+<h2 id="9">9. 评测与可观测<a class="headerlink" href="#9" title="Permanent link">&para;</a></h2>
+<h3 id="91">9.1 四层评测<a class="headerlink" href="#91" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>层</th>
+<th>看什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Turn</strong></td>
+<td>单轮回答/工具调用是否正确</td>
+</tr>
+<tr>
+<td><strong>Session</strong></td>
+<td>多轮任务是否完成、是否跑偏</td>
+</tr>
+<tr>
+<td><strong>Trace</strong></td>
+<td>路径是否合理、是否重复、是否越权</td>
+</tr>
+<tr>
+<td><strong>Outcome</strong></td>
+<td>业务结果、成本、延迟、用户满意度</td>
+</tr>
+</tbody>
+</table>
+<h3 id="92">9.2 指标<a class="headerlink" href="#92" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>pass@k / 任务成功率</strong>：最终结果。</li>
+<li><strong>平均步数 / 工具调用次数</strong>：效率。</li>
+<li><strong>工具错误率 / 重试率</strong>：Harness 质量。</li>
+<li><strong>失败归因分布</strong>：理解错 / 规划错 / 检索错 / 工具错 / 调度错 / 环境错 / 评分错。</li>
+<li><strong>单任务成本 / 延迟</strong>：token、沙箱秒数、judge 调用。</li>
+</ul>
+<h3 id="93">9.3 方法<a class="headerlink" href="#93" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>eval set</strong>：固定任务集 + rubric；任务版本化，防止过拟合。</li>
+<li><strong>replay</strong>：用 trace 复现失败。</li>
+<li><strong>shadow</strong>：线上流量旁路评分，不影响用户。</li>
+<li><strong>A/B</strong>：固定任务集/环境/评分器版本，同一任务配对跑两版；报告 pass@k/pass^k/成功率/成本/P95 的差值与置信区间，先估效应量再定样本量（详见 <code>notes/29 §7.5</code>）。</li>
+<li><strong>非确定性断言</strong>：先区分<strong>模型随机</strong>（温度/采样/并行）和<strong>环境随机</strong>（网络/工具/数据）；对输出做结构断言 + 分布边界，重复运行 N 次统计通过率/方差；flaky 用例隔离并记录 seed/版本，关键路径用确定性测试或 mock。允许合理波动，但阈值要写死。</li>
+<li><strong>LLM-as-judge</strong>：只做辅助，关键任务用测试/人工复核；judge 要校准、版本化。</li>
+<li><strong>Hook 与可观测</strong>：在 before/after tool、on_error、on_completion 等生命周期挂 hook；项目实际 7 切面是 <code>on_run_started / before_iteration / after_llm_call / before_tool_execute / after_tool_execute / on_error / on_completion</code>。hook 本身要有权限/沙箱/超时，失败不能拖垮主流程；每次 hook 进出都进 trace，便于回放。</li>
+</ul>
+<p><strong>eval set 怎么构造和维护</strong>：</p>
+<ol>
+<li><strong>来源</strong>：真实工单/线上失败、SWE-bench 子集、合成回归用例；每类任务至少 N 条（按难度/工具/权限分层）。</li>
+<li><strong>样本量</strong>：先跑 30–50 条配对任务估效应量。符号：<code>α=0.05 → z≈1.96</code>，power 0.8 → <code>z≈0.84</code>，<code>σ</code> 指标标准差，<code>Δ</code> 最小可检测差，<code>N</code> 为每组样本量。两组独立均值比较用 <code>N ≈ 2(z_{1-α/2}+z_{1-β})²σ²/Δ²</code>；配对连续指标用 <code>N ≈ (z_{1-α/2}+z_{1-β})²σ_d²/Δ²</code>（σ_d 为配对差标准差，没有系数 2）。例：σ=10%、Δ=5% → 独立组约 63/组，配对差 σ_d=10% → 约 31 对。二进制指标用 McNemar 的不一致对（discordant pairs）：<code>b = A 成功/B 失败</code>，<code>c = A 失败/B 成功</code>；McNemar 只看 b/c，不看双方都成功/都失败的对。先跑 30–50 对估 b/c 比例，再按 <code>b+c</code> 和要检测的差异查表/仿真，不要拿总样本量硬套。</li>
+<li><strong>门禁</strong>：核心回归集必须通过；新题先进缓冲区，观察 1–2 轮再转正；失败样本自动回流。</li>
+<li><strong>换题</strong>：保留 10–20% 隐藏集，定期轮换，防止过拟合和污染；任务版本化。</li>
+<li><strong>维护人</strong>：eval set 有 owner 和更新记录，不随模型版本悄悄改。</li>
+</ol>
+<hr />
+<h2 id="10">10. 安全与成本<a class="headerlink" href="#10" title="Permanent link">&para;</a></h2>
+<h3 id="101">10.1 安全<a class="headerlink" href="#101" title="Permanent link">&para;</a></h3>
+<ul>
+<li>最小权限、风险分级、人工确认。</li>
+<li>prompt injection：不信任网页/工具输出；隔离指令与数据。</li>
+<li>数据隔离：多租户、敏感字段脱敏。</li>
+<li>沙箱逃逸：限制网络、文件、设备、凭据。</li>
+<li>审计：谁在什么时候调用了什么工具、改了什么。</li>
+</ul>
+<h3 id="102">10.2 成本<a class="headerlink" href="#102" title="Permanent link">&para;</a></h3>
+<ul>
+<li>模型路由：简单任务用小模型/规则。</li>
+<li>缓存：prefix cache、结果缓存、工具缓存。</li>
+<li>异步：长任务后台执行，前端轮询/推送。</li>
+<li>预算：每任务 token/时间/金额上限。</li>
+<li>观测：按任务类型拆分成本，找到头部消耗。</li>
+</ul>
+<hr />
+<h2 id="11-asterwynd">11. Asterwynd 项目映射<a class="headerlink" href="#11-asterwynd" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Asterwynd 模块</th>
+<th>对应知识</th>
+<th>面试怎么讲</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Agent Loop</td>
+<td>Loop 工程</td>
+<td>心跳、停止条件、重试</td>
+</tr>
+<tr>
+<td>工具系统</td>
+<td>Harness</td>
+<td>schema、校验、幂等、补偿</td>
+</tr>
+<tr>
+<td>沙箱执行</td>
+<td>Harness/安全</td>
+<td>3 层隔离、生命周期、回收</td>
+</tr>
+<tr>
+<td>上下文与记忆</td>
+<td>Context</td>
+<td>预算、压缩、记忆检索</td>
+</tr>
+<tr>
+<td>子代理</td>
+<td>Graph</td>
+<td>角色、生命周期、资源回收</td>
+</tr>
+<tr>
+<td>权限安全</td>
+<td>Harness/安全</td>
+<td>capability/risk/origin 三维 + 配置/审批</td>
+</tr>
+<tr>
+<td>钩子与可观测</td>
+<td>评测/可观测</td>
+<td>trace、回放、失败归因</td>
+</tr>
+<tr>
+<td>模型集成</td>
+<td>Harness</td>
+<td>双协议适配、降级</td>
+</tr>
+<tr>
+<td>MCP 集成</td>
+<td>Harness</td>
+<td>工具发现、权限、审计</td>
+</tr>
+<tr>
+<td>上下文构建器</td>
+<td>Context</td>
+<td>优先级编排、prefix cache</td>
+</tr>
+</tbody>
+</table>
+<h3 id="111-star">11.1 项目 STAR（面试直接用）<a class="headerlink" href="#111-star" title="Permanent link">&para;</a></h3>
+<p><strong>S/T</strong>：Coding Agent 项目，27K 行、40 个内置工具（含 worktree 控制；MCP/子代理动态工具另计）、3 层纵深防御、72 任务（34 本地 + 38 SWE-bench）、1700+ tests、7 切面 Hook、SWE-bench/pass@k/CI。目标不是“能跑”，而是能稳定定位失败、控制权限和成本。</p>
+<p><strong>A/R（三个案例）</strong>：</p>
+<ol>
+<li><strong>工具参数幻觉</strong></li>
+<li>S：模型给工具参数编字段，执行层报错。</li>
+<li>T：让错误在执行前被拦住。</li>
+<li>A：schema 窄化 + JSON schema 校验 + 业务校验 + 只对可重试错误重试；错误进 trace。</li>
+<li>R：错误不再进入执行层；同类问题可用 trace 复现。</li>
+<li><strong>上下文压缩导致目标丢失</strong></li>
+<li>S：长任务压缩后模型开始做无关子任务。</li>
+<li>T：压缩后仍保留目标/约束/待办。</li>
+<li>A：结构化摘要固定字段（goal/constraints/progress/pending/decisions/key_context；项目里 done/todo 是 progress/pending 的别名，open_questions 单独保留或并入 pending，不等同 decisions），压缩后做目标/约束一致性检查。</li>
+<li>R：长任务不再因压缩跑偏；可用 replay 验证。</li>
+<li><strong>子代理资源泄漏</strong></li>
+<li>S：子代理超时后仍占沙箱/句柄。</li>
+<li>T：任何退出路径都能回收。</li>
+<li>A：租约 + 超时 + 父级回收 + trace 标记；子代理生命周期纳入 run-state。</li>
+<li>R：沙箱池不再被僵尸任务吃满；可观测到泄漏。</li>
+</ol>
+<p><strong>指标怎么补（面试前必做）</strong>：固定 72 任务、环境、评分器版本，跑 before/after 两组；记录成功率/pass@k、工具错误率、平均步数、单任务 token+沙箱成本、P95 完成时间；用配对比较和置信区间，没有实测就标“待补”，不要编数字。R 段只讲“可归因、可回归”不够，最好带一个具体提升幅度。</p>
+<h3 id="112-10">11.2 项目追问 10 问<a class="headerlink" href="#112-10" title="Permanent link">&para;</a></h3>
+<ol>
+<li>为什么用 Agent 而不是 Workflow？</li>
+<li>工具 schema 怎么设计？怎么防参数幻觉？</li>
+<li>沙箱为什么 3 层？每层隔离什么？</li>
+<li>上下文怎么组装/压缩？怎么保证目标不丢？</li>
+<li>子代理怎么派生/回收？父级崩了怎么办？</li>
+<li>权限四层护栏分别拦什么？</li>
+<li>trace 采什么？怎么回放？</li>
+<li>72 任务怎么选？pass@k 怎么算？</li>
+<li>一次线上事故怎么定位/止损？</li>
+<li>如果重做，你会改哪三个设计？</li>
+</ol>
+<p><strong>追问口径</strong>：</p>
+<ul>
+<li><strong>项目 3 层纵深防御（Asterwynd 实际口径）</strong>：WorkspacePolicy（敏感文件/正则黑名单，具体计数以源文档为准）→ CommandGuard（argv 语义检查）→ ExecutionBackend（ProcessBackend / DockerBackend + cgroup v2）。容器→gVisor→Firecracker 是通用参考模型，不是项目实现。</li>
+<li><strong>项目权限模型</strong>：工具 capability/risk/origin 三维 + <code>run_config</code> 配置 + <code>approval</code> 审批；最小权限/风险分级/人工确认/凭据隔离是通用参考“四层护栏”，不要冒充项目三层。</li>
+<li><strong>项目 7 切面 Hook</strong>：<code>on_run_started / before_iteration / after_llm_call / before_tool_execute / after_tool_execute / on_error / on_completion</code>；通用讲法里的“on_stop”对应项目的 <code>on_completion</code>。</li>
+<li><strong>72 任务怎么选</strong>：真实事故回归 + SWE-bench 子集 + 合成用例；按难度/工具/权限覆盖分层，留 10–20% 隐藏集，做污染检查，失败样本回流；不是“随便攒 72 个”。</li>
+<li><strong>重做改哪三个设计</strong>：① 先做事件日志/状态机，再做 Agent 循环；② 状态用 durable store + fencing token，不靠内存；③ 工具走统一网关（schema/权限/审计），沙箱池化并做生命周期回收。</li>
+</ul>
+<p><strong>三个必讲失败案例</strong>：</p>
+<ol>
+<li>工具调用参数幻觉 → schema 窄化 + 校验 + 重试。</li>
+<li>上下文压缩导致目标丢失 → 结构化摘要保留目标/约束/待办。</li>
+<li>子代理资源泄漏 → 生命周期管理 + 超时 + 回收 + trace。</li>
+</ol>
+<hr />
+<h2 id="12">12. 面试要点<a class="headerlink" href="#12" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Agent 和 Workflow 的区别：谁决定下一步。</li>
+<li>四层框架：Context / Harness / Loop / Graph。</li>
+<li>工具调用失败怎么处理：分类、校验、重试、补偿、trace。</li>
+<li>上下文超了怎么办：裁剪、压缩、分层、检索。</li>
+<li>多 Agent 谁喊停：预算/Reviewer/人工/安全策略。</li>
+<li>没有用户反馈怎么评估：eval set、replay、shadow、rubric、人工抽检。</li>
+<li>如何证明记忆有用：对照实验、任务成功率、步数/成本。</li>
+<li>沙箱怎么选：隔离强度、启动速度、兼容性、运维成本。</li>
+</ul>
+<h2 id="13">13. 常见坑<a class="headerlink" href="#13" title="Permanent link">&para;</a></h2>
+<ul>
+<li>把 Agent 当成“更长的 Prompt”，没有循环/停止/验证。</li>
+<li>工具 schema 太宽，模型参数幻觉。</li>
+<li>上下文只做自然语言摘要，目标丢失。</li>
+<li>多 Agent 没有全局 trace 和终止权。</li>
+<li>只测最终答案，不看路径和成本。</li>
+<li>沙箱只做容器，没有网络/文件/凭据隔离。</li>
+<li>记忆只写不读，或只读不评估。</li>
+</ul>
+<h2 id="14-6090">14. 动手清单（60–90 分钟）<a class="headerlink" href="#14-6090" title="Permanent link">&para;</a></h2>
+<ol>
+<li>画一个最小 Agent Loop：目标、工具、验证、停止条件。</li>
+<li>给一个工具写 JSON schema，并列出 3 种失败模式。</li>
+<li>设计一个上下文压缩策略：保留什么、丢什么、怎么验证没丢目标。</li>
+<li>给一个多 Agent 任务定义角色、通信信封、终止权。</li>
+<li>写 5 条 eval rubric，区分 Turn/Session/Trace/Outcome。</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>产出</th>
+<th>验收</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>一页 Loop 图</td>
+<td>有目标/工具/验证/停止；能指出失败点</td>
+</tr>
+<tr>
+<td>2</td>
+<td>一个 schema + 3 个失败</td>
+<td>参数窄、有校验、有重试/补偿</td>
+</tr>
+<tr>
+<td>3</td>
+<td>压缩前后对照</td>
+<td>目标/约束/待办仍在；有检查方法</td>
+</tr>
+<tr>
+<td>4</td>
+<td>消息信封 + 角色表</td>
+<td>有 msg_id/trace_id/权限/终止权</td>
+</tr>
+<tr>
+<td>5</td>
+<td>5 条 rubric</td>
+<td>每条能判分；至少 2 条看 Trace/成本</td>
+</tr>
+</tbody>
+</table>
+<h2 id="15">15. 下一步<a class="headerlink" href="#15" title="Permanent link">&para;</a></h2>
+<ul>
+<li>读 <code>notes/29_agent_eval_infra.md</code>：把评测从“打分”升级成“评测 Infra”。</li>
+<li>读 <code>notes/28_vllm_source_trace.md</code>：把 Agent 的推理后端追到 vLLM 源码。</li>
+<li>用 <code>docs/system-design-drills.md</code> 做一次 Agent 评测平台设计。</li>
+<li>用 <code>docs/hand-calc.md</code> 算一次 Agent 成本/延迟预算。</li>
+</ul>
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.top", "navigation.indexes", "content.code.copy", "search.suggest", "search.highlight", "toc.follow"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+        <script src="../../javascripts/mathjax.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs" type="module"></script>
+      
+    
+  </body>
+</html>

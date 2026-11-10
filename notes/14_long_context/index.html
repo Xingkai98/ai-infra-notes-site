@@ -1,0 +1,2618 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="从 Transformer 骨架到推理系统的 29 篇讲义（本地预览）">
+      
+      
+      
+      
+        <link rel="prev" href="../13_reasoning/">
+      
+      
+        <link rel="next" href="../15_peft_lora/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>第十四层 · 长上下文 —— 位置外推、注意力模式与 KV 账本 - AI Infra 讲义</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#kv" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="../.." title="AI Infra 讲义" class="md-header__button md-logo" aria-label="AI Infra 讲义" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            AI Infra 讲义
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              第十四层 · 长上下文 —— 位置外推、注意力模式与 KV 账本
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切到深色"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="切到深色" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切到浅色"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="切到浅色" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="AI Infra 讲义" class="md-nav__button md-logo" aria-label="AI Infra 讲义" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    AI Infra 讲义
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI Infra 讲义
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Notes
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Notes
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01_skeleton/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第一层 · 骨架 —— 从文本到矩阵
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02_attention/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二层 · 心脏 —— Self-Attention 的 Q/K/V
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03_block/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第三层 · 加强 —— Multi-Head、残差、LayerNorm、FFN
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04_architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第四层 · 组装 —— Encoder / Decoder / 掩码 / Cross-Attention
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05_modern/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第五层 · 现代变体 —— 从原论文到 LLaMA/GPT
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_inference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第六层 · 跑起来 —— 训练/推理、KV Cache、完整 forward
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_pretraining/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第七层 · 预训练 —— 目标、数据与 Scaling Law
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../08_alignment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第八层 · 对齐 —— SFT、RLHF、DPO 与安全
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09_evaluation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第九层 · 评测 —— benchmark、污染、judge 与可复现
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../10_decoding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十层 · 解码 —— 从 logits 到 token
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../11_applications/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十一层 · 应用 —— Prompt、RAG、工具与 Agent
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../12_multimodal/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十二层 · 多模态 —— VLM、扩散与语音
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../13_reasoning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十三层 · 推理模型 —— 测试时计算、长 CoT 与 RLVR
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十四层 · 长上下文 —— 位置外推、注意力模式与 KV 账本
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十四层 · 长上下文 —— 位置外推、注意力模式与 KV 账本
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0. 依赖图(学习顺序)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. 为什么长上下文难:三条独立的账
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. 为什么长上下文难:三条独立的账">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11-attention-ot2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.1 计算账:attention 的 O(T²)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#12-kv-cache-t" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.2 显存账:KV Cache 随 T 线性长
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.3 能力账:“能塞进去”≠“能用好”
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. 位置外推:让模型见到训练时没见过的位置
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. 位置外推:让模型见到训练时没见过的位置">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-rope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 问题:RoPE 的位置在训练分布内
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 五种常见方案
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.3 怎么选
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. 注意力模式:少看一些,或把序列切开
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. 注意力模式:少看一些,或把序列切开">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-sliding-window" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 Sliding window
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-sparse-attention" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 Sparse attention
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33-ringattention" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.3 RingAttention
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#34-ssm-mamba" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.4 SSM / Mamba
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-kv-cache-offload" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. KV Cache 压缩与 offload:长上下文的第一成本
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. KV Cache 压缩与 offload:长上下文的第一成本">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-llama-2-7b" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 账本:以 Llama-2 7B 为例
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 压缩与淘汰
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. 长上下文数据与训练
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. 长上下文数据与训练">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#51" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.1 三阶段
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#52-packing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.2 数据与 packing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#53" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.3 系统
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. 评测与成本
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. 评测与成本">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#61" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.1 三类评测
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#62" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.2 有效上下文
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#63" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.3 成本
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. 面试要点
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        常见坑
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        动手清单
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        相关图
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        下一步
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../15_peft_lora/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十五层 · PEFT 与 LoRA —— 用 0.1% 参数做微调
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../16_agent_rl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十六层 · Agent RL —— rollout、环境、奖励与异步训练
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../17_data_engineering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十七层 · 数据工程 —— 从原始语料到数据飞轮
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../18_interpretability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十八层 · 可解释性 —— 从探针到电路与 SAE
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../19_multimodal_deep/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十九层 · 多模态深化 —— VLM、视频/音频与扩散
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../20_ai_infra_map/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模块二 · M2-0 地图与坐标系
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（2026-10-21 补全景图 20g）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../21_single_node_ops/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模块二 · M2-1 单机与算子
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（2026-10-21 补结构图 20h/20i/20j/20k）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../22_inference_systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模块二 · M2-3 推理系统
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（2026-10-21 补结构图 20l–20q）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../23_training_systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 2 层 · M2-2 训练系统
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../24_distributed_base/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 4 层 · M2-4 分布式底座
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../25_platform_sre/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 5 层 · M2-5 平台与稳定性
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../26_frontier_edge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 6 层 · M2-6 前沿与端侧
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../27_agent_engineering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二十七层 · Agent 工程化：Context / Harness / Loop / Graph
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--v1"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../28_vllm_source_trace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二十八层 · vLLM v1 源码 trace：一次请求怎么走
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--v1"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../29_agent_eval_infra/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二十九层 · Agent 评测 Infra：从打分到可复现的评测平台
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--v1"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../worksheets/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Worksheets
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Worksheets
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0. 依赖图(学习顺序)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. 为什么长上下文难:三条独立的账
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. 为什么长上下文难:三条独立的账">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11-attention-ot2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.1 计算账:attention 的 O(T²)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#12-kv-cache-t" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.2 显存账:KV Cache 随 T 线性长
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.3 能力账:“能塞进去”≠“能用好”
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. 位置外推:让模型见到训练时没见过的位置
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. 位置外推:让模型见到训练时没见过的位置">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-rope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 问题:RoPE 的位置在训练分布内
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 五种常见方案
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.3 怎么选
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. 注意力模式:少看一些,或把序列切开
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. 注意力模式:少看一些,或把序列切开">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-sliding-window" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 Sliding window
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-sparse-attention" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 Sparse attention
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33-ringattention" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.3 RingAttention
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#34-ssm-mamba" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.4 SSM / Mamba
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-kv-cache-offload" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. KV Cache 压缩与 offload:长上下文的第一成本
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. KV Cache 压缩与 offload:长上下文的第一成本">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-llama-2-7b" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 账本:以 Llama-2 7B 为例
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 压缩与淘汰
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. 长上下文数据与训练
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. 长上下文数据与训练">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#51" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.1 三阶段
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#52-packing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.2 数据与 packing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#53" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.3 系统
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. 评测与成本
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. 评测与成本">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#61" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.1 三类评测
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#62" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.2 有效上下文
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#63" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.3 成本
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. 面试要点
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        常见坑
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        动手清单
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        相关图
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        下一步
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="kv">第十四层 · 长上下文 —— 位置外推、注意力模式与 KV 账本<a class="headerlink" href="#kv" title="Permanent link">&para;</a></h1>
+<blockquote>
+<p>本层回答:模型宣称 128K/1M 上下文,到底靠什么做到?位置编码怎么外推?sliding window / sparse / RingAttention / SSM 各自省了什么?KV Cache 为什么是长上下文的第一成本?</p>
+<p><strong>前置(按节)</strong>
+- §1–§2:先看 <code>notes/05_modern.md §2</code>(RoPE)与 <code>notes/07_pretraining.md §4</code>(长上下文预训练)。
+- §3:先看 <code>notes/02_attention.md §3、§9</code>(attention 与 O(T²))。
+- §1.2、§4:先看 <code>notes/06_inference.md §3</code>(KV Cache;§1.2 就用这条公式算账)与 <code>notes/22_inference_systems.md §3、§10</code>(KV 账本/长上下文推理)。
+- §5–§6:先看 <code>notes/07_pretraining.md</code> 的 §2.4(packing)、§4.2–§4.3(短→长三阶段、needle/LongBench)、§6(预训练评测:held-out ppl/BPB、few-shot、scaling 外推、污染检查),再 <code>notes/09_evaluation.md §1</code>(benchmark 口径,RULER 在此)。</p>
+<p><strong>建议路径(3 次 × 45 分钟)</strong>
+- 第 1 次(必学):§1 为什么难 + §2 位置外推(PI/NTK/YaRN/ALiBi/NoPE,图 50a)。
+- 第 2 次(必学):§3 注意力模式(50b)+ §4 KV 压缩/offload 账本(50c)。
+- 第 3 次(必学):§5 长上下文数据与训练(50d)——它是 §2 位置外推与 §4 压缩手段落成模型的唯一接口,不能跳过;§6 评测与成本(50e)——§6.1/§6.2 必学(needle/RULER 与「有效上下文」的定义、相对阈值口径唯一定位在这里,§1.3 只是预告),§6.3 成本可复述、算加分项。</p>
+</blockquote>
+<h2 id="0">0. 依赖图(学习顺序)<a class="headerlink" href="#0" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p><strong>读图约定</strong>:这张图只画「学什么依赖什么」的主干,不为每一节各设节点;I/J 是<strong>落位(收口处)</strong>,不是概念首次出现的地方。§1.3 的有效上下文曲线是能力账的预告(定义与阈值口径在 §6.2),§4.1 结尾的成本排序是先给结论(prefill/decode/服务侧展开在 §6.3)——顺序没有错,按 §1→§6 读即可。
+另有一处预告:§2.2 的 NTK-aware 行拿 §6.3 的 <code>d_model=4096</code>(论文口径的 <code>|D|</code>)对比 <code>head_dim=128</code>(实现口径)(4096 由 §1.2 的 <code>d_head=128 × H=32</code> 得到),不是漏读。</p>
+</blockquote>
+<pre class="mermaid"><code>graph TD
+  A["attention 是 O(T²)&lt;br/&gt;(notes/02)"] --&gt; B["计算爆炸:attention 的 T²"]
+  C["RoPE 对任意 pos 有定义,失效是分布外&lt;br/&gt;(notes/05)"] --&gt; D["位置外推&lt;br/&gt;PI / NTK / YaRN / ALiBi / NoPE"]
+  B --&gt; E["注意力模式&lt;br/&gt;sliding / sparse / Ring / SSM"]
+  KVlin["KV Cache 随 T 线性(显存账,notes/06)"] --&gt; F["KV Cache 压缩与 offload"]
+  D --&gt; G["长上下文模型"]
+  E --&gt; G
+  F --&gt; G
+  H["长文数据 + 继续训练"] --&gt; G
+  G --&gt; I["评测:RULER / needle / 有效上下文"]
+  I --&gt; J["成本与部署决策&lt;br/&gt;(§4.1 先给结论、§6.3 展开)"]</code></pre>
+<h2 id="1">1. 为什么长上下文难:三条独立的账<a class="headerlink" href="#1" title="Permanent link">&para;</a></h2>
+<h3 id="11-attention-ot2">1.1 计算账:attention 的 O(T²)<a class="headerlink" href="#11-attention-ot2" title="Permanent link">&para;</a></h3>
+<p>标准 self-attention 的 scores 是 <code>[T, T]</code>,计算量约 <code>O(T²·d)</code>。把 <code>T</code> 从 4K 提到 128K(<code>×32</code>),attention 计算约 <code>×1024</code>;这不是“线性变长”,而是<strong>平方级</strong>。</p>
+<h3 id="12-kv-cache-t">1.2 显存账:KV Cache 随 T 线性长<a class="headerlink" href="#12-kv-cache-t" title="Permanent link">&para;</a></h3>
+<p>推理时每层要缓存 K/V(见 <code>notes/06_inference.md §3</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>KV Cache ≈ 2 · L · B · T · H_kv · d_head · bytes
+</code></pre></div>
+<p><code>T</code> 翻倍,Cache 翻倍;128K 的 KV Cache 是否超过权重取决于 batch 与头配置:7B-MHA 在 128K 时约 64 GiB(本节显存用 GiB、权重与 PCIe 用 GB,1 GiB≈1.0737 GB,故 64 GiB≈68.7 GB),68.7 GB 约为 FP16 权重 14 GB 的 4.9 倍(KV 与权重打平约在 2.7 万 token,32K 时 16 GiB 已是权重的 1.2 倍),7B-GQA-8 约 16 GiB(=17.18 GB,已是 14 GB 权重的 1.23 倍,交叉点约 107K token,128K 早已越过),70B-GQA-8 约 40 GiB 仍远小于权重 140 GB(§4 给具体数字)。</p>
+<p>这三个结论数的公共口径是 B=1、FP16、d_head=128;层数不统一、按模型取——7B 两档 L=32,70B 一档 L=80:7B-MHA 取 H_kv=32、7B-GQA-8 取 H_kv=8、70B-GQA-8 取 H_kv=8(320 KiB/token × 131072 ≈ 40 GiB,140 GB 权重需 ~427K token 才追平)。B、L、H_kv 一改,交叉点随之变。</p>
+<h3 id="13">1.3 能力账:“能塞进去”≠“能用好”<a class="headerlink" href="#13" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>lost in the middle</strong>:信息放在长上下文中间时最容易漏(Liu et al., 2023)。</li>
+<li><strong>有效上下文</strong>:模型在 128K 上的准确率可能远低于 8K;要测“不同长度 + 不同深度”的曲线,而不是只看最大窗口。</li>
+</ul>
+<blockquote>
+<p>三条账要分开算:计算看 <code>T²</code>,显存看 <code>T</code>,能力看评测曲线。
+口径提示:这里「能力」只做预告——有效上下文的定义、相对阈值与曲线读法在 §6.2,评测任务在 §6.1;成本这条线在 §4.1 先给部署结论、§6.3 收口,读到 §6 时属于复述与展开,不是新概念。面试被问“长上下文为什么贵”时,先分这三条,再谈优化。</p>
+</blockquote>
+<h2 id="2">2. 位置外推:让模型见到训练时没见过的位置<a class="headerlink" href="#2" title="Permanent link">&para;</a></h2>
+<h3 id="21-rope">2.1 问题:RoPE 的位置在训练分布内<a class="headerlink" href="#21-rope" title="Permanent link">&para;</a></h3>
+<p>RoPE 用 <code>θ_i·pos</code> 旋转 Q/K(见 <code>notes/05_modern.md §2</code>)。训练只见过 <code>pos &lt; 4096</code>;直接喂 <code>pos=100000</code> 时,旋转角进入模型没学过的范围,注意力分数会失真。</p>
+<h3 id="22">2.2 五种常见方案<a class="headerlink" href="#22" title="Permanent link">&para;</a></h3>
+<p><img alt="位置外推:PI / NTK-aware / YaRN / ALiBi / NoPE" src="../../diagrams/50a_position_ext.landscape.png" /></p>
+<table>
+<thead>
+<tr>
+<th>方案</th>
+<th>做法</th>
+<th>直觉</th>
+<th>代价/坑</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>PI</strong>(Position Interpolation)</td>
+<td>把目标位置线性压缩回训练范围:<code>pos' = pos · L_train / L_target</code></td>
+<td>128K 压回 4K,所有位置都“见过”</td>
+<td>压缩后相邻位置更挤,短距离分辨率下降</td>
+</tr>
+<tr>
+<td><strong>NTK-aware</strong></td>
+<td>调大 RoPE base:<code>b' = b · s^{d/(d-2)}</code>,<code>s=L_target/L_train</code></td>
+<td>低频转得慢、高频保留,减少远处失真</td>
+<td>公式是常见工程实现,不同框架细节不同;<code>b</code>=RoPE base(<code>θ_i=b^{-2i/d}</code> 的底数,常见 10000),<code>d</code>=工程实现取的 head_dim(7B 为 128);论文定义的 <code>|D|</code> 才是隐层宽度(7B 为 4096,即 §6.3 的 d_model)。按实现口径取 128 得 <code>s^{128/126}≈s^{1.016}</code>,按论文口径取 4096 得 <code>s^{4096/4094}≈s^{1.0005}</code>,两者都≈<code>b·s</code>、只差百分之几(s=4 时约 2%,s=32 时约 5%),所以两套口径都不等于「没缩放」,差别只在偏离论文指数的程度——指数要</td>
+</tr>
+<tr>
+<td><strong>YaRN</strong></td>
+<td>NTK-by-parts + attention temperature(另可附加 Dynamic Scaling 动态缩放)</td>
+<td>不同频段分别处理,兼顾近/远</td>
+<td>超参多,需按模型调;s 按目标长度取定,现算 s 属附加项</td>
+</tr>
+<tr>
+<td><strong>ALiBi</strong></td>
+<td>不加位置向量;在 attention 分数上加 <code>-m·(i-j)</code></td>
+<td>距离越远惩罚越大;<code>m</code> 按头几何递减</td>
+<td>概念上取代位置编码(训练不用位置向量,与 RoPE 是二选一);但它的形式是加在分数上的偏置,工程上可与 RoPE 叠用(叠用超出 ALiBi 原设定,要自己评测);外推好但长文检索未必强</td>
+</tr>
+<tr>
+<td><strong>NoPE</strong></td>
+<td>完全不加位置编码,只靠因果 mask</td>
+<td>因果结构本身隐含顺序</td>
+<td>不是所有任务都稳;常与 RoPE 混用/对比</td>
+</tr>
+<tr>
+<td>&gt; 表里先用到的 YaRN 三个词,这里只留一句口径(定义、式号与数值例子统一放在「诚实边界」之后那一段,不重复写):NTK-by-parts = 按频率分档;attention temperature = logits 进 softmax 前先降温;动态缩放 = 推理时按当前长度现算 s,是 YaRN 论文另设的附加项、不是本体。NTK-aware 那格里的 4096 是论文口径的 <code>|D|</code>(隐层宽,即 §6.3 的 <code>d_model</code>,由 §1.2 的 <code>d_head=128 × H=32</code> 得到);那串百分比只说明「两套口径的差别」,本节不引入新符号。</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><strong>数值例子(PI)</strong>:训练 <code>L_train=4096</code>,目标 <code>L_target=16384</code>,<code>s=4</code>。原位置 <code>pos=8192</code> 压缩为 <code>8192/4=2048</code>;所有目标位置都落回 <code>[0,4096)</code>。</p>
+<p><strong>数值例子(ALiBi)</strong>:某头斜率 <code>m=0.5</code>,query 在 <code>i=10</code>,key 在 <code>j=7</code>,距离 3,则分数加 <code>-0.5×3=-1.5</code>。</p>
+<blockquote>
+<p><strong>诚实边界</strong>:PI/NTK/YaRN 都是“让位置落在可接受范围”的工程手段,不保证长文推理能力;还要继续训练/评测。NTK-aware 的 base 缩放公式最早来自社区实践,但 YaRN 论文附录 A.2 的 Definition 已把它写成正式定义 <code>b' = b·s^{|D|/(|D|-2)}</code>(附录 A.2 给推导;<code>|D|</code> 按论文定义是隐层宽度(7B 为 4096,所以式(2) 的分母 √|D| 就是 √4096),不是 head 的维度;工程实现(HF 等)改用 head_dim=128、分母 √128,那是另一套口径),所以它既有论文里的官方形式、也有多种工程实现;引用时写清实现。</p>
+</blockquote>
+<p>表里 YaRN 那三个词补一下定义:<strong>NTK-by-parts</strong> = 按频率分档处理,低频维做插值、高频维保持原样(不是整体缩放);<strong>attention temperature</strong> = 原文式(14)(15):logits 进 softmax 前除以 <code>t</code>,且 <code>1/√t = 0.1·ln s + 1</code>(s=8 时 1/√t≈1.21)。实现上不改 attention 代码,把 Q/K 的 RoPE embedding 各乘 <code>1/√t</code>(cos/sin 同乘),等价于 logits 乘 <code>1/t = (0.1·ln s + 1)²</code>(s=8 时 ≈1.46):是「降温」不是「升温」:softmax 的有效温度从 1 降到 t=1/1.46≈0.68,logits 被放大 1.46 倍,分布因此变尖,用来补偿长序列下 attention 分布被摊平、熵升高的效应(乘 1.46 等价于除以 0.68;若除以 1.21 则是把 logits 缩到 0.83 倍,反而升温、更平),别把它和采样温度(见 <code>notes/10_decoding.md</code>)混为一谈;<strong>动态缩放</strong> = 推理时按当前实际长度现算 s 与温度,而不是训练时固定一个。</p>
+<h3 id="23">2.3 怎么选<a class="headerlink" href="#23" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>已有 RoPE 模型、想扩窗口</strong>:优先 PI(简单)或 YaRN(效果更稳),配合少量长文继续训练。</li>
+<li><strong>从零训练</strong>:ALiBi/NoPE 可作为对比方案;主流大模型仍以 RoPE 为主。</li>
+<li><strong>只改推理、不训练</strong>:PI/NTK 可以临时试,但分布偏移大时效果有限;要评测再上线。</li>
+</ul>
+<h2 id="3">3. 注意力模式:少看一些,或把序列切开<a class="headerlink" href="#3" title="Permanent link">&para;</a></h2>
+<p><img alt="长上下文注意力模式:sliding / sparse / Ring / SSM" src="../../diagrams/50b_attention_patterns.landscape.png" /></p>
+<h3 id="31-sliding-window">3.1 Sliding window<a class="headerlink" href="#31-sliding-window" title="Permanent link">&para;</a></h3>
+<p>每个 token 只看最近 <code>w</code> 个 token(如 Mistral 7B 的 window=4096),复杂度从 <code>O(T²)</code> 降到 <code>O(T·w)</code>。</p>
+<ul>
+<li>信息仍能通过<strong>多层</strong>逐跳传播:理论感受野约 <code>L·w</code>(32 层 × 4096 ≈ 131K),但不是精确的“全连接”。</li>
+<li>适合局部连贯的文本/代码;对“远处精确检索”不如全注意力。</li>
+<li><strong>Attention sink</strong>:滑窗/淘汰如果把开头 token 全丢掉,模型会崩;保留少量开头 token(attention sink)或 StreamingLLM 的 sink+window 是常见做法。</li>
+</ul>
+<p>机制:softmax 每行必须归一到 1,当这一行没有真正相关的 key 时,多余的注意力会摊到少数几个「排水口」token(通常是开头几个,其 value 被大量读出);这些 token 一被删,注意力被迫重新分配到其余 token,分布失真、输出崩坏。所以 §4.2 淘汰 KV 时要固定保留开头 1–4 个 sink token(数量按模型实测调)。</p>
+<h3 id="32-sparse-attention">3.2 Sparse attention<a class="headerlink" href="#32-sparse-attention" title="Permanent link">&para;</a></h3>
+<p>Longformer/BigBird 等用“局部窗口 + 全局 token + 随机/膨胀连接”的稀疏模式,把 <code>T²</code> 降到近线性。</p>
+<ul>
+<li>关键是<strong>保留全局 token</strong>(如 <code>[CLS]</code>、问题 token)和跨块连接;</li>
+<li>稀疏模式是手工设计的先验,任务不匹配时会掉点。</li>
+</ul>
+<h3 id="33-ringattention">3.3 RingAttention<a class="headerlink" href="#33-ringattention" title="Permanent link">&para;</a></h3>
+<p>把长序列按块切到多张卡上,每张卡持有自己的 Q 块,沿环传递 K/V 块,边算边传、计算与通信重叠。</p>
+<ul>
+<li><strong>计算量仍是 O(T²)</strong>,但每卡显存/序列长度变为 <code>O(T/P)</code>;</li>
+<li>适合“单卡放不下”的训练/推理,不是降低总 FLOPs;</li>
+<li>依赖高速互联(见 <code>notes/24_distributed_base.md</code>)。</li>
+</ul>
+<h3 id="34-ssm-mamba">3.4 SSM / Mamba<a class="headerlink" href="#34-ssm-mamba" title="Permanent link">&para;</a></h3>
+<p>状态空间模型用线性递推 <code>h_t = A h_{t-1} + B x_t</code> 代替 attention:</p>
+<ul>
+<li>LTI SSM 训练可用卷积形式并行;Mamba 的选择性 SSM 用并行 scan,不是卷积。推理每步 <code>O(1)</code> 状态、总 <code>O(T)</code>;</li>
+</ul>
+<p>术语拆开:LTI(线性时不变)= A、B、C 不随 t 变,递推可展开成对输入的固定卷积核 <code>y = x * K</code>(核长 T),所以能一次卷积/FFT 算完;Mamba 让 B、C、Δ 随输入变(选择性),核不再固定,只能并行 scan。
+先给结论(§7 第 8 题背这一句就够):训练是 O(T) 工作量、O(log T) 深度,推理每步 O(1) 状态、总 O(T);下面点到的算法名只是「复杂度按哪种实现算」的注脚,不必记——work-efficient = 工作量最优的前缀扫描,Brent-Kung/Blelloch = 它的上扫/下扫两趟实现,Hillis-Steele = 朴素的两两合并版,FFT = 把卷积降到 O(T log T) 的快速傅里叶变换。「pseudo-linear」是 Mamba 引言对卷积式 SSM 的叫法,前置篇没有这个概念,读到这里不用回头找。复杂度口径要按实现分开,别压成一个数:训练若走逐 token 递推(按 B·L·D·N 计),是 O(T) 工作量、但是 O(T) 深度的纯串行链(每步依赖前一步,没有并行度);走 work-efficient 前缀扫描(Brent-Kung/Blelloch 上扫/下扫)才是 O(T) 工作量、O(log T) 深度——并行扫描的全部意义就在把深度从 T 压到 log T;只有朴素 Hillis-Steele 版 scan 才是 O(T log T) 工作量,O(log T) 深度;卷积式走 FFT 是 O(T log T)(直接卷积 O(T²))。Mamba 原文 §3.3.2 的口径正是这样:朴素递归 O(BLDN) FLOPs(随 L 线性)、卷积 O(BLD log L),引言贡献段说的「比卷积式 SSM 的 pseudo-linear 更快」(这句在 §1 引言的贡献段,不在摘要;摘要只讲线性扩展与吞吐,没有 pseudo-linear 这个词)指的就是递推/scan 对 T 线性,被叫 pseudo-linear 的是卷积式 SSM。所以「对 T 线性」与「O(T log T)」不冲突:前者是递推/work-efficient scan 的训练 FLOPs,后者只是朴素并行扫描或 FFT 卷积的实现代价;推理的逐 token 递推同样是总 O(T)、每步 O(1),O(T) 并非推理独有。注:符号有两套,别混。递推 <code>h_t = A h_{t-1} + B x_t</code> 里的 A、B 是状态矩阵/输入矩阵;而 FLOPs 式 <code>O(BLDN)</code> 里的 B 回到 §1.2 的 batch size,L 是序列长度(不是层数),D 是 d_model 模型宽度(不是 §2.2 的 head_dim d),N 是 SSM 的状态维(每个通道的状态数,不是 §6.3 的 7e9 参数量)——所以 <code>O(BLDN)</code> 就是「batch × 序列长 × 模型宽 × 状态维」的线性量级。</p>
+<p>另有两处缺式,补齐才好读:输出是 <code>y_t = C h_t</code>(C 决定「从状态里读什么」,所以「B、C、Δ 随输入变」里 C 才有出处);<code>Δ</code> 是离散化步长,连续时间 SSM 中 <code>Ā=exp(ΔA)</code>、<code>B̄≈ΔB</code>,Mamba 让它随 token 变,相当于按输入调「记多久、写多少」。<strong>并行 scan</strong> = 前缀扫描:递推可写成仿射复合 <code>(A,B)∘(A',B')=(A'A, A'B+B')</code>,结合律成立,于是 T 步串行可压成 log T 轮两两合并并行算完(朴素 Hillis-Steele 版 O(T log T) 工作量;work-efficient 的上扫/下扫只 O(T) 工作量,两者深度都是 log T)——这正是「核不再固定却仍能整段并行训练」的机制,推理时才退回逐 token 的 O(1) 状态更新。
+- 没有 <code>T²</code> 的注意力矩阵,长序列成本低;
+- 代价是“精确检索/复制”能力通常弱于 attention;常见 hybrid(Mamba + attention)折中。</p>
+<blockquote>
+<p>面试口径:sliding/sparse 改<strong>连接模式</strong>,Ring 改<strong>切分方式</strong>,SSM 改<strong>序列建模算子</strong>;三者不是同一层的东西。</p>
+</blockquote>
+<h2 id="4-kv-cache-offload">4. KV Cache 压缩与 offload:长上下文的第一成本<a class="headerlink" href="#4-kv-cache-offload" title="Permanent link">&para;</a></h2>
+<h3 id="41-llama-2-7b">4.1 账本:以 Llama-2 7B 为例<a class="headerlink" href="#41-llama-2-7b" title="Permanent link">&para;</a></h3>
+<p>配置:L=32 层,H=32 头,d_head=128,FP16(2 bytes),MHA。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>每 token:2 · 32 · 32 · 128 · 2 = 524,288 B = 512 KiB
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>4K:   512 KiB × 4096 ≈ 2 GiB
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>32K:  ≈ 16 GiB
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>128K: ≈ 64 GiB
+</code></pre></div>
+<p><img alt="KV Cache 账本:7B MHA vs GQA vs MLA" src="../../diagrams/50c_kv_ledger.landscape.png" /></p>
+<ul>
+<li><strong>GQA(h_kv=8)</strong>:每 token 128 KiB;128K ≈ 16 GiB(头数 32→8 是 1/4(7B);前置篇 22 §3.2 的 1/8 指 70B 的 64→8,两个数各自正确,不是笔误)。</li>
+<li><strong>MLA(DeepSeek-V2)</strong>:每层缓存 <code>d_c + d_h^R = 512+64=576</code> 维;60 层 FP16 ≈ 67.5 KiB/token;128K ≈ 8.4 GiB(具体 config 以官方为准)。
+  MLA 先把 K/V 压成低秩 latent <code>c_t^{KV}</code>(<code>d_c=512</code>),再额外缓存一份<strong>解耦 RoPE key</strong> <code>k_t^R</code>(<code>d_h^R=64</code>);K/V 在用时上投影出来。与 GQA/MQA 的区别:后者共享<strong>头</strong>,MLA 压缩<strong>每层 K/V 的表示</strong>,缓存的是 latent 而不是完整 K/V。</li>
+<li><strong>FP8 KV</strong>:再减半;但要做 scale/outlier 处理(见 <code>notes/22_inference_systems.md §8</code>)。</li>
+</ul>
+<h3 id="42">4.2 压缩与淘汰<a class="headerlink" href="#42" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>GQA/MQA/MLA</strong>:减少 K/V 头数或维度(见 <code>notes/05_modern.md §3</code>)。</li>
+<li><strong>KV 量化</strong>:INT8/FP8,按 head/block 维护 scale;注意长上下文 outlier。</li>
+<li><strong>淘汰/稀疏</strong>:H2O 等只保留“重要 token”的 KV;实现简单但可能丢关键信息。淘汰时要保留少量 attention sink(开头 token),否则容易崩。</li>
+<li><strong>offload</strong>:把冷 KV 放 CPU/SSD,需要时搬回 GPU。PCIe Gen4 x16 理论 ~32 GB/s,实际 20–25 GB/s;把 16 GiB(17.18 GB)的 GQA cache 单向全搬一次约 0.7–0.9 s(17.18 GB ÷ 20–25 GB/s);offload 要搬出再搬回,往返约 1.4–1.7 s,故适合“分块/预取”,不适合每 token 全量搬。</li>
+<li><strong>PagedAttention</strong>:分页管理 KV,减少碎片(见 <code>notes/22_inference_systems.md §5</code>)。
+  一句话够面试用:PagedAttention 把 KV 按固定大小 block 分页存放、用 block table 做逻辑→物理映射,省的是<strong>显存碎片</strong>(外部/内部碎片,同样显存能塞更多序列),不改每步要搬的 KV 字节,所以不降带宽;offload 换的是存储层级(显存→CPU/SSD),量化换的是每字节精度(FP16→FP8/INT8),前缀缓存省的是跨请求重复 prefill(相同前缀的 K/V 只算一次),H2O/StreamingLLM 换的是「保留哪些 KV」(重要 token / sink+window)。五者不在同一层,别混答。</li>
+</ul>
+<blockquote>
+<p>长上下文成本排序:<strong>显存侧:KV 与权重的交叉点随配置变——7B-MHA 在 32K(16 GiB)已反超 14 GB 权重,7B-GQA-8 约 107K token 才打平,70B-GQA-8 单条要到 ~427K token(4K 下 batch≈104 就反超);故「128K 才反超」只在 7B-GQA-8、batch=1 时成立;计算侧:attention 是 O(T²) 的增长项</strong>。先看 KV 账本,再决定 GQA/MLA/量化/offload。</p>
+</blockquote>
+<h2 id="5">5. 长上下文数据与训练<a class="headerlink" href="#5" title="Permanent link">&para;</a></h2>
+<p><img alt="长上下文训练:短→长、位置扩展、数据与系统" src="../../diagrams/50d_long_train.landscape.png" /></p>
+<h3 id="51">5.1 三阶段<a class="headerlink" href="#51" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>短上下文预训练</strong>:4K–8K,常规网页/代码/书。</li>
+<li><strong>长文继续训练</strong>:32K→128K,加入长文档、长代码库、多文档 QA、长对话;序列长度逐步加,避免一上来 OOM/发散。</li>
+<li><strong>位置扩展 + 评测</strong>:RoPE 扩展(PI/NTK/YaRN)、随机尺度插值(见下);每阶段都测长文任务。</li>
+</ol>
+<p><strong>随机尺度插值</strong>(random scale interpolation,本节主线术语;这个名字专指下面的「每 batch 随机采一个全局缩放尺度 s」,「随机位置插值」不是它的别名、而是下条 Ruoss 版)= 继续训练时每个 batch 随机采一个缩放尺度 s(在训练长度到目标长度之间取)再做位置插值,让模型见过连续的一整段尺度、不只适配某个固定 s;与 PI(固定 s)、YaRN(按目标长度取固定 s)的区别是 s 在训练期就随机化;「推理时按当前长度现算 s」是 YaRN 论文另设的 Dynamic Scaling(动态缩放),只有与 YaRN 合用时才叫 Dynamic-YaRN,不是 YaRN 本体的组成部分,属于纯推理期的做法:只按当前长度现算 s 与温度,不改权重、无需额外继续训练——这正是 §2.3「只改推理、不训练」那条判断的适用对象。</p>
+<p>主线与出处(先记这条):面试问「随机尺度插值」时,按上面「每 batch 随机采一个全局缩放尺度 s」这套答——它是本节主线、工程实践里的叫法,没有单篇论文的正式定义;被追问文献时再补一句「Ruoss et al. 2023 的 Randomized Positional Encoding 是另一种机制,随机化的是位置集合」,就不会把工作定义当成引了一个无出处的说法。
+  来源与同名辨析(上面那条已按机制改叫「随机尺度插值」,是本节自洽的工作定义、正文未标来源;「随机位置插值」这个名字留给下面 Ruoss 版):Ruoss et al.(2023)《Randomized Positional Encodings Boost Length Generalization of Transformers》里的做法是「先模拟更长序列的位置、再随机抽一个递增的位置子集来适配当前长度」,随机化的是「位置集合」(逐 token/逐样本),不是每 batch 一个全局缩放尺度 s。中文里两者常被混译成同一个「随机位置插值」,但机制不同:Ruoss 版随机化的是位置集合,本节主线随机化的是缩放尺度;引用时写清是哪一种(本节主线 = 随机尺度插值),否则会把关键机制读丢。</p>
+<h3 id="52-packing">5.2 数据与 packing<a class="headerlink" href="#52-packing" title="Permanent link">&para;</a></h3>
+<ul>
+<li>长文要<strong>真长且连贯</strong>:书籍章节、长代码文件、多文档;不要只把短文本随机拼接冒充长文。</li>
+<li>packing(把多条短样本首尾拼进一个定长序列,以提高 token 利用率)时要保留文档边界:用 EOS 分隔、文档内保持因果、标签按边界处理;跨文档隔离是二选一——要么在 attention 里加 document mask(block-diagonal)互相看不见,要么接受轻微跨文档污染(很多实现为了效率会接受),这一取舍见 <code>notes/07_pretraining.md §2.4</code>;「位置 id 在每篇文档内从 0 重数」是实现选择而非硬性要求(不少实现只加 document mask、位置 id 保持连续),该篇并未提出这条;长文样本的 attention mask/位置要正确。</li>
+<li>数据配比:长文比例过高会牺牲短任务;常用“短+长”混合、按阶段调。</li>
+</ul>
+<h3 id="53">5.3 系统<a class="headerlink" href="#53" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>FlashAttention</strong>:不把 <code>[T,T]</code> 分数矩阵写回 HBM(高带宽显存,GPU 的片外显存),分块搬进片上 SRAM(shared memory/寄存器那一层,容量百 KB 级、带宽高一个数量级以上)算完,省的是 HBM 读写(FLOPs 不变;完整定义见本节末补充段);<strong>序列并行/上下文并行</strong>:沿序列维切到多卡,每卡只放一段的激活/KV;<strong>RingAttention</strong>:按块切序列、沿环传 K/V,计算与通信重叠(§3.3);<strong>激活重算</strong>:前向只存少量 checkpoint,反向重算中间激活,用算力换显存;</li>
+<li>训练长序列时,显存往往先被激活/KV 类中间量吃满,不是权重(见 <code>notes/23_training_systems.md</code>)。</li>
+</ul>
+<p>两个存储层级这里给完整定义(上面第一条已给一句话口径):<strong>HBM</strong> = 高带宽显存,即 GPU 的片外显存(权重、KV Cache、<code>[T,T]</code> 分数矩阵平时都放这里);<strong>SRAM</strong> = 片上缓存(CUDA 里的 shared memory / 寄存器那一层),容量百 KB 级但带宽比 HBM 高一个数量级以上。FlashAttention 的省法是:把 Q/K/V 分块搬进 SRAM 算完再写回,<code>[T,T]</code> 矩阵从不整体落到 HBM——省的是 HBM 读写带宽,FLOPs 不变,这也正是它与「显存账」直接相关的原因。</p>
+<p>为什么先吃满的是激活:<strong>激活</strong> = 前向时每层产生的中间张量(Q/K/V 投影、attention 输出、MLP 隐层等),训练要用它做反向传播算梯度,所以必须留到反向后才能释放(推理不存,这一项几乎为 0);激活量 ≈ <code>层数 × batch × 序列长度 × hidden × 常数</code>,随 T 线性增长且还要乘 L、B;权重是常数 <code>参数量 × bytes</code>。7B FP16 权重约 14 GB 是定值,而 128K、batch=1 时单层要存的激活就是 GB 量级(128K × 4096 × 2 B ≈ 1 GiB/张量),乘 32 层轻松超过权重——所以长序列训练先被激活卡住,才需要重算、切分与 FlashAttention。</p>
+<h2 id="6">6. 评测与成本<a class="headerlink" href="#6" title="Permanent link">&para;</a></h2>
+<p><img alt="长上下文评测:needle / RULER / 有效上下文曲线" src="../../diagrams/50e_long_eval.landscape.png" /></p>
+<h3 id="61">6.1 三类评测<a class="headerlink" href="#61" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Needle-in-a-haystack</strong>:在长文不同深度放一个事实,问模型能否找到;要测 0/25/50/75/100% 深度。</li>
+<li><strong>RULER</strong>:多类合成任务(检索、多跳、聚合)在 4K–128K 不同长度上的准确率;比单点 needle 全面。</li>
+<li><strong>真实任务</strong>:LongBench(长文 QA/摘要/代码)、多文档 QA、长对话;注意任务是否真的需要长距离信息。</li>
+</ul>
+<h3 id="62">6.2 有效上下文<a class="headerlink" href="#62" title="Permanent link">&para;</a></h3>
+<p>不要只报“支持 128K”。定义<strong>有效上下文</strong>:在给定任务上,准确率不低于短上下文基线某个相对阈值的最大长度(如以 4K 基线为参照取其 90%,即允许相对下降 10%(相对口径,不是绝对 10 个百分点:基线 80% 时门槛是 72%,只降 8 个百分点))。常见曲线是:长度增加 → 先平、后缓慢下降、再陡降;中间位置更差(lost in the middle)。</p>
+<h3 id="63">6.3 成本<a class="headerlink" href="#63" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>prefill</strong>:<code>O(T²)</code> 的 attention + <code>O(T)</code> 的线性层;128K 的 prefill 比 4K 贵约两个数量级(attention 部分 ×1024;整段还含 O(T) 线性层,只 ×32;7B 实算 d=4096、L=32 时总倍数约 ×103)。</li>
+</ul>
+<p>×103 补上可复核的口径:prefill 是 causal 的,attention 只算下三角,全序列 FLOPs ≈ <code>2·L·T²·d</code>(每层 QK^T 与 AV 各约 <code>T²/2·d</code> 次 MAC,合 <code>T²·d</code> MAC = <code>2·T²·d</code> FLOPs),线性层 <code>2·N·T</code>(N 取 7e9,即 7B 名义总参数、含 embedding;若改用前置篇的单层口径 12d²·L=6.44e9,线性层为 5.28e13、总量比 ×108、4K 的 attention 占比 7.7%,不是算错),且统一按 <strong>1 MAC = 2 FLOPs</strong> 计。
+  <strong>MAC</strong> = multiply-accumulate,一次乘加 <code>a×b + c</code>(先算 <code>a×b</code>,再把结果累加进 <code>c</code>);硬件与论文常按 MAC 计数,而 FLOPs 把乘、加各记一次,所以 1 MAC = 2 FLOPs。本文的「<code>T²/2·d</code> 次 MAC」指每层 QK^T 有 T²/2 个点积、每个点积 d 次乘加,合 <code>T²/2·d</code> 次;AV 同理,两项相加为 <code>T²·d</code> MAC,乘这个 2 才得 <code>2·T²·d</code> FLOPs——后面 ×103/×164 全部数字都以此 2 为地基。d=4096、L=32 时:4K 一档 attention≈4.4e12、线性层≈5.7e13,attention 占约 7%;128K 一档 attention≈4.5e15、线性层只≈1.8e15,总量比 4K 约 ×103(6.33e15 ÷ 6.17e13)。若统一改成「MAC 记一次」,两项必须一起减半(2.2e12 与 2.87e13 同步除以 2),占比与比值都不变:4K 里 attention 仍约 7%,总量比仍 ≈×103——单位换算同时缩放分子与分母,改不了比值。反过来,拿满 T²(非因果)的 <code>4·L·T²·d</code> 去配 causal 的线性层,才会算出 4K 占比约 13%、总倍数 ≈×164(1.084e16 ÷ 6.614e13 = 163.9),那是口径没统一(被高估的是增长倍数,约 1.59 倍 = 164÷103;128K 的绝对总量是 1.08e16 对 6.33e15,约 1.71 倍,别把这个 1.6 当成总量之比),不能拿来复核 ×103。
+- <strong>decode</strong>:每步要读全部 KV;KV 越大,memory-bound 越严重。</p>
+<p>两个词先定义,否则这句因果是断的:<strong>prefill</strong> = 把整段输入一次并行送进模型、一次算出所有位置的 K/V(和训练前向同构),区别 decode 的逐 token 前向,贵在 attention 的 <code>T²</code> 项;<strong>memory-bound</strong>(带宽瓶颈)= 按 roofline,单步耗时 ≈ 要搬的字节 ÷ 有效带宽,而 FLOPs 远没喂满算力;decode 每步要搬「全部权重 + 全部 KV」却只算 1 个 token,所以 KV 越大、搬得越多、单步越慢——瓶颈在带宽不在算力,这也是 GQA/量化/offload 能直接加速的原因。
+- <strong>服务</strong>:长上下文请求会拉低并发;需要分块 prefill(chunked prefill)、前缀缓存、KV 量化/压缩、PD 分离(这四项见 <code>notes/22_inference_systems.md §10</code>);KV offload 的账见 §4.2,「按长度分层调度」属工程经验、notes/22 未覆盖——引用只挂那四项。
+  <strong>PD 分离</strong>补半句:P=prefill(把整段输入一次并行算完、得到全部位置的 K/V),D=decode(逐 token 生成)。两者瓶颈相反:prefill 吃算力(attention 的 T² 项),decode 是 memory-bound、且要一直占着 KV。把 P 与 D 拆到不同机器(甚至不同型号的卡)上,各自按自己的瓶颈配资源、互不拖累,KV 经高速互联由 P 机传给 D 机;长请求不再把 decode 的并发槽位长时间占住,所以能救并发。代价是多一跳 KV 传输与调度复杂度。</p>
+<h2 id="7">7. 面试要点<a class="headerlink" href="#7" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>长上下文为什么贵?</strong> → 三条账:attention <code>O(T²)</code>、KV Cache <code>O(T)</code>、能力随长度/深度下降。</li>
+<li><strong>PI 是什么?</strong> → 把目标位置线性压缩回训练范围:<code>pos' = pos·L_train/L_target</code>;简单但损失近距分辨率。</li>
+<li><strong>NTK-aware / YaRN 的区别?</strong> → NTK 调 base(频率缩放);YaRN 做分频段(NTK-by-parts)+ 温度,通常更稳;动态缩放是另设的可选附加项(推理期按当前长度现算 s),不算 YaRN 本体。</li>
+<li><strong>ALiBi 怎么做?</strong> → 不加位置向量,在 attention 分数上加 <code>-m·(i-j)</code>,距离越远惩罚越大。</li>
+<li><strong>NoPE 为什么能工作?</strong> → 因果 mask 本身提供顺序信息;不是所有任务都稳。</li>
+<li><strong>sliding window 省了什么?</strong> → 连接数从 <code>T²</code> 降到 <code>T·w</code>;信息靠多层传播,远处精确检索会弱。</li>
+<li><strong>RingAttention 降低计算量吗?</strong> → 不,仍是 O(T²);它把序列/显存切到多卡,计算通信重叠。</li>
+<li><strong>SSM 和 attention 的区别?</strong> → 线性递推、对 T 线性(训练递推 O(BLDN) 与 work-efficient scan 都是 O(T) 工作量;只有朴素 Hillis-Steele scan 与 FFT 卷积是 O(T log T),直接卷积 O(T²);推理逐 token 递推总 O(T)、每步 O(1))、固定状态;精确检索弱,常 hybrid。</li>
+<li><strong>KV Cache 怎么省?</strong> → GQA/MQA/MLA(省头/省维度)、量化(省精度)、淘汰/PagedAttention/前缀缓存(省 token、省碎片、省重复 prefill)、offload(省显存层级);各层一句话区别见 §4.2 末那段;先算账再选。</li>
+<li><strong>怎么评测长上下文?</strong> → needle 不同深度 + RULER 多任务多长度 + 真实 LongBench;报有效上下文与成本。</li>
+</ol>
+<h2 id="_1">常见坑<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<ul>
+<li>把“最大窗口”当“有效上下文”:128K 支持不等于 128K 都好用。</li>
+<li>只测开头/结尾,不测中间:lost in the middle 会漏。</li>
+<li>以为 RingAttention 降低 FLOPs:它降低的是单卡显存/序列切分。</li>
+<li>把 sliding window 的 <code>L·w</code> 当精确感受野:多层传播是近似上界。</li>
+<li>直接外推 RoPE 不继续训练:分布偏移,分数会崩。</li>
+<li>只算权重不算 KV:长上下文 decode 的瓶颈通常是 KV 带宽/显存。</li>
+<li>忽略 offload 的 PCIe 带宽:以 §4.2 那笔 16 GiB 的 GQA cache 为例,全量搬运一次(单程)约 0.7–0.9 s、往返 1.4–1.7 s(7B-MHA@128K 是 64 GiB,同带宽下应为 2.7–3.4 s),不能每 token 搬。</li>
+</ul>
+<h2 id="_2">动手清单<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>PI 复算</strong>:训练 4K、目标 16K,把 pos=0/4096/8192/16383 压缩,验证都落在 <code>[0,4096)</code>。</li>
+<li><strong>KV 账本</strong>:用 Llama-2 7B 配置算 4K/32K/128K 的 MHA 与 GQA-8 KV 大小;验收:与 §4.1 一致。</li>
+<li><strong>needle 评测</strong>:在 8K/32K 文本的 0/50/100% 深度各放一个事实,测召回;验收:报告不同深度准确率。</li>
+<li><strong>sliding window 估算</strong>:给定 <code>w=4096,L=32</code>,估算理论感受野,并说明为什么不是精确全连接。</li>
+</ol>
+<h2 id="_3">相关图<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p><code>50a_position_ext</code> · <code>50b_attention_patterns</code> · <code>50c_kv_ledger</code> · <code>50d_long_train</code> · <code>50e_long_eval</code>
+(均在 <code>diagrams/</code>,横竖双版本)</p>
+<h2 id="_4">下一步<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<p>第十五层 · PEFT/LoRA:Adapter、prefix/prompt tuning、LoRA/QLoRA/DoRA、rank/alpha、target modules、合并与多适配器服务、显存账本。</p>
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.top", "navigation.indexes", "content.code.copy", "search.suggest", "search.highlight", "toc.follow"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+        <script src="../../javascripts/mathjax.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs" type="module"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,2097 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="从 Transformer 骨架到推理系统的 29 篇讲义（本地预览）">
+      
+      
+      
+      
+        <link rel="prev" href="../03_block/">
+      
+      
+        <link rel="next" href="../05_modern/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>第四层 · 组装 —— Encoder / Decoder / 掩码 / Cross-Attention - AI Infra 讲义</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#encoder-decoder-cross-attention" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="../.." title="AI Infra 讲义" class="md-header__button md-logo" aria-label="AI Infra 讲义" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            AI Infra 讲义
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              第四层 · 组装 —— Encoder / Decoder / 掩码 / Cross-Attention
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切到深色"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="切到深色" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切到浅色"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="切到浅色" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="AI Infra 讲义" class="md-nav__button md-logo" aria-label="AI Infra 讲义" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    AI Infra 讲义
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI Infra 讲义
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Notes
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Notes
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01_skeleton/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第一层 · 骨架 —— 从文本到矩阵
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02_attention/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二层 · 心脏 —— Self-Attention 的 Q/K/V
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03_block/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第三层 · 加强 —— Multi-Head、残差、LayerNorm、FFN
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第四层 · 组装 —— Encoder / Decoder / 掩码 / Cross-Attention
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第四层 · 组装 —— Encoder / Decoder / 掩码 / Cross-Attention
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0. 依赖图(学习顺序)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. 三种架构(先记结论)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-masked-causal-attention" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. 因果掩码(Masked / Causal Attention)—— 生成的关键
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-cross-attention" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Cross-Attention:连接两段序列
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. 位置编码在编码器/解码器里的差异
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-block" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. 实际案例:同一个 Block,三种用法
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-bert" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. 补:BERT 是怎么预训练的(高频,别再只答"结构")
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        面试要点
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        常见坑
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        相关图
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        下一步
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05_modern/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第五层 · 现代变体 —— 从原论文到 LLaMA/GPT
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_inference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第六层 · 跑起来 —— 训练/推理、KV Cache、完整 forward
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_pretraining/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第七层 · 预训练 —— 目标、数据与 Scaling Law
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../08_alignment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第八层 · 对齐 —— SFT、RLHF、DPO 与安全
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09_evaluation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第九层 · 评测 —— benchmark、污染、judge 与可复现
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../10_decoding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十层 · 解码 —— 从 logits 到 token
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../11_applications/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十一层 · 应用 —— Prompt、RAG、工具与 Agent
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../12_multimodal/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十二层 · 多模态 —— VLM、扩散与语音
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../13_reasoning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十三层 · 推理模型 —— 测试时计算、长 CoT 与 RLVR
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../14_long_context/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十四层 · 长上下文 —— 位置外推、注意力模式与 KV 账本
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../15_peft_lora/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十五层 · PEFT 与 LoRA —— 用 0.1% 参数做微调
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../16_agent_rl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十六层 · Agent RL —— rollout、环境、奖励与异步训练
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../17_data_engineering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十七层 · 数据工程 —— 从原始语料到数据飞轮
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../18_interpretability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十八层 · 可解释性 —— 从探针到电路与 SAE
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../19_multimodal_deep/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十九层 · 多模态深化 —— VLM、视频/音频与扩散
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../20_ai_infra_map/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模块二 · M2-0 地图与坐标系
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（2026-10-21 补全景图 20g）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../21_single_node_ops/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模块二 · M2-1 单机与算子
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（2026-10-21 补结构图 20h/20i/20j/20k）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../22_inference_systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模块二 · M2-3 推理系统
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（2026-10-21 补结构图 20l–20q）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../23_training_systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 2 层 · M2-2 训练系统
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../24_distributed_base/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 4 层 · M2-4 分布式底座
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../25_platform_sre/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 5 层 · M2-5 平台与稳定性
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../26_frontier_edge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 6 层 · M2-6 前沿与端侧
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../27_agent_engineering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二十七层 · Agent 工程化：Context / Harness / Loop / Graph
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--v1"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../28_vllm_source_trace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二十八层 · vLLM v1 源码 trace：一次请求怎么走
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--v1"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../29_agent_eval_infra/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二十九层 · Agent 评测 Infra：从打分到可复现的评测平台
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--v1"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../worksheets/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Worksheets
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Worksheets
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0. 依赖图(学习顺序)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. 三种架构(先记结论)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-masked-causal-attention" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. 因果掩码(Masked / Causal Attention)—— 生成的关键
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-cross-attention" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Cross-Attention:连接两段序列
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. 位置编码在编码器/解码器里的差异
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-block" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. 实际案例:同一个 Block,三种用法
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-bert" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. 补:BERT 是怎么预训练的(高频,别再只答"结构")
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        面试要点
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        常见坑
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        相关图
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        下一步
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="encoder-decoder-cross-attention">第四层 · 组装 —— Encoder / Decoder / 掩码 / Cross-Attention<a class="headerlink" href="#encoder-decoder-cross-attention" title="Permanent link">&para;</a></h1>
+<blockquote>
+<p>本层回答:把 Block 拼成完整模型,有哪几种拼法?为什么生成任务需要<strong>掩码</strong>和 <strong>Cross-Attention</strong>?</p>
+</blockquote>
+<h2 id="0">0. 依赖图(学习顺序)<a class="headerlink" href="#0" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p>根节点是<strong>可以无条件接受</strong>的事实;箭头表示「前者支撑后者」。<strong>能力依赖</strong>的拓扑序是从根到汇点 J(D、F 先于 B,B 再经 G/H/I 汇到 J);但<strong>成文顺序不是拓扑序</strong>:§1 先给中间节点 B 的结论表,§2/§3 再回填 D、F 的定义,所以读 §1 时先当标签收下是正常的。
+例外只有一处:C(「生成时不能看到未来」)是<strong>带前提的根</strong>,严格读作「<strong>逐 token 自回归解码时</strong>不能看到未来」。§2 用 Mask-Predict、扩散式解码说明「没有因果掩码也能生成」,那是把 C 的前提收窄,不是推翻它——按这个读法,图与 §2 不冲突,不必回头怀疑这张图。
+<strong>图 ≠ 成文顺序</strong>:图只声明能力依赖(D、F 支撑 B)。§1 先给结论表格时,“因果掩码”“cross-attention”“自回归”先当标签接受,读完 §2/§3 再回看表格,不必在 §1 卡住。
+§1 还会提前用到几个标签,一并先当标签收下:<strong>teacher forcing</strong>(§2 末给定义)、<strong>encoder/decoder 与 Block 的堆叠关系</strong>(§5 给代码)、<strong>decoder 的三个子层</strong>(§3:因果 self-attention → cross-attention → FFN)、<strong>KV Cache / CLM / few-shot(上下文学习)</strong>(§1 中段「三个裸术语」段各给一句定义),它们只影响细节回看,不影响 §1 的结论。图上未单列的三块都挂在 B 之下、属下游而非前置:位置编码差异(§4)、padding mask(§3 与「常见坑」,与因果掩码并列的第二种 mask)、MLM/NSP(§6;它们就写在 G 节点「BERT:MLM + NSP」的标签里,图上没有独立节点或边,属下游预训练目标而非前置)。</p>
+</blockquote>
+<pre class="mermaid"><code>graph TD
+  A["任务形态&lt;br/&gt;理解 / 生成 / 序列到序列"] --&gt; B["三种架构"]
+  C["生成时不能看到未来"] --&gt; D["因果掩码&lt;br/&gt;严格上三角(不含对角线)= -∞"]
+  E["解码每一步都要参考整段源序列&lt;br/&gt;不需要词级对齐"] --&gt; F["Cross-Attention&lt;br/&gt;Q 来自 decoder,K/V 来自 encoder"]
+  D --&gt; B
+  F --&gt; B
+  B --&gt; G["Encoder-only&lt;br/&gt;BERT:MLM + NSP"]
+  B --&gt; H["Decoder-only&lt;br/&gt;GPT:next-token"]
+  B --&gt; I["Encoder-Decoder&lt;br/&gt;T5 / 原论文:seq2seq"]
+  H --&gt; J["自回归生成"]
+  I --&gt; J</code></pre>
+<h2 id="1">1. 三种架构(先记结论)<a class="headerlink" href="#1" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>架构</th>
+<th>由谁组成</th>
+<th>每层里的 attention</th>
+<th>代表</th>
+<th>适合</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Encoder-only</strong></td>
+<td>只堆 encoder</td>
+<td>双向 self-attention</td>
+<td>BERT</td>
+<td>理解类:分类、抽取、判别</td>
+</tr>
+<tr>
+<td><strong>Decoder-only</strong></td>
+<td>只堆 decoder(去掉 cross)</td>
+<td>带因果掩码的 self-attention</td>
+<td>GPT / LLaMA</td>
+<td>生成类:续写、对话</td>
+</tr>
+<tr>
+<td><strong>Encoder-Decoder</strong></td>
+<td>encoder + decoder</td>
+<td>encoder 双向;decoder 因果 + <strong>cross-attention</strong></td>
+<td>原论文 / T5 / 机器翻译</td>
+<td>序列到序列:翻译、摘要</td>
+</tr>
+</tbody>
+</table>
+<p>一句话:<strong>区别就在 Block 内部(骨架都是第二三层的那个 Block,换掉的是 Block 里的 attention 子层:mask 决定可见范围、有没有 cross-attention 子层),即"注意力能不能看全序列"和"有没有 cross-attention"。</strong></p>
+<p><strong>为什么现代通用大模型几乎都收敛到 decoder-only?</strong>(面试追问):</p>
+<ul>
+<li><strong>目标统一</strong>:翻译、摘要、问答、代码都能写成“给前缀,生成后缀”,不用为任务换架构。</li>
+<li>
+<p><strong>训练/推理一致(注意:这条对「选哪种架构」没有区分力,不是 decoder-only 独有的优势)</strong>:训练与推理的目标其实一致——encoder-decoder 的解码端同样是 next-token prediction(训练时配 teacher forcing——每步喂真实前缀、不用模型自己的预测,§2 末给定义)、推理时同样自回归,不存在“目标错位”。真正的差别是结构(一套还是两套 Block、两堆之间要不要 cross-attention 这个连接件)与调度复杂度。</p>
+</li>
+<li>
+<p><strong>工程更简单</strong>:只有因果 self-attention,一套 mask + KV Cache;encoder-decoder 多一套 cross-attention 与调度。</p>
+</li>
+</ul>
+<blockquote>
+<p>这一条里的 <strong>KV Cache</strong>、下一条的 <strong>CLM / few-shot</strong> 都还没定义,先当标签读;定义就在本节末「三个裸术语」段,不影响本段结论。
+- <strong>上下文学习</strong>:海量 CLM 预训练自然学出“看提示、照格式续写”,few-shot 很顺。</p>
+</blockquote>
+<p>encoder-only(BERT 类)仍适合分类/抽取等理解任务;encoder-decoder 仍适合翻译/摘要等严格 seq2seq。详见 <code>notes/07_pretraining.md §1.5</code>。
+<strong>三个裸术语先各给一句定义</strong>(细节在后面几层):<strong>KV Cache</strong> = 自回归生成时把已算过的 K、V 缓存复用,每步只算新 token,不重算整段;<strong>CLM</strong> = Causal Language Modeling,因果语言建模,即“给前缀预测下一个 token”这个预训练目标(GPT 系);<strong>few-shot / 上下文学习</strong> = 不改参数,只在提示里给几个示例,模型照格式续写。第 3、4 条理由(工程更简单、上下文学习)的落点是:K/V 同源 → 缓存只有一套;预训练目标与推理用法同形 → 提示里的例子就等于“前缀”。</p>
+<p><img alt="三种架构对比" src="../../diagrams/09_architectures.landscape.png" /></p>
+<h2 id="2-masked-causal-attention">2. 因果掩码(Masked / Causal Attention)—— 生成的关键<a class="headerlink" href="#2-masked-causal-attention" title="Permanent link">&para;</a></h2>
+<p><strong>问题:</strong> 生成任务里,预测第 <code>t</code> 个词时,模型<strong>不能偷看</strong>第 <code>t+1</code> 及之后的词(那是答案/未来)。但标准 attention 是"每个位置都能看全序列",会泄露未来信息。</p>
+<p><strong>解法:</strong> 在 softmax <strong>之前</strong>,把"未来位置"的分数置成 <code>-∞</code>,<code>e^{-∞}=0</code>——未来位置的权重就变成 0,不参与加权。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>mask[i, j] = 0      if j ≤ i    (允许看:自己及之前)
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>mask[i, j] = -∞     if j &gt; i    (禁止看:未来)
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>scores = Q·Kᵀ / √d_k + mask
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>A = softmax(scores)             # 被 mask 的位置权重精确为 0
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>掩码后的注意力矩阵(严格上三角(不含对角线)为 0,下三角含对角线才有值):
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>      k1   k2   k3   k4          · 有值,空白 = 0
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>q1 [  ·  ]
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>q2 [  ·    ·  ]
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>q3 [  ·    ·    ·  ]
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>q4 [  ·    ·    ·    ·  ]
+</code></pre></div>
+<p><img alt="因果掩码矩阵" src="../../diagrams/08_causal_mask.landscape.png" /></p>
+<blockquote>
+<p>本框数值可逐格按框内算式自核(<code>notes/02_attention.md §5.5 ⑤.5</code> 用的是另一组 scores、且明写略去 ÷√d_k,不能用来核本框);掩码<strong>形状</strong>示意见 <code>diagrams/14h_mask.landscape.png</code>(数值口径见本框末注)。
+不翻外部文件也能验的一组数(取 <code>T=3, d_k=2</code>,<code>Q=K=[[1,0],[0,1],[1,1]]</code>):</p>
+<p>scores_raw = Q·Kᵀ  = [[1,0,1],[0,1,1],[1,1,2]]
+scores     = /√2  ≈ [[0.71,0,0.71],[0,0.71,0.71],[0.71,0.71,1.41]]
+mask              = [[0,-∞,-∞],[0,0,-∞],[0,0,0]]
+scores+mask       = [[0.71,-∞,-∞],[0,0.71,-∞],[0.71,0.71,1.41]]
+A = softmax(逐行)  = [[1,0,0],[0.33,0.67,0],[0.25,0.25,0.50]]</p>
+<p>第 1 行只有 <code>k1</code> 有权重(<code>A[0][1]=A[0][2]=0</code>),被 mask 的位置<strong>精确为 0</strong>;每行仍归一化为 1。图 <code>14h_mask</code> 只用来看<strong>掩码形状</strong>(哪些格子被置 <code>-∞</code>、哪些留空),<strong>不要拿它核验本框的数值</strong>:那张图用的是另一套示例数,且未除 √d_k,与本框的 scores/A 不是同一组;本框的数一律以本框算式为准(逐格按本框算式自核即可;<code>notes/02_attention.md §5.5 ⑤.5</code> 的 scores 与掩码口径都和本框不同,不能当核对依据)。</p>
+</blockquote>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">causal_mask</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">device</span><span class="p">):</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="n">m</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">T</span><span class="p">,</span> <span class="n">T</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="s2">"-inf"</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>   <span class="c1"># mask 必须和 scores 同 device</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="n">m</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">triu</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">diagonal</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>          <span class="c1"># 上三角(不含对角线)= -inf</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    <span class="k">return</span> <span class="n">m</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="c1"># Q/K 就是上面公式里的 Q、K;用 Q.device,不要引用本篇从未定义的 x</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="n">scores</span> <span class="o">=</span> <span class="n">Q</span> <span class="o">@</span> <span class="n">K</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">d_k</span> <span class="o">**</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">+</span> <span class="n">causal_mask</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">Q</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="n">A</span> <span class="o">=</span> <span class="n">scores</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+</code></pre></div>
+<p><strong>为什么用 <code>-∞</code> 而不是 0?</strong> 必须让 softmax <strong>之后的权重精确等于 0</strong>。如果加 0,softmax 仍会给未来位置分配非零概率(<code>e^score &gt; 0</code>),就泄露了。<code>-∞</code> 保证被 mask 的权重恰好为 0。</p>
+<p><strong>为什么叫"因果"?</strong> 因为它保证每个位置只依赖<strong>它之前</strong>的信息,和"时间上不能穿越"一致。常被顺口叫作“自回归注意力”,但严格说两者不等价:因果掩码是<strong>机制</strong>(禁止看未来),自回归是<strong>使用方式</strong>(逐个生成)。</p>
+<blockquote>
+<p>下面马上要用到四个词,先各给一句最小定义免得边读边猜(本节只给一遍,后面不再重复):<strong>NAR(非自回归)</strong> = 不逐 token、一次并行吐整段;<strong>Mask-Predict</strong> = 先全填 <code>[MASK]</code> 再迭代重填低置信位置;<strong>扩散式解码</strong> = 从噪声多步去噪出整段;<strong>block-wise</strong> = 序列切块、一次生成一块(块内多 token 由并行的独立 proposal 猜、再因果验证),注意力仍是普通因果掩码、不额外加块内掩码。</p>
+<p>(四个词的定义到此结束;以下转入<strong>论证</strong>——证明「因果掩码不是生成的必要条件」、以及两类反例方向相反。别把论证当定义读。)BERT 用非因果注意力、训练时一次前向就并行算出所有位置的输出;反过来要小心所举反例的方向:非自回归(NAR)模型(Mask-Predict、扩散式解码等)是<strong>「没有因果掩码也能生成」</strong>的例子,它证明的是「因果掩码不是生成的必要条件」,并不能证伪「因果掩码 → 自回归」;至于 block-wise 解码(Stern et al., 2018),它恰恰<strong>是</strong>「有因果掩码也不等于严格逐 token」的例子:注意力全程保留因果掩码;块内 k 个候选由 k 个独立 proposal 模型各自只看同一段已确定的因果前缀并行猜出(块内不靠掩码隔离),验证阶段用普通因果注意力并行打分(Figure 1 的 verify 明写要 condition on the previous independent predictions,即块内靠前的 token 对靠后位置是可见的),再取最长可接受前缀;所以它只能说明「生成粒度是块、不是单个 token」。
+换句话说,这两类反例方向相反,别混为一类:Mask-Predict、扩散式解码属于「根本没有因果掩码」,用来证明因果掩码不是生成的必要条件;block-wise 则是「保留因果掩码、但一次吐多个 token」,它证明的正是「有因果掩码也不等于严格逐 token」,方向和前者正好相反。(此处只是举例,不影响主线,不必先去补语音识别或扩散模型的知识。)</p>
+<p>(四个词的定义见上文,不重复。出处:block-wise 并行解码见 Stern et al., 2018 <em>Blockwise Parallel Decoding</em>;Mask-Predict 见 Ghazvininejad et al., EMNLP 2019;扩散式解码属另一支,此处不展开。)</p>
+<p>训练时的巧妙之处:因为有掩码,一次前向就能并行算出<strong>所有位置</strong>的预测(位置 i 的预测只用 ≤i 的信息),不用像推理那样一步步来。这是 Transformer 训练高效的来源。</p>
+<p>这跟 <strong>teacher forcing</strong> 是两件事,别混:并行前向是<strong>因果掩码</strong>带来的效果(位置 i 只看得到 ≤i 的输入);<strong>teacher forcing</strong> 指的是<strong>喂法</strong>——训练时解码器每一步的输入都用<strong>真实的前缀</strong>(而非模型自己上一步的预测)。正因为喂的是真实前缀、不依赖上一步的输出,整段才能并行喂进去;推理时才换成用自己生成的 token(第六层的自回归)。</p>
+</blockquote>
+<h2 id="3-cross-attention">3. Cross-Attention:连接两段序列<a class="headerlink" href="#3-cross-attention" title="Permanent link">&para;</a></h2>
+<p>翻译任务:输入是英文(source),输出是中文(target)。解码器生成中文第 <code>t</code> 个词时,需要<strong>参考整个英文句子</strong>。</p>
+<p>Cross-Attention 的巧妙:<strong>Q 来自解码器,K/V 来自编码器</strong>。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>Q = 解码器当前状态 · W_Q      [B, T_dec, d_k]     (我在找什么)
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>K = 编码器输出     · W_K      [B, T_enc, d_k]     (源序列每个词的标签)
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>V = 编码器输出     · W_V      [B, T_enc, d_v]     (源序列每个词的内容)
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>scores = Q·Kᵀ  [B, T_dec, T_enc]     ← 注意形状:query 数 ≠ key 数
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>out = softmax(...) · V  [B, T_dec, d_v]
+</code></pre></div>
+<p>对比 self-attention:<code>Q,K,V</code> 同源、<code>T×T</code> 方阵;cross-attention:<code>Q</code> 一段、<code>K/V</code> 另一段,矩阵是 <code>T_dec × T_enc</code> 的<strong>矩形</strong>。这是唯一用"两段序列"的地方。</p>
+<ul>
+<li><strong>mask 用不用?</strong> cross-attention 通常<strong>不用因果掩码</strong>(目标端可以看全整个源句);但要 mask 掉 <strong>padding</strong>。padding 是为把 batch 里长短不一的句子凑成同长矩阵、在<strong>源句尾部补的占位符</strong>(如 <code>&lt;pad&gt;</code>,id=0),不是真词。做法:softmax <strong>之前</strong>把 padding 对应的 <strong>key 列</strong>(位置上是 K 的第 j 行,落到 scores 上是第 j 列)<strong>只在 scores 上</strong>置 <code>-∞</code>;K 只读、V 完全不动——权重不在 V 里,而在 softmax 之后的 A 的 padding 那一列(精确为 0);V 的每一行只是源序列某个词的向量本身、不带权重,所以 <code>A[:,pad]=0</code> 乘出来自然是 0。若反过来去动 V 那行(置 <code>-∞</code>),0×(-∞) 直接 NaN——不是加 0(加 0 仍有概率);而且<strong>只屏蔽列,别整行填 <code>-∞</code></strong>(整行 <code>-∞</code> 时 softmax 分母 <code>Σe^{-∞}=0</code>,直接 NaN)。下面数值例子取 <code>T_enc=3</code>,若第 3 个是 padding,就只把 scores 的第 3 列置 <code>-∞</code>,两行仍各自归一化(注意:下面给出的 A 是<strong>未加</strong> padding mask 的;加了之后约为 <code>[[0.67,0.33,0],[0.20,0.80,0]]</code>)。</li>
+<li>解码器每层有<strong>三个</strong>子层:<code>因果 self-attention</code> → <code>cross-attention</code> → <code>FFN</code>。</li>
+</ul>
+<p><strong>FFN(前馈网络,Feed-Forward Network)</strong>:两层线性 + 激活,维度 <code>d → 4d → d</code>,参数约 <code>8d²</code>;加上注意力四个投影的 <code>4d²</code>,合计就是前置清单里的 <code>12d²</code>。<strong>(这只是顺手把账记上:FFN 是解码器三个子层里的第三个,和下面 cross-attention 的矩形演算无关——记完这句就回到矩形。)</strong></p>
+<blockquote>
+<p><strong>FFN 三问(可跳过,不影响下面的矩形演算)</strong>:①<strong>激活</strong> = 逐元素套在中间那层上的非线性函数(原论文 ReLU,即 <code>max(0, x)</code>;现代变体 GELU / SwiGLU),只给非线性、不改形状;②<strong>为什么必须非线性</strong>——两层线性叠起来等价于一层线性(<code>W₂(W₁x) = (W₂W₁)x</code>),不加激活 FFN 就退化成一个线性投影;③<strong>为什么中间是 4d</strong>——原论文的工程选择(给每个位置一条更宽的非线性通道,参数正好 <code>4d²+4d² = 8d²</code>),不是理论必然,现代模型常改比例(如 LLaMA 的 SwiGLU 取约 <code>8/3·d</code> 并加第三个投影)。本层只需记住「FFN = 逐位置的两层 MLP + 非线性」,变体留第五层。</p>
+</blockquote>
+<p><strong>数值/形状演算(矩形从哪里来):</strong></p>
+<p>取 <code>T_dec=2, T_enc=3, d_k=2</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>Q_dec = [[2,1],[0,2]]                 # [2,2] = T_dec × d_k
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>K_enc = [[1,0],[0,1],[1,1]]           # [3,2] = T_enc × d_k
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>scores_raw = Q_dec · K_enc^T = [[2,1,3],[0,2,2]]     # [2,3] = T_dec × T_enc
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>scores = scores_raw / √d_k = scores_raw / √2 ≈ [[1.41,0.71,2.12],[0,1.41,1.41]]
+</code></pre></div>
+<p>只算左上角:<code>scores_raw[0][0] = 2×1 + 1×0 = 2</code>,再除以 √d_k = √2 得 <code>scores[0][0] ≈ 1.41</code>(<strong>cross-attention 和 §2 一样要缩放</strong>,d_k=2 也不例外)。shape 的来历是
+<code>[T_dec,d_k]·[d_k,T_enc] → [T_dec,T_enc]</code>——query 数和 key 数不必相等,所以 scores
+<strong>不是方阵</strong>;之后 <code>out = A[T_dec,T_enc]·V_enc[T_enc,d_v] → [T_dec,d_v]</code>。
+对缩放后的 scores 逐行 softmax 可直接验算:<code>A ≈ [[0.284,0.140,0.576],[0.108,0.446,0.446]]</code>(每行和为 1)。取 <code>V_enc = [[1,0],[0,1],[1,1]]</code>(<code>d_v=2</code>)再乘,得 <code>out = A·V_enc ≈ [[0.86,0.72],[0.55,0.89]]</code>,即 [T_dec, d_v] = [2,2] 的输出。</p>
+<blockquote>
+<p>图 <code>14m_cross_scores</code> 用的是与本段同一组 <code>Q_dec</code>、<code>K_enc</code>,但图上标的是<strong>未除 √d_k</strong> 的 <code>scores_raw</code>:左上角是 <code>2</code>(不是 <code>1.41</code>),图上只有 <code>Q_dec</code> 第 0 行、<code>K_enc^T</code> 第 0 列和 <code>scores_raw[0][0]=2</code> 这一格,既没有 A、也没有 softmax 任何一步——不要照图去找 A。图能核对的是<strong>矩形形状</strong> <code>[T_dec,T_enc]=[2,3]</code> 和这一格 <code>scores_raw[0][0]=2</code>;缩放后的 scores/A/out 请照本段算式算,别照图。</p>
+</blockquote>
+<p><img alt="Cross-Attention 的矩形 scores" src="../../diagrams/14m_cross_scores.landscape.png" /></p>
+<h2 id="4">4. 位置编码在编码器/解码器里的差异<a class="headerlink" href="#4" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Encoder-only(BERT):可学习位置编码,双向看,适合理解。</li>
+<li>Decoder-only(GPT):因果掩码 + 位置编码。<strong>GPT-1/2/3 用的是可学习绝对位置编码</strong>;RoPE 出自 RoFormer(Su et al., 2021),LLaMA(2023)只是采用者;PaLM、GPT-NeoX 早在 2022 年就已采用,目前是主流做法(第五层展开)。</li>
+<li>Encoder-Decoder:两端都加位置编码;解码器靠因果掩码保证自回归。
+三者一句话分清:<strong>正弦 PE</strong> 是固定公式,与词向量逐元素相加;<strong>可学习 PE</strong> 是另一张 <code>[max_len, d_model]</code> 的可训练矩阵(按位置查表后相加,参数另算,不在前面记的 12d² 里);<strong>RoPE</strong> 不“加”在词向量上,而是按位置对 Q/K 做旋转,让内积只依赖相对位置差 m−n(带符号:位置 (5,2) 与 (2,5) 分数不同,不是只依赖 |m−n|)(第五层展开)。BERT 与 GPT 用的都是<strong>可学习 PE</strong>(上面第二种);它与正弦 PE 同属「加在词向量上」的加法式,LLaMA 一系用 RoPE 则不加在词向量上、改对 Q/K 做旋转。</li>
+</ul>
+<h2 id="5-block">5. 实际案例:同一个 Block,三种用法<a class="headerlink" href="#5-block" title="Permanent link">&para;</a></h2>
+<p>同一个第三层的 Block,通过"改 attention 的可见范围 + 加不加 cross"变成三种用途:</p>
+<p><strong>先把「右移」和 BOS 说清楚</strong>——不然后面那行 <code>tgt = 右移的真实前缀</code> 照字面写不出来:</p>
+<ul>
+<li>目标序列记作 <code>y = [y1, y2, …, yT]</code>;最前面补一个起始符 <code>[BOS]</code>(可学习,或固定 id),再砍掉最后一个词,得到喂给解码器的输入:<code>tgt = [BOS, y1, y2, …, y_{T-1}]</code>。这就是「右移一位」(shift right)。</li>
+<li>对齐关系:<strong>位置 t 的输入是目标词 t−1,位置 t 的监督目标才是目标词 t</strong>。所以第 1 个位置的输入只能是 <code>[BOS]</code>(它没有前一个词);最后一个目标词 <code>yT</code> 只出现在监督里,不作为输入出现。</li>
+<li>因果掩码在训练时保证位置 t 只看得到 <code>tgt[0..t-1] = [BOS, y1, …, y_{t-1}]</code>,正好不含 <code>yt</code>,所以整段并行算也不泄露。</li>
+<li>
+<p>一句话:<code>dec = embed([BOS] + y[:-1]) + PE</code>,<code>loss = CE(logits, y)</code>;推理时没有真实 <code>y</code>,才改成把上一步<strong>生成</strong>的词接到输入末尾(§2 末的自回归)。</p>
+</li>
+<li>
+<p>补两个定义:<code>logits</code> = 解码器最后一层输出的<strong>未归一化</strong>分数向量,形状 <code>[T, V]</code>(V = 词表大小);<code>CE</code>(cross-entropy,交叉熵)= 先对 logits 做 softmax 得概率,再取目标词那一项概率的负对数、沿位置取平均,即 <code>loss = -mean_t log softmax(logits[t])[y_t]</code>。这样才和上面「位置 t 的监督目标才是目标词 t」对上:第 t 行的 logits 只与 <code>y_t</code> 算损失。</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a># Pre-LN:每个子层先 LN 再进模块、再残差相加(下面写成 LN(x))
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>Encoder Block:   x += MHA_双向(LN(x))      ; x += FFN(LN(x))
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>Decoder Block:   x += MHA_因果(LN(x))      ; x += CrossAttn(Q=LN(x), K=enc_out, V=enc_out) ; x += FFN(LN(x))
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a># 模型级组装(补上 §0 承诺的堆叠关系):enc_out 是 encoder 那堆 Block 的输出
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>enc_out = encoder(embed(src) + PE)                  # [B, T_enc, d_model],堆 N 层 Encoder Block
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>dec = embed(tgt) + PE                               # 训练时 tgt = 右移的真实前缀
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>for blk in decoder_blocks:  dec = blk(dec, enc_out) # 每个 Decoder Block 都读同一份 enc_out
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a># 注意:K、V 都取自 enc_out,但各自乘自己的 W_K / W_V —— 两份不同张量,不相等
+</code></pre></div>
+<p><strong>BERT 怎么做分类?</strong> 在输入最前面加一个特殊的 <code>[CLS]</code> token,它经过双向 attention 汇聚了整句信息,取它的输出接一个分类头(一个线性层,把 <code>d</code> 维句向量映射到类别数)即可。这就是"理解类"任务的范式。</p>
+<p><strong>GPT 怎么做生成?</strong> 因果注意力 + 训练时用"下一个 token 预测"目标;推理时逐个生成(第六层讲 KV Cache)。</p>
+<h2 id="6-bert">6. 补:BERT 是怎么预训练的(高频,别再只答"结构")<a class="headerlink" href="#6-bert" title="Permanent link">&para;</a></h2>
+<p>结构之外的必问点——BERT 的<strong>预训练目标</strong>:</p>
+<ul>
+<li><strong>MLM(Masked Language Modeling,掩码语言模型):</strong> 随机<strong>选中</strong>输入中约 15% 的 token 作为待预测位置(这 15% 里真正换成 <code>[MASK]</code> 的只有 80%,约 12%),让模型<strong>双向</strong>地根据上下文预测这些位置的词(像完形填空)。<strong>这正是 BERT 能双向看的原因</strong>——因为要预测的是中间被挖空的位置,看两边都不算"偷看答案"。这也是它区别于 GPT(因果、只能看左边)的根本。</li>
+</ul>
+<blockquote>
+<p>一个易错细节:那 15% 里,80% 换成 <code>[MASK]</code>、10% 换成随机词、10% 保持不变——因为下游任务(真正要应用的任务,如分类、抽取)<strong>没有 <code>[MASK]</code></strong>,要防止模型只学会"盯着 <code>[MASK]</code> 做预测"。</p>
+</blockquote>
+<ul>
+<li><strong>NSP(Next Sentence Prediction):</strong> 判断两句话是否相邻。<strong>现已基本被弃用</strong>,但证据要分清:RoBERTa 的消融(ablation:去掉某个组件看指标怎么变)是<strong>去掉 NSP 后下游持平或略好</strong>(即贡献有限/无贡献),并没有说它“有害”;“换成更难的句子顺序目标(SOP)更强”是 <strong>ALBERT</strong> 的结论。两句常被并成一句,引用时要分开。后续模型多只用 MLM,或改用 SOP。</li>
+</ul>
+<p><strong>面试口径:</strong> 问"BERT 怎么预训练"→ 答 MLM(双向完形填空)+ NSP(且 NSP 已弃用)。问"BERT 和 GPT 为什么一个能双向一个只能单向"→ 答预训练目标不同:MLM 挖空预测中间词(可双向),GPT 是下一个词预测(必须因果)。</p>
+<h2 id="_1">面试要点<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>BERT 和 GPT 的结构区别?</strong> → 都是 Transformer 系;BERT encoder-only 双向,GPT decoder-only 因果。一个是"填空/理解",一个是"续写/生成"。
+1b. <strong>BERT 怎么预训练的?</strong> → MLM(随机选中 15% 位置待预测、其中 80% 换 <code>[MASK]</code>,双向预测)+ NSP;<strong>NSP 现已弃用</strong>(RoBERTa)。双向能力正来自 MLM 挖空预测(看两边不算偷看)。</li>
+<li><strong>为什么生成任务需要掩码?</strong> → 否则会看到未来 token,训练时信息泄露,学不到真正的自回归生成。</li>
+<li><strong>掩码为什么用 -∞?</strong> → 让 softmax 后的权重精确为 0,彻底屏蔽未来。</li>
+<li><strong>cross-attention 和 self-attention 区别?</strong> → Q 与 K/V 是否同源;矩阵是方阵还是 <code>T_dec×T_enc</code>。</li>
+<li><strong>训练时为什么能并行?</strong> → 因果掩码让每个位置的预测只依赖前缀,一次前向即可并行算所有位置。</li>
+<li><strong><code>[CLS]</code> 是干嘛的?</strong> → BERT 里一个汇聚整句信息的特殊 token,用于下游分类。</li>
+</ol>
+<h2 id="_2">常见坑<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<ul>
+<li>掩码加在 <strong>softmax 之前</strong>(加在分数上),不是之后。</li>
+<li>padding mask 和 causal mask 是两回事:前者屏蔽填充位,后者屏蔽未来;可以叠加。</li>
+<li>别把 padding mask 写成整行 <code>-∞</code>:一行全是 <code>-∞</code> 时 softmax 分母为 0,结果 NaN;只屏蔽 padding 所在的 key 列。</li>
+<li>cross-attention 里 Q 的序列长度是<strong>解码器</strong>的,别写反。</li>
+<li>Decoder-only 模型没有 cross-attention(它只有自回归 self-attention + FFN)。</li>
+</ul>
+<h2 id="_3">相关图<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p><code>09_architectures</code>(三种架构)· <code>08_causal_mask</code>(因果掩码矩阵)· <code>14h_mask</code>(掩码形状示意;示例数与 §2 不同、未除 √d_k,只核形状不核数值)
+· <code>14m_cross_scores</code>(Cross-Attention 矩形 scores;Q/K 与 §3 同、scores 未除 √d_k,只核形状与 scores_raw)(均在 <code>diagrams/</code>,<strong>只有横版 <code>.landscape.png</code></strong>,没有竖版;竖版未随本篇同步,需要时到源码仓取)</p>
+<h2 id="_4">下一步<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<p>第五层 · 现代变体:<strong>Pre-LN/RMSNorm、RoPE、GQA/MQA、SwiGLU、MoE</strong> —— 从原论文到 LLaMA/GPT 的工程演进。</p>
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.top", "navigation.indexes", "content.code.copy", "search.suggest", "search.highlight", "toc.follow"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+        <script src="../../javascripts/mathjax.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs" type="module"></script>
+      
+    
+  </body>
+</html>

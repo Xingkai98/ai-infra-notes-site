@@ -1,0 +1,2582 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="从 Transformer 骨架到推理系统的 29 篇讲义（本地预览）">
+      
+      
+      
+      
+        <link rel="prev" href="../18_interpretability/">
+      
+      
+        <link rel="next" href="../20_ai_infra_map/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>第十九层 · 多模态深化 —— VLM、视频/音频与扩散 - AI Infra 讲义</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#vlm" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="../.." title="AI Infra 讲义" class="md-header__button md-logo" aria-label="AI Infra 讲义" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            AI Infra 讲义
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              第十九层 · 多模态深化 —— VLM、视频/音频与扩散
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切到深色"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="切到深色" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切到浅色"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="切到浅色" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="AI Infra 讲义" class="md-nav__button md-logo" aria-label="AI Infra 讲义" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    AI Infra 讲义
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI Infra 讲义
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Notes
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Notes
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01_skeleton/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第一层 · 骨架 —— 从文本到矩阵
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02_attention/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二层 · 心脏 —— Self-Attention 的 Q/K/V
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03_block/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第三层 · 加强 —— Multi-Head、残差、LayerNorm、FFN
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04_architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第四层 · 组装 —— Encoder / Decoder / 掩码 / Cross-Attention
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05_modern/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第五层 · 现代变体 —— 从原论文到 LLaMA/GPT
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_inference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第六层 · 跑起来 —— 训练/推理、KV Cache、完整 forward
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_pretraining/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第七层 · 预训练 —— 目标、数据与 Scaling Law
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../08_alignment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第八层 · 对齐 —— SFT、RLHF、DPO 与安全
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09_evaluation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第九层 · 评测 —— benchmark、污染、judge 与可复现
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../10_decoding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十层 · 解码 —— 从 logits 到 token
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../11_applications/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十一层 · 应用 —— Prompt、RAG、工具与 Agent
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../12_multimodal/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十二层 · 多模态 —— VLM、扩散与语音
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../13_reasoning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十三层 · 推理模型 —— 测试时计算、长 CoT 与 RLVR
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../14_long_context/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十四层 · 长上下文 —— 位置外推、注意力模式与 KV 账本
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../15_peft_lora/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十五层 · PEFT 与 LoRA —— 用 0.1% 参数做微调
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../16_agent_rl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十六层 · Agent RL —— rollout、环境、奖励与异步训练
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../17_data_engineering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十七层 · 数据工程 —— 从原始语料到数据飞轮
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../18_interpretability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十八层 · 可解释性 —— 从探针到电路与 SAE
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十九层 · 多模态深化 —— VLM、视频/音频与扩散
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十九层 · 多模态深化 —— VLM、视频/音频与扩散
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0. 依赖图(学习顺序)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-vlm-vs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. VLM 训练:对比对齐 vs 生成式指令微调
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. VLM 训练:对比对齐 vs 生成式指令微调">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11-clip" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.1 对比学习(CLIP 类)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#12-llava" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.2 生成式(LLaVA 类)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#13-projector-q-former" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.3 Projector / Q-Former:对齐与压缩
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-tokenizerpatch-vs-vq" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. 视觉 tokenizer:patch vs VQ
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. 视觉 tokenizer:patch vs VQ">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-patch-token" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 Patch token(连续)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-vq-token" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 VQ token(离散)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-token-vs-cross-attention" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. 跨模态融合:拼 token vs cross-attention
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-vlm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. VLM 指令微调与现代变体
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-ddpm-cfg-ldmdit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. 扩散深化:DDPM → CFG → LDM/DiT
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. 扩散深化:DDPM → CFG → LDM/DiT">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#51-t" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.1 前向:一步跳到任意 t
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#52-x0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.2 反向:预测噪声,反推 x0
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#53-classifier-free-guidancecfg" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.3 Classifier-free guidance(CFG)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#54-latent-diffusion-dit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.4 Latent Diffusion 与 DiT
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-token" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. 视频与音频:token 预算与管线
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. 视频与音频:token 预算与管线">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#61" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.1 视频
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#62-asr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.2 ASR
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#63-tts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.3 TTS
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. 评测与安全
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. 面试要点
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        常见坑
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        动手清单
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        相关图
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        下一步
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../20_ai_infra_map/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模块二 · M2-0 地图与坐标系
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（2026-10-21 补全景图 20g）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../21_single_node_ops/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模块二 · M2-1 单机与算子
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（2026-10-21 补结构图 20h/20i/20j/20k）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../22_inference_systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模块二 · M2-3 推理系统
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（2026-10-21 补结构图 20l–20q）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../23_training_systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 2 层 · M2-2 训练系统
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../24_distributed_base/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 4 层 · M2-4 分布式底座
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../25_platform_sre/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 5 层 · M2-5 平台与稳定性
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../26_frontier_edge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 6 层 · M2-6 前沿与端侧
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../27_agent_engineering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二十七层 · Agent 工程化：Context / Harness / Loop / Graph
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--v1"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../28_vllm_source_trace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二十八层 · vLLM v1 源码 trace：一次请求怎么走
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--v1"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../29_agent_eval_infra/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二十九层 · Agent 评测 Infra：从打分到可复现的评测平台
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--v1"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../worksheets/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Worksheets
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Worksheets
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0. 依赖图(学习顺序)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-vlm-vs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. VLM 训练:对比对齐 vs 生成式指令微调
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. VLM 训练:对比对齐 vs 生成式指令微调">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11-clip" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.1 对比学习(CLIP 类)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#12-llava" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.2 生成式(LLaVA 类)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#13-projector-q-former" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.3 Projector / Q-Former:对齐与压缩
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-tokenizerpatch-vs-vq" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. 视觉 tokenizer:patch vs VQ
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. 视觉 tokenizer:patch vs VQ">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-patch-token" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 Patch token(连续)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-vq-token" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 VQ token(离散)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-token-vs-cross-attention" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. 跨模态融合:拼 token vs cross-attention
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-vlm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. VLM 指令微调与现代变体
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-ddpm-cfg-ldmdit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. 扩散深化:DDPM → CFG → LDM/DiT
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. 扩散深化:DDPM → CFG → LDM/DiT">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#51-t" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.1 前向:一步跳到任意 t
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#52-x0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.2 反向:预测噪声,反推 x0
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#53-classifier-free-guidancecfg" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.3 Classifier-free guidance(CFG)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#54-latent-diffusion-dit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.4 Latent Diffusion 与 DiT
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-token" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. 视频与音频:token 预算与管线
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. 视频与音频:token 预算与管线">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#61" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.1 视频
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#62-asr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.2 ASR
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#63-tts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.3 TTS
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. 评测与安全
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. 面试要点
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        常见坑
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        动手清单
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        相关图
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        下一步
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="vlm">第十九层 · 多模态深化 —— VLM、视频/音频与扩散<a class="headerlink" href="#vlm" title="Permanent link">&para;</a></h1>
+<blockquote>
+<p>本层回答:VLM 到底怎么训练(对比 vs 生成)?视觉 token 怎么来(patch/VQ)?图文怎么融合?视频/音频管线怎么估成本?扩散模型的前向/反向、CFG、LDM/DiT 怎么推导与复算?</p>
+<p><strong>前置(按节)</strong>
+- §1–§4:先看 <code>notes/12_multimodal.md §1–§3</code>(VLM 概览/tokenization/融合)。
+- §5 扩散:先看 <code>notes/12_multimodal.md §4–§5</code>(DDPM/LDM/DiT 概览);本篇给公式与数值链。
+- §6 音频:先看 <code>notes/12_multimodal.md §6</code>;§7 评测:先看 <code>notes/12_multimodal.md §7</code> 与 <code>notes/09_evaluation.md</code>。</p>
+<p><strong>建议路径(2 次 × 45 分钟)</strong>
+- 第 1 次(必学):§1 VLM 训练 + §2 视觉 tokenizer + §3 融合 + §4 指令微调/现代变体(55a–55c)。
+- 第 2 次(必学):§5 扩散数值链 + §6 视频/音频 + §7 评测与安全(55d/55e)。</p>
+</blockquote>
+<h2 id="0">0. 依赖图(学习顺序)<a class="headerlink" href="#0" title="Permanent link">&para;</a></h2>
+<pre class="mermaid"><code>graph TD
+  A["图像/视频/音频&lt;br/&gt;连续信号"] --&gt; B["视觉/音频 tokenizer&lt;br/&gt;patch / VQ / mel / codec"]
+  B --&gt; C["编码器&lt;br/&gt;ViT / audio encoder"]
+  C --&gt; D["对齐/融合&lt;br/&gt;projector / Q-Former / cross-attn"]
+  E["文本 token"] --&gt; D
+  D --&gt; F["LLM 生成&lt;br/&gt;VQA/描述/对话"]
+  G["噪声 + 条件"] --&gt; H["扩散去噪&lt;br/&gt;DDPM / CFG / LDM / DiT"]
+  H --&gt; I["图像/视频生成"]
+  B --&gt; J["ASR / TTS"]
+  F --&gt; K["评测与安全"]
+  I --&gt; K
+  J --&gt; K</code></pre>
+<blockquote>
+<p><strong>与 12 的分工</strong>:12 是“多模态全景”:每块给直觉、代表性数字和一个数值例。
+19 只补深水区:VLM 训练目标与 projector/Q-Former 的取舍、VQ 量化与 token 预算、
+扩散的公式/CFG/LDM/DiT 计算链、音频管线与指标。12 已讲的定义不重复推导。</p>
+</blockquote>
+<h2 id="1-vlm-vs">1. VLM 训练:对比对齐 vs 生成式指令微调<a class="headerlink" href="#1-vlm-vs" title="Permanent link">&para;</a></h2>
+<h3 id="11-clip">1.1 对比学习(CLIP 类)<a class="headerlink" href="#11-clip" title="Permanent link">&para;</a></h3>
+<p>一对图文 <code>(I, T)</code> 分别过图像/文本编码器,得到 <code>z_i, z_t</code>,做归一化后算相似度矩阵:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>S = z_i · z_t^T / τ          # [N, N],N=batch
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>L = (CE(S, labels=arange(N)) + CE(S^T, labels=arange(N))) / 2
+</code></pre></div>
+<p>对角线是正样本;温度 <code>τ</code> 控制分布的尖锐程度。训练后,图像/文本嵌入在同一空间,可做零样本分类/检索。</p>
+<p><strong>CLIP vs SigLIP</strong>:</p>
+<ul>
+<li><strong>CLIP</strong>:对 <code>N×N</code> 相似度矩阵做 <strong>softmax 对比损失</strong>(InfoNCE),依赖 batch 内的负样本;batch 越大,负样本越多,效果通常越好,但显存/通信成本高。</li>
+<li><strong>SigLIP</strong>:对每个图文对做 <strong>sigmoid 二分类</strong>(匹配/不匹配),不要求整行 softmax 归一化;对 batch 大小的依赖更弱,小/中 batch 往往更稳,训练也更易扩展。两者都不是“没有负样本”,而是负样本的组织方式不同。</li>
+<li>选择:数据/算力有限时 SigLIP 常更友好;需要经典 CLIP 生态/蒸馏时仍常用 CLIP。具体效果依数据与规模,不要把它说成绝对优劣。</li>
+</ul>
+<p><img alt="VLM 两种训练:对比对齐(相似度矩阵)与生成式(视觉 token + 文本 token → LLM)" src="../../diagrams/55a_vlm_training.landscape.png" /></p>
+<p><strong>数值直觉</strong>(3×3,示意):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>S = [[0.90, 0.20, 0.10],
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>     [0.20, 0.80, 0.30],
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>     [0.10, 0.30, 0.85]]
+</code></pre></div>
+<p>对角线应被推高,非对角线被压低。<strong>能回答</strong>:图文是否匹配、检索/零样本。
+<strong>不能回答</strong>:细粒度问答、计数、空间关系;需要生成式训练。</p>
+<h3 id="12-llava">1.2 生成式(LLaVA 类)<a class="headerlink" href="#12-llava" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>图像 → ViT → patch 向量 [N, d_v] → projector → 视觉 token [N, d_model]
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>文本 → tokenizer → 文本 token [M, d_model]
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>拼接 [视觉; 文本] → LLM → 回答
+</code></pre></div>
+<p>训练通常两阶段:</p>
+<ol>
+<li><strong>对齐预训练</strong>:冻结 LLM,只训 projector(或只训少量参数),用图文对教“视觉 token 与词空间对齐”;</li>
+<li><strong>指令微调</strong>:解冻 LLM(或 LoRA),用视觉问答/对话数据教“看图回答”;loss 只对 assistant token 算。</li>
+</ol>
+<p><strong>对比</strong>:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>对比式(CLIP)</th>
+<th>生成式(LLaVA)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>输出</td>
+<td>匹配分数/嵌入</td>
+<td>下一个 token 分布</td>
+</tr>
+<tr>
+<td>监督</td>
+<td>图文对(正/负)</td>
+<td>回答文本(教师强制)</td>
+</tr>
+<tr>
+<td>强项</td>
+<td>检索、零样本分类</td>
+<td>VQA、描述、对话</td>
+</tr>
+<tr>
+<td>弱项</td>
+<td>细粒度生成</td>
+<td>需要高质量指令数据</td>
+</tr>
+</tbody>
+</table>
+<h3 id="13-projector-q-former">1.3 Projector / Q-Former:对齐与压缩<a class="headerlink" href="#13-projector-q-former" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>线性层</strong>:最便宜,LLaVA-1 用;把 <code>d_v</code> 投到 <code>d_model</code>。</li>
+<li><strong>2 层 MLP</strong>:LLaVA-1.5 用;非线性更强,参数量仍小。</li>
+<li><strong>Q-Former / Perceiver Resampler</strong>:用 <code>K</code> 个可学 query 从 <code>N</code> 个视觉特征里抽取,输出 <code>K</code> 个 token(<code>K &lt;&lt; N</code>);省上下文,但可能丢细节。</li>
+<li><strong>动态分辨率</strong>:Qwen2-VL 类把大图切块,保留更多 patch;代价是 token 数可变、批处理复杂。</li>
+</ul>
+<blockquote>
+<p>面试口径:projector 决定“视觉特征能不能被 LLM 读”;Q-Former 决定“用多少 token 读”。token 数 = 成本,细节 = 能力,二者要按任务权衡。</p>
+</blockquote>
+<h2 id="2-tokenizerpatch-vs-vq">2. 视觉 tokenizer:patch vs VQ<a class="headerlink" href="#2-tokenizerpatch-vs-vq" title="Permanent link">&para;</a></h2>
+<h3 id="21-patch-token">2.1 Patch token(连续)<a class="headerlink" href="#21-patch-token" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>图像 H×W, patch P×P → 网格 (H/P) × (W/P) 个 patch
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>每个 patch: P×P×3 个像素 → 线性投影到 d_model
+</code></pre></div>
+<p>数值:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>224/14 = 16 → 16×16 = 256;加 [CLS] = 257
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>336/14 = 24 → 24×24 = 576(LLaVA 常用)
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>672/14 = 48 → 48×48 = 2304
+</code></pre></div>
+<p><strong>分辨率翻倍 → token 数 ×4</strong>;视频再乘帧数:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>16 帧 × 576 = 9216 个视觉 token
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>32 帧 → 18432
+</code></pre></div>
+<h3 id="22-vq-token">2.2 VQ token(离散)<a class="headerlink" href="#22-vq-token" title="Permanent link">&para;</a></h3>
+<p>VQ-VAE/VQGAN 把连续特征 <code>z</code> 量化到码本 <code>{c_k}</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>k* = argmin_k ||z - c_k||²
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>z_hat = c_{k*}
+</code></pre></div>
+<p><img alt="视觉 tokenization:patch 连续 token vs VQ 最近邻量化" src="../../diagrams/55b_visual_tokenizer.landscape.png" /></p>
+<p><strong>数值</strong>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>z = [0.2, 0.9]
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>c1 = [0, 1] → ||z-c1||² = 0.2² + (-0.1)² = 0.05
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>c2 = [1, 0] → ||z-c2||² = (-0.8)² + 0.9² = 1.45
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>→ 选 c1,码字索引 1;重建 z_hat=[0,1];量化误差 0.05
+</code></pre></div>
+<p>VQ 的损失通常包含:重建损失 + 码本损失 + commitment loss。码本大小/维度决定信息损失;离散 token 可像文本一样自回归生成。</p>
+<p><strong>codebook collapse(码本坍缩)</strong>:训练中编码器可能只反复使用少数码字,其余码字变成“死码”,有效码本变小、重建变差。常用缓解:</p>
+<ul>
+<li><strong>EMA 更新码本</strong>:用编码器输出的指数滑动平均更新码字,而不是只靠码本损失的梯度;</li>
+<li><strong>commitment loss</strong>:<code>β·||z - sg[c]||²</code>,让编码器输出靠近所选码字(<code>sg</code> 为 stop-gradient);</li>
+<li><strong>死码重启/重初始化</strong>:长时间不被选中的码字用随机样本或当前 batch 的编码重置;也可用 k-means 初始化、码本归一化、温度/噪声。</li>
+<li>监控:每码字使用率、perplexity、死码比例;不要只看重建 loss。</li>
+</ul>
+<blockquote>
+<p>注意:VQ 的“离散化”本身有损;collapse 是优化/使用率问题,和量化误差不是同一件事。</p>
+</blockquote>
+<p><strong>Token 预算</strong>:先定“视觉 token 上限”,再反推分辨率/帧数/是否用 Q-Former 压缩。不要先拉满分辨率再发现上下文爆了。</p>
+<h2 id="3-token-vs-cross-attention">3. 跨模态融合:拼 token vs cross-attention<a class="headerlink" href="#3-token-vs-cross-attention" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>方式</th>
+<th>做法</th>
+<th>代表</th>
+<th>代价</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Early fusion</td>
+<td>视觉 token 与文本 token 拼接,统一 self-attn</td>
+<td>LLaVA</td>
+<td>视觉 token 占上下文</td>
+</tr>
+<tr>
+<td>Cross-attention</td>
+<td>文本 Q 看视觉 K/V</td>
+<td>Flamingo</td>
+<td>额外 cross-attn 层,训练复杂</td>
+</tr>
+<tr>
+<td>Resampler</td>
+<td>少量 query 抽取视觉特征</td>
+<td>Q-Former/Perceiver</td>
+<td>压缩但可能丢细节</td>
+</tr>
+</tbody>
+</table>
+<p><img alt="跨模态融合:early fusion 的拼接 vs cross-attention 的文本 Q 看视觉 K/V" src="../../diagrams/55c_cross_modal_fusion.landscape.png" /></p>
+<p><strong>形状与数值</strong>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>Early fusion:
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>  视觉 [N,d] + 文本 [M,d] → concat [N+M,d] → self-attn
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>Cross-attention:
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>  Q 来自文本 [M,d],K/V 来自视觉 [N,d]
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>  scores = Q·K^T [M,N]   ← 不是方阵
+</code></pre></div>
+<p>小例 <code>M=2, N=3, d=2</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>Q = [[2,1],[0,2]]
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>K = [[1,0],[0,1],[1,1]]
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>Q·K^T = [[2,1,3],[0,2,2]]
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>scores[0][0] = 2×1 + 1×0 = 2
+</code></pre></div>
+<p><strong>因果 mask 细节</strong>:early fusion 中文本通常能看全部视觉 token;视觉 token 之间是否互看取决于实现。训练/推理必须一致。</p>
+<h2 id="4-vlm">4. VLM 指令微调与现代变体<a class="headerlink" href="#4-vlm" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>LLaVA</strong>:CLIP ViT-L/14-336 → 576 token;2 层 MLP projector;两阶段训练。</li>
+<li><strong>Qwen2-VL</strong>:动态分辨率/NaViT,大图切块;适合文档/小字,但 token 数可变。</li>
+<li><strong>Chameleon</strong>:从预训练起就把离散视觉 token 与文本 token 放同一 Transformer;统一理解/生成,训练要求高。</li>
+<li><strong>Janus</strong>:理解用连续视觉特征、生成用离散 token,两条路径解耦,减少任务冲突。</li>
+</ul>
+<p><strong>指令数据</strong>:VQA、描述、对话、OCR、图表、代码/截图;要覆盖“拒答/不确定性/安全”。数据质量比堆量更重要。</p>
+<h2 id="5-ddpm-cfg-ldmdit">5. 扩散深化:DDPM → CFG → LDM/DiT<a class="headerlink" href="#5-ddpm-cfg-ldmdit" title="Permanent link">&para;</a></h2>
+<h3 id="51-t">5.1 前向:一步跳到任意 t<a class="headerlink" href="#51-t" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>q(x_t | x_{t-1}) = N( sqrt(1-β_t) x_{t-1}, β_t I )
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>α_t = 1-β_t,  alpha_bar_t = Π_{s=1}^t α_s
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>x_t = sqrt(alpha_bar_t) x_0 + sqrt(1-alpha_bar_t) ε,  ε~N(0,I)
+</code></pre></div>
+<p>数值:<code>x_0=1.0, β=0.02, alpha_bar=0.98, ε=0.5</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>x_1 = sqrt(0.98)×1.0 + sqrt(0.02)×0.5
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>    = 0.98995 + 0.14142×0.5
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>    = 1.06066
+</code></pre></div>
+<h3 id="52-x0">5.2 反向:预测噪声,反推 x0<a class="headerlink" href="#52-x0" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>L = E[ ||ε - ε_θ(x_t,t)||² ]
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>x_0_hat = (x_t - sqrt(1-alpha_bar_t)·ε_hat) / sqrt(alpha_bar_t)
+</code></pre></div>
+<p>用 <code>ε_hat=0.5</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>x_0_hat = (1.06066 - 0.14142×0.5) / 0.98995 = 1.0000
+</code></pre></div>
+<p>完整采样一步(DDPM):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>x_{t-1} = (1/sqrt(α_t)) (x_t - (β_t/sqrt(1-alpha_bar_t)) ε_θ(x_t,t)) + σ_t z
+</code></pre></div>
+<p><img alt="扩散:前向/反向数值链、CFG、LDM 的 latent 尺寸与 DiT token 数" src="../../diagrams/55d_diffusion.landscape.png" /></p>
+<h3 id="53-classifier-free-guidancecfg">5.3 Classifier-free guidance(CFG)<a class="headerlink" href="#53-classifier-free-guidancecfg" title="Permanent link">&para;</a></h3>
+<p>训练时以一定概率(如 10%)把条件置空;采样时:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>eps_hat = eps_uncond + s · (eps_cond - eps_uncond)
+</code></pre></div>
+<p>数值:<code>eps_uncond=0.2, eps_cond=0.5, s=7.5</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>eps_hat = 0.2 + 7.5×(0.5-0.2) = 2.45
+</code></pre></div>
+<p><code>s=1</code> 无引导;<code>s&gt;1</code> 更贴条件但可能过饱和/多样性下降;每步两次前向(有条件+无条件)。negative prompt 把 <code>eps_uncond</code> 换成 <code>eps_neg</code>。</p>
+<h3 id="54-latent-diffusion-dit">5.4 Latent Diffusion 与 DiT<a class="headerlink" href="#54-latent-diffusion-dit" title="Permanent link">&para;</a></h3>
+<p><strong>LDM</strong>:在 VAE latent 上扩散,而不是像素空间。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>512×512×3 = 786,432 个值
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>→ VAE encoder → 64×64×4 = 16,384 个值(下采样 8×,约 ÷48)
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>在 latent 上做扩散;文本条件通过 cross-attention 注入
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>→ VAE decoder → 图像
+</code></pre></div>
+<p><strong>DiT</strong>:用 Transformer 替换 U-Net。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>latent 64×64×4, patch 2×2 → 32×32 = 1024 个 token
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>每个 token:2×2×4 = 16 维 → 线性投影到 d_model
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>条件:adaLN-Zero 注入时间步/类别
+</code></pre></div>
+<p><strong>能回答</strong>:扩散为什么预测噪声、CFG 怎么放大条件、LDM/DiT 为什么省算力。
+<strong>不能回答</strong>:具体采样器/步数的质量;不同 schedule/模型差异很大,要实验。</p>
+<h2 id="6-token">6. 视频与音频:token 预算与管线<a class="headerlink" href="#6-token" title="Permanent link">&para;</a></h2>
+<h3 id="61">6.1 视频<a class="headerlink" href="#61" title="Permanent link">&para;</a></h3>
+<ul>
+<li>均匀采样 <code>F</code> 帧,每帧 <code>N</code> 个 patch → <code>F×N</code> token;加时间位置编码;</li>
+<li>或 3D tubelet 一次编码时空 patch;</li>
+<li>长视频要分层/稀疏采样;先估预算:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>336×336, 每帧 576 token
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>F=16 → 9216 token;F=32 → 18432
+</code></pre></div>
+<h3 id="62-asr">6.2 ASR<a class="headerlink" href="#62-asr" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>波形 16kHz → log-mel(80 通道,25ms 窗/10ms 移)→ encoder → 文本
+</code></pre></div>
+<p>30 秒、10ms hop → 3000 帧;<code>80×3000=240,000</code> 个值。Whisper 用 30s 窗口;large-v3 用 128 mel。指标 WER/CER。</p>
+<p><strong>幻觉</strong>:静音/噪声/音乐上可能“编”文本;用 VAD/静音过滤/无语音概率,不要盲信输出。流式优先 RNN-T/分块 attention。</p>
+<h3 id="63-tts">6.3 TTS<a class="headerlink" href="#63-tts" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>文本 → 音素/对齐 → mel 频谱 → vocoder → 波形
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>或:文本 → 离散 codec token → 解码器 → 波形(codec LM)
+</code></pre></div>
+<p>经典 vocoder:HiFi-GAN;端到端:VITS;现代:flow matching/diffusion(F5-TTS、CosyVoice)。指标 MOS、说话人相似度、可懂度 WER。</p>
+<p><img alt="音频管线:ASR 波形→mel→文本;TTS 文本→mel/codec→波形" src="../../diagrams/55e_audio_pipeline.landscape.png" /></p>
+<h2 id="7">7. 评测与安全<a class="headerlink" href="#7" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>任务</th>
+<th>基准/指标</th>
+<th>坑</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>图像问答</td>
+<td>VQAv2、MMMU、MathVista;准确率</td>
+<td>题目难度/答案格式</td>
+</tr>
+<tr>
+<td>文档</td>
+<td>DocVQA;ANLS/准确率</td>
+<td>OCR/版面</td>
+</tr>
+<tr>
+<td>描述</td>
+<td>COCO Caption;CIDEr/BLEU</td>
+<td>指标与人类偏好不一致</td>
+</tr>
+<tr>
+<td>视频</td>
+<td>MVBench 等;准确率</td>
+<td>帧采样/时序推理</td>
+</tr>
+<tr>
+<td>语音识别</td>
+<td>LibriSpeech;WER</td>
+<td>口音/噪声域外</td>
+</tr>
+<tr>
+<td>语音合成</td>
+<td>MOS/说话人相似度</td>
+<td>主观、样本少</td>
+</tr>
+<tr>
+<td>生成</td>
+<td>FID、CLIPScore、人类偏好</td>
+<td>FID 依赖特征提取器</td>
+</tr>
+</tbody>
+</table>
+<p><strong>安全</strong>:</p>
+<ul>
+<li><strong>幻觉</strong>:描述图中不存在的东西;用 grounding/引用/不确定性;</li>
+<li><strong>视觉 prompt injection</strong>:图片里嵌文字指令/对抗 patch;</li>
+<li><strong>NSFW/暴力</strong>:输入输出过滤;</li>
+<li><strong>隐私/版权</strong>:人脸、PII、训练图像版权;水印/溯源;</li>
+<li><strong>偏见</strong>:人物描述/职业/性别刻板;分群体评测。</li>
+</ul>
+<h2 id="8">8. 面试要点<a class="headerlink" href="#8" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>对比式 vs 生成式 VLM?</strong> → 对比学图文匹配(CLIP);生成学看图回答(LLaVA),loss 是 next-token。</li>
+<li><strong>projector 与 Q-Former 的区别?</strong> → 线性/MLP 逐 token 投影;Q-Former 用少量 query 压缩,省 token 但可能丢细节。</li>
+<li><strong>图像 patch 数怎么算?</strong> → <code>(H/P)×(W/P)</code>;336/14=24²=576;224/14=16²=256(+CLS)。</li>
+<li><strong>VQ 怎么量化?</strong> → 最近邻码字;<code>k*=argmin||z-c_k||²</code>;数值 z=[0.2,0.9]→c1,误差 0.05。</li>
+<li><strong>early fusion vs cross-attn?</strong> → 拼接统一 self-attn vs 文本 Q 看视觉 K/V;scores 形状 [M,N]。</li>
+<li><strong>DDPM 前向/反向?</strong> → 闭式加噪;预测噪声;<code>x0_hat</code> 反推。</li>
+<li><strong>CFG 公式与代价?</strong> → <code>eps_uncond+s(eps_cond-eps_uncond)</code>;每步两次前向;s 过大过饱和。</li>
+<li><strong>LDM 为什么省?</strong> → 在 64×64×4 latent 上扩散,而不是 512×512×3 像素。</li>
+<li><strong>DiT 的 token 数?</strong> → 64×64 latent、patch 2×2 → 32²=1024 token,每 token 16 维。</li>
+<li><strong>视频/音频 token 怎么估?</strong> → <code>F×N</code>;30s/10ms=3000 帧,80×3000=240k mel 值。</li>
+<li><strong>ASR 幻觉怎么防?</strong> → VAD/静音过滤/无语音概率;流式用 RNN-T/分块 attention。</li>
+<li><strong>多模态评测的坑?</strong> → 帧采样、OCR、指标与人类偏好不一致、幻觉/偏见/注入。</li>
+</ol>
+<h2 id="_1">常见坑<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<ul>
+<li>把 VLM 说成“LLM 直接看图”:必须有视觉编码器 + 对齐投影。</li>
+<li>把 projector 越复杂越好:Q-Former 省 token,但可能丢细节。</li>
+<li>把 VQ 当无损:量化有误差;码本大小/维度决定损失。</li>
+<li>把 DDPM 训练目标说成“预测原图”:标准是预测噪声(或 v/score)。</li>
+<li>把 LDM 的下采样说成无损:VAE 是有损压缩。</li>
+<li>把 ASR 的 WER 与 TTS 的 MOS 混用。</li>
+<li>只测干净图片/标准口音,不测对抗/域外/多语。</li>
+</ul>
+<h2 id="_2">动手清单<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>patch/token 计算器</strong>:输入 H、W、P、帧数,输出 token 数;验收:224/14=256(+CLS)、336/14=576、16 帧=9216。</li>
+<li><strong>VQ 复算</strong>:给定 z 和两个码字,手算 L2 距离、索引、量化误差;验收:与 §2.2 数值一致。</li>
+<li><strong>DDPM 复算</strong>:用 §5 的数字复算 <code>x_1</code>、<code>x_0_hat</code>、CFG;验收:1.06066 / 1.0000 / 2.45。</li>
+<li><strong>LDM/DiT 账本</strong>:给定像素尺寸和 VAE 下采样,算 latent 值数与 DiT token 数;验收:512²×3→16,384;64² patch2→1024。</li>
+</ol>
+<h2 id="_3">相关图<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p><code>55a_vlm_training</code> · <code>55b_visual_tokenizer</code> · <code>55c_cross_modal_fusion</code>
+· <code>55d_diffusion</code> · <code>55e_audio_pipeline</code>(均在 <code>diagrams/</code>,横竖双版本)</p>
+<h2 id="_4">下一步<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<p>Phase 2 完成。下一步按 <code>docs/advanced-roadmap.md §5</code> 选定主/次方向,进入 Phase 3 模块三:按目标岗位/研究问题做 3–5 篇方向深入。</p>
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.top", "navigation.indexes", "content.code.copy", "search.suggest", "search.highlight", "toc.follow"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+        <script src="../../javascripts/mathjax.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs" type="module"></script>
+      
+    
+  </body>
+</html>

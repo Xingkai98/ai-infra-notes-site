@@ -1,0 +1,2714 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="从 Transformer 骨架到推理系统的 29 篇讲义（本地预览）">
+      
+      
+      
+      
+        <link rel="prev" href="../27_agent_engineering/">
+      
+      
+        <link rel="next" href="../29_agent_eval_infra/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>第二十八层 · vLLM v1 源码 trace：一次请求怎么走 - AI Infra 讲义</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#vllm-v1-trace" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="../.." title="AI Infra 讲义" class="md-header__button md-logo" aria-label="AI Infra 讲义" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            AI Infra 讲义
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              第二十八层 · vLLM v1 源码 trace：一次请求怎么走
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切到深色"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="切到深色" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切到浅色"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="切到浅色" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="AI Infra 讲义" class="md-nav__button md-logo" aria-label="AI Infra 讲义" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    AI Infra 讲义
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI Infra 讲义
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Notes
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Notes
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01_skeleton/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第一层 · 骨架 —— 从文本到矩阵
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02_attention/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二层 · 心脏 —— Self-Attention 的 Q/K/V
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03_block/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第三层 · 加强 —— Multi-Head、残差、LayerNorm、FFN
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04_architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第四层 · 组装 —— Encoder / Decoder / 掩码 / Cross-Attention
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05_modern/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第五层 · 现代变体 —— 从原论文到 LLaMA/GPT
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_inference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第六层 · 跑起来 —— 训练/推理、KV Cache、完整 forward
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_pretraining/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第七层 · 预训练 —— 目标、数据与 Scaling Law
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../08_alignment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第八层 · 对齐 —— SFT、RLHF、DPO 与安全
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09_evaluation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第九层 · 评测 —— benchmark、污染、judge 与可复现
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../10_decoding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十层 · 解码 —— 从 logits 到 token
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../11_applications/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十一层 · 应用 —— Prompt、RAG、工具与 Agent
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../12_multimodal/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十二层 · 多模态 —— VLM、扩散与语音
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../13_reasoning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十三层 · 推理模型 —— 测试时计算、长 CoT 与 RLVR
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../14_long_context/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十四层 · 长上下文 —— 位置外推、注意力模式与 KV 账本
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../15_peft_lora/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十五层 · PEFT 与 LoRA —— 用 0.1% 参数做微调
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../16_agent_rl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十六层 · Agent RL —— rollout、环境、奖励与异步训练
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../17_data_engineering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十七层 · 数据工程 —— 从原始语料到数据飞轮
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../18_interpretability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十八层 · 可解释性 —— 从探针到电路与 SAE
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../19_multimodal_deep/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十九层 · 多模态深化 —— VLM、视频/音频与扩散
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../20_ai_infra_map/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模块二 · M2-0 地图与坐标系
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（2026-10-21 补全景图 20g）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../21_single_node_ops/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模块二 · M2-1 单机与算子
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（2026-10-21 补结构图 20h/20i/20j/20k）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../22_inference_systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模块二 · M2-3 推理系统
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（2026-10-21 补结构图 20l–20q）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../23_training_systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 2 层 · M2-2 训练系统
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../24_distributed_base/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 4 层 · M2-4 分布式底座
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../25_platform_sre/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 5 层 · M2-5 平台与稳定性
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../26_frontier_edge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 6 层 · M2-6 前沿与端侧
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../27_agent_engineering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二十七层 · Agent 工程化：Context / Harness / Loop / Graph
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--v1"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二十八层 · vLLM v1 源码 trace：一次请求怎么走
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--v1"></span>
+  
+
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二十八层 · vLLM v1 源码 trace：一次请求怎么走
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--v1"></span>
+  
+
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0. 依赖图（学习顺序）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. 为什么读源码
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. 先钉版本
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. 文件地图
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. 文件地图">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-v1-v0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 进程架构（v1 和 v0 的关键差异）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. 正常链：一次新请求
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. 正常链：一次新请求">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 请求进入
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 调度
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#43-kv" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.3 KV 分配
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#44-scheduleroutput" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.4 SchedulerOutput
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#45-worker" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.5 Worker 执行
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#46" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.6 收尾
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#47-abort" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.7 取消 / abort
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. 异常链：块不够时怎么退
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. 数据结构
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. 数据结构">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#61-prefix-cache-lru" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.1 prefix cache 的哈希链与 LRU
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#62-chunked-prefill" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.2 chunked prefill 与本文边界
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#63-block_size" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.3 block_size 取舍
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#64" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.4 投机解码：只指路
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-trace" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Trace 产物
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. 三个练习
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. 三个练习">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        练习 1：画正常链
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-preemption" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        练习 2：追一次 preemption
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        练习 3：改一个参数
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6090" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        动手清单（60–90 分钟）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. 面试要点
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. 常见坑
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11. 下一步
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../29_agent_eval_infra/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二十九层 · Agent 评测 Infra：从打分到可复现的评测平台
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--v1"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../worksheets/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Worksheets
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Worksheets
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0. 依赖图（学习顺序）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. 为什么读源码
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. 先钉版本
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. 文件地图
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. 文件地图">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-v1-v0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 进程架构（v1 和 v0 的关键差异）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. 正常链：一次新请求
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. 正常链：一次新请求">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 请求进入
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 调度
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#43-kv" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.3 KV 分配
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#44-scheduleroutput" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.4 SchedulerOutput
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#45-worker" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.5 Worker 执行
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#46" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.6 收尾
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#47-abort" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.7 取消 / abort
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. 异常链：块不够时怎么退
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. 数据结构
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. 数据结构">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#61-prefix-cache-lru" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.1 prefix cache 的哈希链与 LRU
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#62-chunked-prefill" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.2 chunked prefill 与本文边界
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#63-block_size" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.3 block_size 取舍
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#64" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.4 投机解码：只指路
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-trace" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Trace 产物
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. 三个练习
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. 三个练习">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        练习 1：画正常链
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-preemption" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        练习 2：追一次 preemption
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        练习 3：改一个参数
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6090" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        动手清单（60–90 分钟）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. 面试要点
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. 常见坑
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11. 下一步
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="vllm-v1-trace">第二十八层 · vLLM v1 源码 trace：一次请求怎么走<a class="headerlink" href="#vllm-v1-trace" title="Permanent link">&para;</a></h1>
+<blockquote>
+<p>本层是 <strong>M2-3 推理系统的源码补丁</strong>：把 <code>notes/22_inference_systems.md</code> 的引擎架构落到 vLLM v1 的代码路径。
+前置：<code>notes/22 §3–6</code>（KV Cache、PagedAttention、调度、引擎架构）、Python 基础、会跑 vLLM。
+<strong>重要</strong>：源码会变。本文以 vLLM v1 的公开结构为骨架，读之前先钉 commit/tag，不要背行号。</p>
+</blockquote>
+<h2 id="0">0. 依赖图（学习顺序）<a class="headerlink" href="#0" title="Permanent link">&para;</a></h2>
+<pre class="mermaid"><code>flowchart TD
+    A["推理指标：TTFT/TPOT/吞吐"] --&gt; B["KV Cache / PagedAttention"]
+    B --&gt; C["Scheduler：谁下一步跑"]
+    C --&gt; D["KV Manager：块从哪来"]
+    D --&gt; E["SchedulerOutput：调度器→worker 的契约"]
+    E --&gt; F["Worker：block_table + prefill/decode"]
+    F --&gt; G["update_from_output / free"]
+    G --&gt; H["Preemption：块不够时怎么退"]
+    H --&gt; I["目标：能沿一次请求追完整条链"]</code></pre>
+<p><strong>建议 45 分钟路径</strong>：§2 钉版本 → §3 文件地图 → §4 正常链 → §5 异常链 → §6 数据结构 → §7 trace 产物 → §8 练习。</p>
+<p><strong>前置（按节）</strong>：</p>
+<ul>
+<li>§0/§6.3：知道 TTFT/TPOT/吞吐等推理指标（<code>notes/22 §1</code>）；TP=张量并行、PP=流水线并行、PD=prefill/decode 分离。</li>
+<li>§3–§4：知道 prefill/decode、KV Cache、PagedAttention（<code>notes/22 §2–5</code>）。</li>
+<li>§5：知道 continuous batching 与 preemption（<code>notes/22 §4</code>）。</li>
+<li>§7：知道 <code>docs/source-trace-template.md</code> 的字段。</li>
+</ul>
+<hr />
+<h2 id="1">1. 为什么读源码<a class="headerlink" href="#1" title="Permanent link">&para;</a></h2>
+<p>面试问“你熟悉 vLLM 吗”，只答“它用 PagedAttention”不够。真正区分人的是：</p>
+<ul>
+<li>一次请求从哪进、经过谁、在哪结束；</li>
+<li>KV 块什么时候分配、什么时候释放；</li>
+<li>块不够时谁被抢占、怎么恢复；</li>
+<li>prefix cache 命中在哪一层判断；</li>
+<li>你改一个参数/策略，会影响哪条路径。</li>
+</ul>
+<p>源码 trace 的目标不是“读完 vLLM”，而是<strong>能闭卷画出这条链，并回答 3 层追问：机制（谁调谁）、异常（preemption/cancel）、取舍（block_size/版本）</strong>。</p>
+<hr />
+<h2 id="2">2. 先钉版本<a class="headerlink" href="#2" title="Permanent link">&para;</a></h2>
+<p>vLLM v0 和 v1 的文件结构差异很大。v0 有 <code>vllm/core/block_manager.py</code>；v1 没有同名类，职责拆到 <code>BlockPool</code> / <code>KVCacheManager</code> / <code>SingleTypeKVCacheManager</code> / <code>KVCacheCoordinator</code>。</p>
+<p>开始前记录：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>repo: vllm-project/vllm
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>version / tag:
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>commit:
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>date:
+</code></pre></div>
+<p>本文以 <strong>vLLM v1</strong> 为骨架；读的时候以实际 commit 为准。</p>
+<hr />
+<h2 id="3">3. 文件地图<a class="headerlink" href="#3" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>层</th>
+<th>文件</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>引擎入口</td>
+<td><code>vllm/v1/engine/llm_engine.py</code> / <code>LLMEngine</code></td>
+<td>接收请求、驱动 <code>step()</code>；v1 不再是 v0 的 <code>vllm/engine/llm_engine.py</code></td>
+</tr>
+<tr>
+<td>输出前端</td>
+<td><code>vllm/v1/engine/output_processor.py</code> + detokenizer</td>
+<td>把 sampled token 变成文本增量/流式 chunk；在引擎前端，不在 scheduler 侧</td>
+</tr>
+<tr>
+<td>调度</td>
+<td><code>vllm/v1/core/sched/scheduler.py</code></td>
+<td>选请求、算新 token、触发 preemption</td>
+</tr>
+<tr>
+<td>调度输出</td>
+<td><code>vllm/v1/core/sched/output.py</code></td>
+<td><code>SchedulerOutput</code>：调度器→worker 的契约</td>
+</tr>
+<tr>
+<td>KV 门面</td>
+<td><code>vllm/v1/core/kv_cache_manager.py</code></td>
+<td><code>get_computed_blocks</code> / <code>allocate_slots</code> / <code>free</code></td>
+</tr>
+<tr>
+<td>KV 协调</td>
+<td><code>vllm/v1/core/kv_cache_coordinator.py</code></td>
+<td>多 KV group（full/sliding window）协调</td>
+</tr>
+<tr>
+<td>单类型 KV</td>
+<td><code>vllm/v1/core/single_type_kv_cache_manager.py</code></td>
+<td>单个 attention 类型的块账本</td>
+</tr>
+<tr>
+<td>物理块池</td>
+<td><code>vllm/v1/core/block_pool.py</code></td>
+<td>分配/回收/prefix hash/ref_cnt</td>
+</tr>
+<tr>
+<td>Worker</td>
+<td><code>vllm/v1/worker/gpu_model_runner.py</code></td>
+<td>执行 forward、更新 block table</td>
+</tr>
+<tr>
+<td>Block table</td>
+<td><code>vllm/v1/worker/block_table.py</code></td>
+<td>逻辑块 → 物理块</td>
+</tr>
+<tr>
+<td>设计文档</td>
+<td><code>docs/design/prefix_caching.md</code>（v0.10.x 有）、<code>docs/design/hybrid_kv_cache_manager.md</code>（目前 main 有，v0.10.x 可能没有）</td>
+<td>先读设计，再读代码；版本不同先确认文件是否存在</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>不要从 <code>vllm/core/block_manager.py</code> 开始读 v1；那是 v0 的入口。</p>
+</blockquote>
+<h3 id="31-v1-v0">3.1 进程架构（v1 和 v0 的关键差异）<a class="headerlink" href="#31-v1-v0" title="Permanent link">&para;</a></h3>
+<p>v1 把调度和前端拆开（以实际版本为准）：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>API server / AsyncLLM（frontend，跑在 API 进程）
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  → EngineCoreClient（in-process 或 MP client）
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  → EngineCoreProc（独立进程，ZMQ input/output socket）
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>      → Scheduler / KVCacheManager / 每卡 worker（TP/PP）
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>  → OutputProcessor / detokenizer（frontend 侧）
+</code></pre></div>
+<ul>
+<li><strong>EngineCore 独立进程</strong>：scheduler 在 EngineCore 里跑 busy loop（<code>run_busy_loop</code>），通过 ZMQ 收请求/发输出；frontend 做 HTTP/SSE/detokenize。这样调度不被 Python HTTP 前端拖慢。</li>
+<li><strong>worker 进程</strong>：每卡一个 worker（TP/PP 组合），通过 executor/消息拿 <code>SchedulerOutput</code> 并返回 sampled tokens。</li>
+<li><strong>v0 vs v1</strong>：v0 有 swap 队列/换出；v1 默认 recompute、scheduler 无 swap 队列（多序列/beam 等特例可能仍需 swap，以钉住版本为准），所以 v1 的 <code>EngineCore</code>/scheduler 结构更简单。</li>
+<li>读代码顺序：frontend <code>AsyncLLM</code> → <code>EngineCoreClient</code> → <code>EngineCore.abort_requests/step</code> → scheduler → KV manager → worker。</li>
+</ul>
+<hr />
+<h2 id="4">4. 正常链：一次新请求<a class="headerlink" href="#4" title="Permanent link">&para;</a></h2>
+<p><img alt="vLLM v1 请求生命周期" src="../../diagrams/28a_vllm_lifecycle.landscape.png" /></p>
+<blockquote>
+<p>手机版：<code>../diagrams/28a_vllm_lifecycle.portrait.png</code></p>
+</blockquote>
+<h3 id="41">4.1 请求进入<a class="headerlink" href="#41" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>add_request()
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>→ 请求进入 waiting/engine queue
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>→ EngineCore.step()（offline 经 LLMEngine → client；online 经 AsyncLLM → EngineCoreProc）
+</code></pre></div>
+<p><code>step()</code> 是 trace 的起点：它驱动一次调度 + 一次（或多次）模型执行。</p>
+<h3 id="42">4.2 调度<a class="headerlink" href="#42" title="Permanent link">&para;</a></h3>
+<p><code>scheduler.schedule()</code> 通常分两段：</p>
+<ol>
+<li><strong>RUNNING</strong>：已经在跑的请求。为每个请求算 <code>num_new_tokens</code>，调用 <code>allocate_slots()</code>；分配失败就触发 preemption。</li>
+<li><strong>WAITING</strong>：新请求/被抢占后恢复的请求。先 <code>get_computed_blocks()</code> 查 prefix cache 命中，再 <code>allocate_slots()</code>。</li>
+</ol>
+<p>关键：<strong>RUNNING 分配失败才会抢占；WAITING 分配失败通常继续等。</strong></p>
+<h3 id="43-kv">4.3 KV 分配<a class="headerlink" href="#43-kv" title="Permanent link">&para;</a></h3>
+<p><code>KVCacheManager</code> 是 scheduler 的门面：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>get_computed_blocks(request)
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>→ 查最长 prefix cache 命中（prefix cache 定义见 `notes/27 §4.4`：复用已算前缀的 KV，跳过这段 prefill）
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>→ 返回 computed blocks，作为 new_computed_blocks 传给 allocate_slots
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>allocate_slots(request, num_new_tokens)
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>→ 只为未命中的 token 从 BlockPool 拿新块
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>→ 分配后、返回前调用 coordinator.cache_blocks(request, num_tokens_to_cache)
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>   登记块 hash（KV 内容在随后的 forward 写入；hash 基于 token IDs）
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>→ 返回 None 表示块不够
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>cache_blocks(...)  # KVCacheManager 的公开 wrapper，也可被外部调用
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>→ 把已计算 token 的块登记到 prefix cache；PD 用 delay_cache_blocks 延迟登记
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>→ 下一请求才能命中
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>free(request)
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>→ 请求结束/被抢占时释放
+</code></pre></div>
+<p><code>num_new_tokens</code> = 本轮新增 token 数（decode 为 1；prefill 为 chunk 长度）。</p>
+<p><code>BlockPool</code> 负责物理块：</p>
+<ul>
+<li><code>get_new_blocks(n)</code>：从 free queue 取块；必要时驱逐 cached 块；<code>ref_cnt++</code>。</li>
+<li><code>free_blocks(blocks)</code>：<code>ref_cnt--</code>；归零才回 free queue。</li>
+<li><code>cached_block_hash_to_block</code>：prefix hash → block。</li>
+</ul>
+<p><strong>启动时可用 KV 块数</strong>：加载权重、激活/通信缓冲、CUDA context 之后，用 profiling run 量剩余显存；<code>num_gpu_blocks = 可用 KV 显存 ÷ 每块字节</code>，其中每块字节 = <code>block_size × 2(K+V) × L × H_kv × d_head × bytes</code>。例：7B GQA-8（L=32, H_kv=8, d_head=128）、block_size=16、FP16，每块 = <code>16×2×32×8×128×2 = 2 MiB</code>；50 GiB KV 预算 → 25,600 块。<code>gpu_memory_utilization</code> 太低 → KV 预算少、更早 preemption/拒绝；太高 → 启动预分配失败/OOM（headroom 不足）；模型/<code>max_model_len</code>/<code>max_num_seqs</code> 太大也会让可用块变少。若 <code>num_gpu_blocks=0</code>，先看启动日志的可用 KV 显存与块数。</p>
+<h3 id="44-scheduleroutput">4.4 SchedulerOutput<a class="headerlink" href="#44-scheduleroutput" title="Permanent link">&para;</a></h3>
+<p><code>SchedulerOutput</code> 是调度器给 worker 的“任务单”，至少包含：</p>
+<ul>
+<li>新请求的 block IDs；</li>
+<li>被恢复请求的 block IDs / computed token 数；</li>
+<li>总调度 token 数；</li>
+<li>完成的请求。</li>
+</ul>
+<p><strong>面试点</strong>：scheduler 管策略（谁跑、跑多少），KV manager 管机制（块从哪来、怎么回收）。不要把两者混成一个“block manager”。</p>
+<h3 id="45-worker">4.5 Worker 执行<a class="headerlink" href="#45-worker" title="Permanent link">&para;</a></h3>
+<p><code>gpu_model_runner</code> 根据 <code>SchedulerOutput</code>：</p>
+<ol>
+<li>更新 GPU 侧 <code>block_table</code>（逻辑块 → 物理块）；</li>
+<li>执行 prefill（新请求的 prompt；chunked prefill 时按块）；</li>
+<li>执行 decode（每步 1 token）；</li>
+<li>通过 PagedAttention kernel 读写 KV；</li>
+<li>返回 logits / sampled tokens。</li>
+</ol>
+<h3 id="46">4.6 收尾<a class="headerlink" href="#46" title="Permanent link">&para;</a></h3>
+<p><code>update_from_output()</code>：</p>
+<ul>
+<li>处理采样结果；</li>
+<li>判断请求是否结束（stop string / max_tokens / EOS）；</li>
+<li>scheduler 判定 finished 后，经 OutputProcessor / detokenizer 生成文本增量；</li>
+<li>流式路径把增量包装成 chunk 出引擎，非流式路径攒到结束再返回；</li>
+<li>结束则 <code>free()</code> 释放块；</li>
+<li>未结束则下一轮继续。</li>
+</ul>
+<h3 id="47-abort">4.7 取消 / abort<a class="headerlink" href="#47-abort" title="Permanent link">&para;</a></h3>
+<p>客户端断开、超时、用户取消时，不能只“停止读响应”。abort 通常在<strong>下一个调度步</strong>生效，不能打断正在执行的 forward：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>客户端取消 / 超时
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>→ vllm/v1/engine/async_llm.py: AsyncLLM.abort(request_id)
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>→ vllm/v1/engine/core.py: EngineCore.abort_requests(...)
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>→ scheduler 标记 finished/aborted，不再分配新 token
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>→ vllm/v1/core/kv_cache_manager.py: KVCacheManager.free(request)
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>→ worker 下一调度步停止后续 forward
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>→ metrics 记录取消原因/已生成 token
+</code></pre></div>
+<p>关键：<strong>取消要释放 KV 块和调度资源</strong>；否则高并发下会被“僵尸请求”吃满显存。流式代理要把客户端断连翻译成取消信号，不能只关 socket。</p>
+<hr />
+<h2 id="5">5. 异常链：块不够时怎么退<a class="headerlink" href="#5" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>RUNNING 请求 allocate_slots() → None
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>→ 选 victim（FCFS 取队尾 / priority 按优先级+到达时间）
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>→ _preempt_request(victim)
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>→ kv_cache_manager.free(victim)
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>→ victim 状态 = PREEMPTED，num_computed_tokens = 0
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>→ victim 放到 WAITING 队首（后续再调度）
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>→ 当前请求在同一轮立即重试 allocate_slots()（不等待 victim）
+</code></pre></div>
+<blockquote>
+<p>版本提示：<code>_preempt_request</code> 是 main 分支抽出的方法；v0.10.x 里抢占内联在 <code>schedule()</code> 中（<code>running.pop()</code> → <code>PREEMPTED</code>/<code>num_computed_tokens=0</code> → <code>waiting.prepend_request</code>）。按固定版本读时以实际源码为准。</p>
+</blockquote>
+<p>关键不变量：</p>
+<ul>
+<li><code>block.ref_cnt == 0</code> 才能回 free queue；</li>
+<li>共享 prefix 的块可能被多个请求持有，不能因为一个请求结束就直接回收；</li>
+<li>被抢占请求的已计算 token 会丢，恢复时要重新 prefill（或依赖 prefix cache）。</li>
+</ul>
+<p><strong>面试追问</strong>：</p>
+<ul>
+<li>为什么 WAITING 分配失败不抢占？因为 RUNNING 已经在执行，抢占成本更高；先让新请求等。</li>
+<li>FCFS 为什么抢“队尾”？FCFS 下队尾是<strong>最近才进入 RUNNING</strong> 的请求，已投入计算最少，抢占代价最低。</li>
+<li>抢占一定丢 KV 吗？不一定，取决于块是否被 prefix cache 持有/能否复用。</li>
+<li>为什么 ref_cnt 重要？它防止“一个请求释放了别人还在用的共享 prefix 块”。</li>
+</ul>
+<hr />
+<h2 id="6">6. 数据结构<a class="headerlink" href="#6" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>结构</th>
+<th>关键字段</th>
+<th>生命周期</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>KVCacheBlock</code></td>
+<td><code>block_id</code>、<code>ref_cnt</code>、<code>_block_hash</code>、free queue 指针</td>
+<td>分配 → 使用 → ref_cnt=0 → 回收</td>
+</tr>
+<tr>
+<td><code>BlockPool</code></td>
+<td>free queue、cached hash map</td>
+<td>全局</td>
+</tr>
+<tr>
+<td><code>KVCacheManager</code></td>
+<td>request → blocks、prefix cache 门面</td>
+<td>请求级</td>
+</tr>
+<tr>
+<td><code>SingleTypeKVCacheManager</code></td>
+<td><code>req_to_blocks</code>、<code>num_cached_block</code></td>
+<td>单 attention 类型/请求</td>
+</tr>
+<tr>
+<td><code>BlockTable</code>（worker）</td>
+<td>逻辑块位置 → 物理 block_id</td>
+<td>GPU 侧，每步更新</td>
+</tr>
+</tbody>
+</table>
+<p><strong>不变量</strong>：</p>
+<ul>
+<li>一个逻辑块只能映射到一个物理块；</li>
+<li>一个物理块可被多个请求共享（prefix cache），用 <code>ref_cnt</code> 计数；</li>
+<li>只有 <code>ref_cnt == 0</code> 的块才能被驱逐/复用；</li>
+<li>block table 是 worker 侧视图，scheduler 侧只持有 block IDs。</li>
+</ul>
+<h3 id="61-prefix-cache-lru">6.1 prefix cache 的哈希链与 LRU<a class="headerlink" href="#61-prefix-cache-lru" title="Permanent link">&para;</a></h3>
+<ul>
+<li>写满的块按 <strong>前缀 token 的 hash</strong> 建索引；命中时从最长前缀开始复用。</li>
+<li><code>cached_block_hash_to_block</code> 存 hash → block；<code>free_block_queue</code> 近似 LRU。</li>
+<li>复用块 <code>ref_cnt++</code>；请求结束 <code>ref_cnt--</code>；只有归零才可驱逐。</li>
+<li>命中判断在 scheduler 侧（<code>get_computed_blocks</code>），不在 worker。</li>
+</ul>
+<h3 id="62-chunked-prefill">6.2 chunked prefill 与本文边界<a class="headerlink" href="#62-chunked-prefill" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>chunked prefill</strong>：把长 prompt 的 prefill 切成多个 chunk，和 decode 交替调度；入口在 scheduler 的 token 预算（<code>max_num_batched_tokens</code>）分配，不在 attention kernel。vLLM v1 常开，实验里更实际的是调分块粒度，而不是找 on/off 开关。</li>
+<li><strong>本文不覆盖</strong>：PD 分离、KV connector、约束解码、MLA/DeepSeek 专属路径、多模态 encoder。它们各自有独立路径，不要用本文的六步链硬套；投机解码只做 §6.4 的指路。</li>
+</ul>
+<h3 id="63-block_size">6.3 block_size 取舍<a class="headerlink" href="#63-block_size" title="Permanent link">&para;</a></h3>
+<p><code>block_size</code> 是 KV 块的粒度：</p>
+<ul>
+<li>小块：内部碎片上限更小（最后一块最多浪费 <code>block_size-1</code> 个 token 的槽），prefix cache 共享粒度更细；但 block table 更大、寻址/调度开销更高。</li>
+<li>大块：block table 小、寻址快；但内部碎片和 prefix cache 共享浪费变大。</li>
+<li>调参时看 <code>kv_cache_usage_perc</code>（v1；v0 叫 <code>gpu_cache_usage_perc</code>）、preemption 计数（v0 引擎与 v0.11.x 的 v1 看 <code>num_preemptions_total</code>；latest v1 看 <code>num_preemptions</code> 计数器 + <code>request_num_preemptions</code> per-request 直方图）、TTFT/TPOT 和吞吐，不要只看单请求。指标名随版本变，以实际 <code>/metrics</code> 为准。</li>
+</ul>
+<h3 id="64">6.4 投机解码：只指路<a class="headerlink" href="#64" title="Permanent link">&para;</a></h3>
+<p>投机解码的源码主链（不做逐行 trace）：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>draft/proposer 生成 k 个候选 token
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>→ target model 一次 verify
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>→ 接受最长匹配前缀 + 1 个 bonus token（或按拒绝重采样）
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>→ 更新 KV / 调度下一步
+</code></pre></div>
+<ul>
+<li><strong>入口/文件</strong>：v1 的 speculative decoding 在引擎/scheduler 的配置与 <code>vllm/v1/spec_decode/</code>（具体文件随版本变化，以钉住的 commit 为准）；常见配置 <code>speculative_model</code>、<code>num_speculative_tokens</code>，调度侧受 token 预算约束。</li>
+<li><strong>收益条件</strong>：接受率 α 高、draft 成本低、并发/延迟有空闲；退化条件：α 低、draft 太贵、verification 抢占算力、高并发下 KV/调度开销上升。大 batch 时 decode 已接近 compute-bound，verify 的算力不再被带宽掩盖，加速比可能 &lt;1；公式是单请求/低并发近似。</li>
+<li><strong>数值</strong>：期望生成 token <code>E=(1-α^(k+1))/(1-α)</code>（含 1 个 bonus；接受的 draft token 约 <code>E−1</code>），加速 <code>E/(1+c·k)</code>，见 <code>hand-calc #11</code>；概念与取舍见 <code>notes/22 §9</code>。</li>
+</ul>
+<hr />
+<h2 id="7-trace">7. Trace 产物<a class="headerlink" href="#7-trace" title="Permanent link">&para;</a></h2>
+<p>按 <code>docs/source-trace-template.md</code> 输出：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>learning/repos/vllm/traces/request-lifecycle.md
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>learning/repos/vllm/traces/preemption.md
+</code></pre></div>
+<p>每份至少包含：</p>
+<ul>
+<li>版本/commit；</li>
+<li>入口/出口；</li>
+<li>正常链表格（文件 + 符号）；</li>
+<li>异常链；</li>
+<li>数据结构与不变量；</li>
+<li>3 道 quiz；</li>
+<li>开放问题。</li>
+</ul>
+<hr />
+<h2 id="8">8. 三个练习<a class="headerlink" href="#8" title="Permanent link">&para;</a></h2>
+<h3 id="1_1">练习 1：画正常链<a class="headerlink" href="#1_1" title="Permanent link">&para;</a></h3>
+<p>不看源码，先画：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>add_request → schedule → allocate_slots → SchedulerOutput → worker → decode → update → free
+</code></pre></div>
+<p>再打开源码，标出每一步的文件/符号；差异就是学习点。</p>
+<h3 id="2-preemption">练习 2：追一次 preemption<a class="headerlink" href="#2-preemption" title="Permanent link">&para;</a></h3>
+<p>构造一个块不足的场景（可复现参数示例：<strong>7B MHA（LLaMA-2 7B，L=32/H_kv=32/d_head=128，512 KiB/token；和 §4.3 的 GQA-8 例子不同）</strong> / 24 GiB 卡，<code>gpu_memory_utilization=0.9</code>、<code>max_model_len=4096</code>、<code>max_num_seqs=8</code>，并发发 6 条 ~3500 token 的 prompt。每请求 KV ≈ 512 KiB × 3500 ≈ 1.71 GiB，6 条约 10.3 GiB；24×0.9−13 ≈ 8.6 GiB 是 KV 上限（未扣激活/CUDA graph），实际以启动日志 <code>Available KV cache memory</code>/<code>num_gpu_blocks</code> 为准；预计第 4–6 条触发 preemption，留 1–2 条余量）。观察 vLLM 日志和 <code>/metrics</code> 的 preemption 指标（v0 引擎与 v0.11.x 的 v1 看 <code>num_preemptions_total</code>；latest v1 看 <code>num_preemptions</code> + <code>request_num_preemptions</code> 直方图，以版本为准）。回答：</p>
+<ul>
+<li>谁被选为 victim？</li>
+<li>victim 的 <code>num_computed_tokens</code> 变成多少？</li>
+<li>它回到哪个队列？</li>
+<li>当前请求什么时候重试？</li>
+<li>共享 prefix 块会不会被误回收？</li>
+</ul>
+<h3 id="3_1">练习 3：改一个参数<a class="headerlink" href="#3_1" title="Permanent link">&para;</a></h3>
+<p>选 <code>block_size</code>、<code>max_num_batched_tokens</code> 或 <code>gpu_memory_utilization</code> 之一，回答：</p>
+<ul>
+<li>影响哪条路径？</li>
+<li>吞吐/延迟/显存怎么变？</li>
+<li>怎么用 benchmark 验证？</li>
+</ul>
+<hr />
+<h2 id="6090">动手清单（60–90 分钟）<a class="headerlink" href="#6090" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>动作</th>
+<th>产出 / 验收</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>画正常链</td>
+<td>一张图 + 每步文件/符号；能不看源码复述</td>
+</tr>
+<tr>
+<td>2</td>
+<td>追一次 preemption</td>
+<td>一页 trace：victim、队列、ref_cnt、恢复路径</td>
+</tr>
+<tr>
+<td>3</td>
+<td>追一次取消</td>
+<td>一页 trace：取消信号 → free → worker 停止</td>
+</tr>
+<tr>
+<td>4</td>
+<td>改一个参数</td>
+<td>用 benchmark 跑 before/after，写 3 行解释</td>
+</tr>
+<tr>
+<td>5</td>
+<td>写 3 道 quiz</td>
+<td>入口/出口、ref_cnt 不变量、chunked prefill 入口</td>
+</tr>
+</tbody>
+</table>
+<p>验收：能回答“scheduler 和 KV manager 分工”“为什么 ref_cnt=0 才能回收”“取消为什么必须 free”。</p>
+<hr />
+<h2 id="9">9. 面试要点<a class="headerlink" href="#9" title="Permanent link">&para;</a></h2>
+<ul>
+<li>vLLM v1 的请求生命周期（能画图）。</li>
+<li>Scheduler 和 KV Manager 的分工。</li>
+<li>PagedAttention 的 block table / ref_cnt / prefix cache。</li>
+<li>preemption 的触发条件、victim 选择、恢复路径。</li>
+<li>为什么 <code>ref_cnt=0</code> 才能回收。</li>
+<li>改 <code>block_size</code> / <code>gpu_memory_utilization</code> 的影响。</li>
+<li>怎么用 trace 定位“请求慢”是排队、prefill、decode 还是 KV 不足。</li>
+</ul>
+<h2 id="10">10. 常见坑<a class="headerlink" href="#10" title="Permanent link">&para;</a></h2>
+<ul>
+<li>用 v0 的 <code>block_manager.py</code> 讲 v1。</li>
+<li>把 scheduler 和 KV manager 说成一个东西。</li>
+<li>以为 PagedAttention 直接减少 attention FLOPs；它优化的是显存管理。</li>
+<li>忽略 prefix cache 的共享块和 ref_cnt。</li>
+<li>只看正常链，不看 preemption/取消/结束。</li>
+<li>背行号，不记版本。</li>
+</ul>
+<h2 id="11">11. 下一步<a class="headerlink" href="#11" title="Permanent link">&para;</a></h2>
+<ul>
+<li>用 <code>/learn-repo</code> 在 <code>nano-vllm</code> 上先跑一遍同样链路，再读完整 vLLM。</li>
+<li>用 <code>labs/inference-bench/</code> 改 <code>block_size</code> / batch，验证你对源码的理解。</li>
+<li>读 <code>notes/29_agent_eval_infra.md</code>：把推理后端接到 Agent 评测。</li>
+</ul>
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.top", "navigation.indexes", "content.code.copy", "search.suggest", "search.highlight", "toc.follow"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+        <script src="../../javascripts/mathjax.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs" type="module"></script>
+      
+    
+  </body>
+</html>

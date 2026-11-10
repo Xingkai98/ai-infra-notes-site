@@ -1,0 +1,2576 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="从 Transformer 骨架到推理系统的 29 篇讲义（本地预览）">
+      
+      
+      
+      
+        <link rel="prev" href="../07_pretraining/">
+      
+      
+        <link rel="next" href="../09_evaluation/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>第八层 · 对齐 —— SFT、RLHF、DPO 与安全 - AI Infra 讲义</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#sftrlhfdpo" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="../.." title="AI Infra 讲义" class="md-header__button md-logo" aria-label="AI Infra 讲义" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            AI Infra 讲义
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              第八层 · 对齐 —— SFT、RLHF、DPO 与安全
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切到深色"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="切到深色" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切到浅色"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="切到浅色" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="AI Infra 讲义" class="md-nav__button md-logo" aria-label="AI Infra 讲义" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    AI Infra 讲义
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI Infra 讲义
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Notes
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Notes
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01_skeleton/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第一层 · 骨架 —— 从文本到矩阵
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02_attention/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二层 · 心脏 —— Self-Attention 的 Q/K/V
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03_block/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第三层 · 加强 —— Multi-Head、残差、LayerNorm、FFN
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04_architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第四层 · 组装 —— Encoder / Decoder / 掩码 / Cross-Attention
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05_modern/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第五层 · 现代变体 —— 从原论文到 LLaMA/GPT
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_inference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第六层 · 跑起来 —— 训练/推理、KV Cache、完整 forward
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_pretraining/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第七层 · 预训练 —— 目标、数据与 Scaling Law
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第八层 · 对齐 —— SFT、RLHF、DPO 与安全
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第八层 · 对齐 —— SFT、RLHF、DPO 与安全
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0. 依赖图(学习顺序)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-sft" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. SFT:先教会“按指令回答”
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. SFT:先教会“按指令回答”">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.1 直觉与数据
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#12-token" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.2 格式与特殊 token
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#13-loss-masking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.3 Loss masking:只学回答,不学提问
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#14-packing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.4 多轮、packing 与常见问题
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-rlhf" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. RLHF:用“比较”训练奖励,再用奖励训练策略
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. RLHF:用“比较”训练奖励,再用奖励训练策略">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-reward-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 Reward Model:把“哪个更好”变成分数
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-ppoproximal-policy-optimization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 PPO(Proximal Policy Optimization,近端策略优化)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23-reward-hacking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.3 Reward hacking:奖励模型的漏洞
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-rm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. 偏好优化:不训练 RM 也能对齐
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. 偏好优化:不训练 RM 也能对齐">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-dpo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 DPO:把偏好直接写进损失
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-dpo-ipo-kto-orpo-grpo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 DPO 家族:IPO / KTO / ORPO / GRPO
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33-best-of-n" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.3 拒绝采样与 best-of-N
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#34-constitutional-ai-rlaif" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.4 Constitutional AI 与 RLAIF
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-alignment-tax" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. 安全对齐与 alignment tax
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. 安全对齐与 alignment tax">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 安全对齐做什么
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42-alignment-tax" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 Alignment tax:对齐不是免费的
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. 对齐评测
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. 面试要点
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        常见坑
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        动手清单
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        相关图
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        下一步
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09_evaluation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第九层 · 评测 —— benchmark、污染、judge 与可复现
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../10_decoding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十层 · 解码 —— 从 logits 到 token
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../11_applications/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十一层 · 应用 —— Prompt、RAG、工具与 Agent
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../12_multimodal/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十二层 · 多模态 —— VLM、扩散与语音
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../13_reasoning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十三层 · 推理模型 —— 测试时计算、长 CoT 与 RLVR
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../14_long_context/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十四层 · 长上下文 —— 位置外推、注意力模式与 KV 账本
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../15_peft_lora/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十五层 · PEFT 与 LoRA —— 用 0.1% 参数做微调
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../16_agent_rl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十六层 · Agent RL —— rollout、环境、奖励与异步训练
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../17_data_engineering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十七层 · 数据工程 —— 从原始语料到数据飞轮
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../18_interpretability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十八层 · 可解释性 —— 从探针到电路与 SAE
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../19_multimodal_deep/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十九层 · 多模态深化 —— VLM、视频/音频与扩散
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../20_ai_infra_map/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模块二 · M2-0 地图与坐标系
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（2026-10-21 补全景图 20g）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../21_single_node_ops/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模块二 · M2-1 单机与算子
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（2026-10-21 补结构图 20h/20i/20j/20k）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../22_inference_systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模块二 · M2-3 推理系统
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（2026-10-21 补结构图 20l–20q）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../23_training_systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 2 层 · M2-2 训练系统
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../24_distributed_base/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 4 层 · M2-4 分布式底座
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../25_platform_sre/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 5 层 · M2-5 平台与稳定性
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../26_frontier_edge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 6 层 · M2-6 前沿与端侧
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../27_agent_engineering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二十七层 · Agent 工程化：Context / Harness / Loop / Graph
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--v1"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../28_vllm_source_trace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二十八层 · vLLM v1 源码 trace：一次请求怎么走
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--v1"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../29_agent_eval_infra/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二十九层 · Agent 评测 Infra：从打分到可复现的评测平台
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--v1"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../worksheets/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Worksheets
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Worksheets
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0. 依赖图(学习顺序)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-sft" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. SFT:先教会“按指令回答”
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. SFT:先教会“按指令回答”">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.1 直觉与数据
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#12-token" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.2 格式与特殊 token
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#13-loss-masking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.3 Loss masking:只学回答,不学提问
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#14-packing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.4 多轮、packing 与常见问题
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-rlhf" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. RLHF:用“比较”训练奖励,再用奖励训练策略
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. RLHF:用“比较”训练奖励,再用奖励训练策略">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-reward-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 Reward Model:把“哪个更好”变成分数
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-ppoproximal-policy-optimization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 PPO(Proximal Policy Optimization,近端策略优化)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23-reward-hacking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.3 Reward hacking:奖励模型的漏洞
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-rm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. 偏好优化:不训练 RM 也能对齐
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. 偏好优化:不训练 RM 也能对齐">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-dpo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 DPO:把偏好直接写进损失
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-dpo-ipo-kto-orpo-grpo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 DPO 家族:IPO / KTO / ORPO / GRPO
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33-best-of-n" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.3 拒绝采样与 best-of-N
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#34-constitutional-ai-rlaif" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.4 Constitutional AI 与 RLAIF
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-alignment-tax" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. 安全对齐与 alignment tax
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. 安全对齐与 alignment tax">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 安全对齐做什么
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42-alignment-tax" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 Alignment tax:对齐不是免费的
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. 对齐评测
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. 面试要点
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        常见坑
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        动手清单
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        相关图
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        下一步
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="sftrlhfdpo">第八层 · 对齐 —— SFT、RLHF、DPO 与安全<a class="headerlink" href="#sftrlhfdpo" title="Permanent link">&para;</a></h1>
+<blockquote>
+<p>本层回答:基座模型只会“接龙”,怎么让它<strong>听懂指令、按人类偏好回答、同时不学坏</strong>?SFT、RLHF、DPO 各自在优化什么?</p>
+<p><strong>前置(按节)</strong>
+- §1 SFT:先看 <code>notes/07_pretraining.md §1.2</code>(CLM loss)与 <code>notes/06_inference.md §1</code>(训练/推理)。
+- §2 RLHF:需要概率、期望、梯度;先看 §1;KL 散度的直觉在 §2.2 解释。
+- §3 DPO:需要 log、sigmoid;先看 §2.1 的 Bradley-Terry 模型,以及 §2.2 的 KL 正则目标、<code>β</code> 与 <code>π_ref</code> 这套记号(§3.1 第一句就要用)。
+- §4 安全:先看 §1–§3;评测细节接 <code>notes/09_evaluation.md §5</code>。</p>
+<p><strong>建议路径(3 次 × 45 分钟)</strong>
+- 第 1 次(必学):§1 SFT + loss masking(图 31a/31b)。
+- 第 2 次(必学):§2 RM + PPO/KL(图 31c/31f),§3.1 DPO 数值链(31d)。
+- 第 3 次(加分):§3.2 DPO 家族、§3.3 拒绝采样、§3.4 CAI、§4 安全与 alignment tax(31e/31g/31h)。</p>
+</blockquote>
+<h2 id="0">0. 依赖图(学习顺序)<a class="headerlink" href="#0" title="Permanent link">&para;</a></h2>
+<pre class="mermaid"><code>graph TD
+  A["预训练基座&lt;br/&gt;只会 next-token"] --&gt; B["SFT&lt;br/&gt;指令-回答对"]
+  B --&gt; C["偏好数据&lt;br/&gt;(y_w 优于 y_l)"]
+  C --&gt; D["Reward Model&lt;br/&gt;给回答打分"]
+  B --&gt; E
+  D --&gt; E["RLHF / PPO&lt;br/&gt;用奖励更新策略"]
+  C --&gt; F["DPO&lt;br/&gt;直接在偏好对上优化"]
+  B --&gt; F
+  D --&gt; F
+  E --&gt; F
+  E --&gt; G["对齐后的助手"]
+  F --&gt; G
+  B --&gt; G
+  D --&gt; J["§3.3 拒绝采样 / best-of-N&lt;br/&gt;采样→打分→过滤→SFT"]
+  C --&gt; K["§3.4 CAI / RLAIF&lt;br/&gt;原则自评 + AI 反馈"]
+  E --&gt; K
+  J --&gt; B
+  J --&gt; G
+  K --&gt; G
+  K --&gt; L["§3.2 DPO 家族 / GRPO&lt;br/&gt;IPO/KTO/ORPO + 组内归一化优势"]
+  E --&gt; L
+  D --&gt; L
+  C --&gt; L
+  L --&gt; G
+  H["安全原则 / 红队"] --&gt; G
+  G --&gt; I["对齐评测&lt;br/&gt;有用性 + 无害性 + 过度拒绝"]</code></pre>
+<h2 id="1-sft">1. SFT:先教会“按指令回答”<a class="headerlink" href="#1-sft" title="Permanent link">&para;</a></h2>
+<h3 id="11">1.1 直觉与数据<a class="headerlink" href="#11" title="Permanent link">&para;</a></h3>
+<p>SFT(Supervised Fine-Tuning,监督微调)就是拿 <code>(指令, 好回答)</code> 对继续做 next-token 训练。它不直接教“偏好”,只教<strong>格式与基本行为</strong>:听懂任务、按格式输出、该停时停。</p>
+<p>数据质量比数量更关键:</p>
+<ul>
+<li>InstructGPT 用了约 <strong>13k</strong> 条人工写的 SFT 提示(论文口径);</li>
+<li>LIMA 用 <strong>1,000</strong> 条精选示例就得到很强的对话模型,说明“高质量、多样、干净”比“海量噪声”更重要;</li>
+<li>Alpaca 用 Self-Instruct 生成 52k 条,是低成本复现路线,但会继承教师模型的风格与错误。</li>
+</ul>
+<blockquote>
+<p>数据配比通常要覆盖:开放问答、写作、摘要、抽取、代码、数学、多轮、拒答/安全。只训单一任务会让模型“只会一种腔调”。</p>
+</blockquote>
+<h3 id="12-token">1.2 格式与特殊 token<a class="headerlink" href="#12-token" title="Permanent link">&para;</a></h3>
+<p>对话模型通常有 chat template,把角色、轮次、结束符编码成特殊 token:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>&lt;|system|&gt;你是助手&lt;|end|&gt;
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>&lt;|user|&gt;把这句话翻译成英文:我爱学习&lt;|end|&gt;
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>&lt;|assistant|&gt;I love learning.&lt;|end|&gt;
+</code></pre></div>
+<p>训练时要保证:</p>
+<ul>
+<li>角色边界与结束符和推理时<strong>完全一致</strong>;</li>
+<li>只对 assistant 的回答计算 loss(见 §1.3);</li>
+<li>多轮对话中,历史 assistant 内容作为上下文,但 loss 口径属<strong>实现选择</strong>(不是硬性保证),要显式约定取哪一种——①只算最后一轮 assistant(历史轮标签设 -100),或②所有 assistant 轮都算;②才是主流框架的默认(TRL 的 <code>assistant_only_loss</code>、LLaMA-Factory 的 <code>mask_history</code>),所以「只算最后一轮」不能写成多数口径;</li>
+<li>序列结束要有 EOS,否则模型学不会停。</li>
+</ul>
+<h3 id="13-loss-masking">1.3 Loss masking:只学回答,不学提问<a class="headerlink" href="#13-loss-masking" title="Permanent link">&para;</a></h3>
+<p>SFT 的损失通常只在<strong>回答 token</strong> 上计算:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>L_SFT = - (1/|y|) Σ_{t∈回答} log π_θ(y_t | x, y_&lt;t)
+</code></pre></div>
+<p>其中 <code>x</code> 是指令/历史,<code>y</code> 是目标回答。实现上把 prompt 位置的标签设成 <code>-100</code>,<code>cross_entropy(ignore_index=-100)</code> 会跳过。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span><span class="o">,</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1"># input_ids: [B, T]; labels: [B, T],prompt 位置 = -100</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">logits</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">input_ids</span><span class="p">)</span>                      <span class="c1"># [B, T, V]</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1"># next-token shift:位置 t 的 logits 预测 t+1 的标签</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">loss</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">cross_entropy</span><span class="p">(</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="n">logits</span><span class="p">[:,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">logits</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)),</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    <span class="n">labels</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>    <span class="n">ignore_index</span><span class="o">=-</span><span class="mi">100</span><span class="p">,</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="p">)</span>
+</code></pre></div>
+<p><img alt="SFT loss masking:只对回答 token 算交叉熵" src="../../diagrams/31b_sft_mask.landscape.png" /></p>
+<p><strong>数值例子</strong>:prompt 3 个 token(<code>&lt;user&gt; 总结 这段</code>),回答 4 个 token(<code>猫 坐 在 垫子</code>)再加 EOS(§1.2:回答侧以 EOS 结束,它算 target),<code>|y|=5</code>,对应 loss 为
+<code>0.2, 0.5, 1.0, 0.3, 0.4</code>(末项是 EOS 的 loss)。只对回答侧(含 EOS)求平均:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>L_SFT = (0.2 + 0.5 + 1.0 + 0.3 + 0.4) / 5 = 0.48
+</code></pre></div>
+<p>如果把 prompt 也算进去(shift 后只有 2 个 prompt 预测位置,假设 loss 为 <code>2.0, 1.8</code>),平均会变成
+<code>(2.0+1.8+0.2+0.5+1.0+0.3+0.4)/7 ≈ 0.89</code>——回答的贡献被稀释,模型会花力气去“预测用户会说什么”,这不是我们想要的。</p>
+<blockquote>
+<p>形状:<code>logits [B,T,V]=[1,8,32000]</code>,shift 后 <code>[1,7,32000]</code>;<code>labels [B,T]=[1,8]</code>,shift 后 <code>[1,7]</code>;有效预测位置 7 个(2 个 prompt + 4 个回答 + 1 个 EOS),mask 后只对 5 个回答侧位置(含 EOS)求平均;<code>loss</code> 是标量。<strong>不要 shift 两次</strong>:用 HuggingFace 模型内部算 loss 时,传未 shift 的 labels 即可。</p>
+</blockquote>
+<h3 id="14-packing">1.4 多轮、packing 与常见问题<a class="headerlink" href="#14-packing" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>多轮</strong>:把历史拼进 <code>x</code>,loss 范围按 §1.2 约定的那一种执行(只算最后一轮,或所有 assistant 轮都算),不要两套混用——口径直接改 loss 数值和梯度;要保证上一轮 assistant 的 EOS 在上下文里。</li>
+<li><strong>Packing</strong>:多条短样本拼进一个 <code>T</code>,用 document/attention mask 隔离;标签在每条样本结束后设 <code>-100</code>。</li>
+<li><strong>过拟合</strong>:SFT 数据少、训练久会背答案、丢通用能力;用早停、低 LR、数据混合(掺预训练数据)缓解。</li>
+<li><strong>灾难性遗忘</strong>:只训窄领域会让基座能力退化;可混入通用指令/预训练 loss(如 PPO-ptx 思路)。</li>
+</ul>
+<h2 id="2-rlhf">2. RLHF:用“比较”训练奖励,再用奖励训练策略<a class="headerlink" href="#2-rlhf" title="Permanent link">&para;</a></h2>
+<p>RLHF(Reinforcement Learning from Human Feedback)分两步:<strong>先学一个奖励模型(RM),再用 RL 优化策略</strong>。InstructGPT 的经典三阶段是 SFT → RM → PPO。</p>
+<p><img alt="后训练管线:SFT → RM → RLHF / DPO → 安全与评测" src="../../diagrams/31a_posttrain_pipeline.landscape.png" /></p>
+<h3 id="21-reward-model">2.1 Reward Model:把“哪个更好”变成分数<a class="headerlink" href="#21-reward-model" title="Permanent link">&para;</a></h3>
+<p>人类标注的原始形态是<strong>整体排序</strong>:同一个 prompt <code>x</code> 采 4~9 个回答(InstructGPT 取 K=9)让标注者排序,再从排序里采样出成对样本 <code>y_w</code>(winner)≻<code>y_l</code>(loser)。用 Bradley-Terry(成对比较)模型假设:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>P(y_w ≻ y_l | x) = σ(r_φ(x, y_w) - r_φ(x, y_l))
+</code></pre></div>
+<p>其中 <code>σ(z)=1/(1+e^{-z})</code>,<code>r_φ</code> 是奖励模型(通常由基座模型加一个标量头得到)。训练损失:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>L_RM = - E[ log σ( r_φ(x, y_w) - r_φ(x, y_l) ) ]
+</code></pre></div>
+<p><strong>数值</strong>:<code>r_w=2.0</code>,<code>r_l=1.0</code>,差 <code>1.0</code>,<code>σ(1)=0.7311</code>,<code>L_RM=-log(0.7311)=0.3133</code>。若差为 0,<code>σ=0.5</code>,<code>loss=0.693</code>;差越大,loss 越小。</p>
+<p><strong>数据与工程要点</strong>:</p>
+<ul>
+<li>标注要控制风格偏差(长度、格式、自信语气),否则 RM 会学“长/客气=好”。</li>
+<li>RM 通常比策略小(InstructGPT 用 6B RM 服务 175B 策略),但容量太小会成为瓶颈。</li>
+<li>同一 prompt 的多个回答要一起采样/比较,减少 prompt 难度带来的噪声。</li>
+<li>RM 只在训练分布附近可靠;策略跑远后奖励会失真(reward hacking,见 §2.3)。</li>
+</ul>
+<h3 id="22-ppoproximal-policy-optimization">2.2 PPO(Proximal Policy Optimization,近端策略优化)<a class="headerlink" href="#22-ppoproximal-policy-optimization" title="Permanent link">&para;</a></h3>
+<p>PPO 的目标是最大化奖励,同时<strong>不要一步走太远</strong>。核心是重要性比率 <code>r_t</code> 与裁剪:</p>
+<blockquote>
+<p>记号对回 §1.3:<code>a_t</code> 就是第 t 个生成的 token(即 <code>y_t</code>),<code>s_t</code> 是状态 = prompt + 已生成前缀(即 <code>x, y_&lt;t&gt;</code>),因此 <code>π_θ(a_t|s_t)</code> 与 §1.3 的 <code>π_θ(y_t|x,y_&lt;t)</code> 是同一个分布;<code>π_old</code> 是采样这批数据时的旧策略。<code>A_t</code>(advantage,优势)表示“在 <code>s_t</code> 下选 <code>a_t</code> 比该状态的平均水平好多少”:<code>A_t&gt;0</code> 抬概率,<code>A_t&lt;0</code> 压概率。</p>
+</blockquote>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>r_t(θ) = π_θ(a_t | s_t) / π_old(a_t | s_t)
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>L_PPO = E_t[ min( r_t A_t, clip(r_t, 1-ε, 1+ε) A_t ) ] - β · E_t[ KL(π_θ || π_ref) ]
+</code></pre></div>
+<ul>
+<li><code>A_t</code>:优势(advantage),表示这个动作比“平均水平”好多少;常用 GAE 估计。</li>
+<li><code>ε</code>:裁剪范围,常见 0.2。比率超出 <code>[0.8, 1.2]</code> 后,目标不再奖励继续偏离。</li>
+<li><code>π_ref</code>:参考策略(通常是 SFT 模型);KL 惩罚防止策略为了刷奖励而跑偏。</li>
+<li><code>β</code>:KL(Kullback-Leibler 散度)系数;InstructGPT 的 PPO 配置里 KL 惩罚系数约为 <strong>0.02</strong>(以论文/config 为准)。</li>
+</ul>
+<p>在 RLHF 里,奖励通常是<strong>序列级</strong>的(RM 在整段回答结束时给一个分),而 KL 可以<strong>逐 token</strong> 估计:</p>
+<p>先给直觉:<code>KL(π_θ‖π_ref) = E_{a~π_θ}[ log π_θ(a|s) - log π_ref(a|s) ]</code>,即对<strong>每个 token 位置</strong>上两个 next-token 分布之差取期望;由 Jensen/吉布斯不等式它恒 <code>≥0</code>,且仅在两分布完全相同时为 0,所以这个数值正好当“偏离参考模型的程度”。下面的 <code>KL_t</code> 就是它的单样本逐 token 估计,沿序列求和即整条回答的 KL。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>KL_t ≈ log π_θ(a_t|s_t) - log π_ref(a_t|s_t)      # 单样本估计
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>shaped_reward_t = - β · KL_t                       # 只在序列末尾加 RM 奖励
+</code></pre></div>
+<p><img alt="PPO 裁剪:比率、优势、KL 惩罚的数值链" src="../../diagrams/31c_ppo_clip.landscape.png" /></p>
+<p><strong>数值链</strong>:某个 token 上 <code>π_old=0.20</code>,<code>π_θ=0.25</code>,<code>π_ref=0.20</code>,<code>A=+1.0</code>,<code>ε=0.2</code>,<code>β=0.02</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>① 比率:r = 0.25 / 0.20 = 1.25
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>② 裁剪:clip(1.25, 0.8, 1.2) = 1.20
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>③ 取小:min(r·A, clip·A) = min(1.25, 1.20) = 1.20
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>④ KL:log(0.25/0.20) = 0.2231
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>⑤ 目标 L_PPO:1.20 - 0.02×0.2231 = 1.1955   (要最大化的是 L_PPO)
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>   loss = -L_PPO = -1.1955
+</code></pre></div>
+<p>如果 <code>A=-1.0</code>,则 <code>r·A=-1.25</code>,<code>clip·A=-1.20</code>,<code>min=-1.25</code>;裁剪在负优势侧的方向相反。<strong>记住:PPO 裁剪不是“把比率永远夹在区间里”,而是让超出区间的更新不再带来额外收益。</strong></p>
+<blockquote>
+<p>面试追问:<strong>为什么用 PPO 而不是朴素策略梯度?</strong> 朴素 PG 对步长敏感、方差大;PPO 用旧策略采样的数据做多步更新,裁剪限制分布漂移,训练更稳。代价是要维护 value/critic、实现复杂。
+补一句「朴素 PG 在优化什么」:策略梯度直接最大化 <code>J(θ)=E_{y~π_θ(·|x)}[R(y)]</code>,用 <code>∇_θ log π_θ(y|x)·R(y)</code> 的单样本估计更新参数——无偏,但方差极大(整条序列共用一个标量回报,credit assignment 全靠它;一次采样只能走一步,所以对步长敏感)。加基线/优势(<code>A_t</code>)、用重要性比率复用旧数据做多步更新,就是 PPO 的来路。</p>
+</blockquote>
+<p><strong>优势怎么估(GAE)</strong>:RLHF 里常用 token 级或序列级的 GAE(广义优势估计):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>δ_t = R_t + γ V(s_{t+1}) - V(s_t)          # R_t:即时(塑形)奖励,不是上面那个比率 r_t
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>A_t = Σ_{l≥0} (γλ)^l δ_{t+l}
+</code></pre></div>
+<p><code>γ</code> 是折扣、<code>λ</code> 控制偏差-方差;序列级奖励只在末尾给,KL 惩罚可以逐 token 塑形。</p>
+<blockquote>
+<p>记号提醒:GAE 里的 <code>R_t</code> 是 token 级即时(塑形)奖励——RM 的序列级分数只在末尾给,KL 塑形项分摊到各 token;它和本节前面裁剪公式里的重要性比率 <code>r_t(θ)=π_θ/π_old</code> 是两个量。照符号代数值时,别把 1.25 这样的比率当奖励塞进 <code>δ_t</code>。同理 §3.1 的 <code>r(x,y)</code>、§3.2 的 <code>r_i</code> 都是奖励,不是比率。
+其中 <code>V(s)</code> 是 <strong>critic(value 网络)</strong> 的输出:在状态 <code>s</code>(prompt+已生成前缀)下对<strong>未来累计(塑形)奖励</strong>的期望预测;critic 就是“四个模型”里的第四个,靠回归实际回报训练。<code>δ_t</code> 是一步 TD 误差,<code>A_t</code> 用 <code>(γλ)^l</code> 把多步 <code>δ</code> 加权累加:<code>λ=0</code> 只看一步(方差低、偏差大),<code>λ=1</code> 接近 Monte-Carlo(偏差低、方差大)。正因为要额外训这个 <code>V</code>,GRPO 才用组内均值当基线把它省掉(见 §3.2)。RLHF 常取 <code>γ=1</code>(序列有限、不折扣未来 token),但具体实现差异很大,报告时要写清。</p>
+</blockquote>
+<p><strong>四个模型与显存</strong>:PPO-RLHF 通常同时驻留 <strong>actor(策略)、critic(value)、reward model、reference model</strong>;即使初始权重相同,训练后也是四份参数,再加优化器状态与激活。显存吃紧时可以让 RM 单独部署、或让 actor/critic 共享底座但<strong>不共享训练后的权重</strong>。</p>
+<p><strong>什么时候选 online(PPO)而不是 DPO?</strong> 奖励不可微/需要在线探索(代码单测、工具调用、多步推理)、或偏好数据分布会随策略变化时,online RL 更合适;偏好对固定、追求实现简单稳定时,DPO 更划算。</p>
+<h3 id="23-reward-hacking">2.3 Reward hacking:奖励模型的漏洞<a class="headerlink" href="#23-reward-hacking" title="Permanent link">&para;</a></h3>
+<p>策略会找到 RM 的“捷径”,而不是人类真正想要的东西:</p>
+<ul>
+<li><strong>长度偏置</strong>:更长的回答平均得分更高;</li>
+<li><strong>谄媚(sycophancy)</strong>:顺着用户说,而不是说真话;</li>
+<li><strong>格式刷分</strong>:堆 bullet、加免责声明;</li>
+<li><strong>钻 RM 盲区</strong>:在训练分布外生成 RM 高分的怪文本。</li>
+</ul>
+<p>缓解:</p>
+<ol>
+<li><strong>KL 约束</strong>:别让策略离 <code>π_ref</code> 太远(§2.2)。</li>
+<li><strong>奖励集成/不确定性</strong>:多个 RM 取保守值,或对高不确定性降权。</li>
+<li><strong>持续更新偏好数据</strong>:用当前策略采样新回答,让人重新标注,避免 RM 过时。</li>
+<li><strong>规则/验证器混合</strong>:代码用单测、数学用答案校验,不完全依赖 RM。</li>
+<li><strong>长度/风格归一化</strong>:训练与评测时控制长度等混杂因素。</li>
+</ol>
+<p><img alt="Reward hacking:奖励上升但真实质量下降" src="../../diagrams/31f_reward_hacking.landscape.png" /></p>
+<h2 id="3-rm">3. 偏好优化:不训练 RM 也能对齐<a class="headerlink" href="#3-rm" title="Permanent link">&para;</a></h2>
+<h3 id="31-dpo">3.1 DPO:把偏好直接写进损失<a class="headerlink" href="#31-dpo" title="Permanent link">&para;</a></h3>
+<p>DPO(Direct Preference Optimization)的关键观察:先写出被优化的 KL 正则目标 <code>max_π E_{y~π(·|x)}[r(x,y)] - β·KL(π(·|x)‖π_ref(·|x))</code>(逐 token 分解后每个位置形式相同),对它求导令零,得最优策略满足——<code>β</code> 在分母上,所以 β 越大 <code>π_ref</code> 权重越大、最优策略越保守:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>π*(y|x) ∝ π_ref(y|x) · exp( r(x,y) / β )
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>**这一步怎么来的(可自己验)**:对每个 `x` 解 `max_π Σ_y π(y|x)·r(x,y) − β·Σ_y π(y|x)·log(π(y|x)/π_ref(y|x))`,约束 `Σ_y π(y|x)=1`;用拉格朗日乘子 λ,对每个 `y` 求偏导令零:`r(x,y) − β·( log(π/π_ref) + 1 ) + λ = 0`。解出 `log π = log π_ref + r/β + (λ−β)/β`,与 `y` 无关的项收进归一化常数 `Z(x)`,即得 `π* = π_ref·e^{r/β} / Z(x)`。`β` 落到分母上,是因为它给整个 KL 项加权:β 越大,同样一份收益要付更多 KL 罚,最优解就越贴 `π_ref`。
+</code></pre></div>
+<p>反解出隐式奖励:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>r(x,y) = β · log( π*(y|x) / π_ref(y|x) ) + β · log Z(x)
+</code></pre></div>
+<p>把它代入 Bradley-Terry,配分函数 <code>Z(x)</code> 在成对比较中抵消,得到:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>L_DPO = - E[ log σ( β · ( log π_θ(y_w|x)/π_ref(y_w|x)
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>                         - log π_θ(y_l|x)/π_ref(y_l|x) ) ) ]
+</code></pre></div>
+<p>直观:提高“好回答”相对参考模型的概率,降低“坏回答”相对参考模型的概率;<code>β</code> 是约束强度(也是温度):β 越大,最优策略越贴近 <code>π_ref</code>、偏离越小;β 越小越敢跑。</p>
+<p><strong>数值链</strong>(<code>β=0.1</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>chosen:   log π_θ(y_w|x) = -2.0,  log π_ref(y_w|x) = -2.5
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>          Δ_w = -2.0 - (-2.5) = +0.5
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>rejected: log π_θ(y_l|x) = -3.0,  log π_ref(y_l|x) = -2.0
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>          Δ_l = -3.0 - (-2.0) = -1.0
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>margin = β(Δ_w - Δ_l) = 0.1 × (0.5 - (-1.0)) = 0.15
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>σ(0.15) = 0.537430
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>L_DPO = -log(0.537430) = 0.6210
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a>隐式奖励:r_w = 0.1×0.5 = 0.05,r_l = 0.1×(-1.0) = -0.10,差 0.15
+</code></pre></div>
+<p><img alt="DPO loss:log-prob 差、margin、sigmoid 与 loss" src="../../diagrams/31d_dpo_loss.landscape.png" /></p>
+<p><strong>实现要点</strong>:</p>
+<ul>
+<li>需要四个前向:策略/参考 × chosen/rejected;参考模型冻结。</li>
+<li>log-prob 通常对回答 token <strong>求和</strong>(不是平均),长度会影响 margin;可按任务做长度归一化,但要与论文口径区分。</li>
+<li>DPO 是<strong>离线</strong>的:偏好数据固定,不会像 PPO 那样在线采样;数据覆盖不足时容易过拟合。</li>
+<li><code>β</code> 常见 0.1 左右;太小约束弱,太大会学不动。</li>
+</ul>
+<blockquote>
+<p>口径提醒:这里的 <code>β</code> 作用在<strong>整条序列</strong>的 log-prob 比上(序列级,同时充当 DPO 温度);§2.2 PPO 的 <code>β≈0.02</code> 乘的是 <strong>Σ_t KL_t</strong>(L_PPO 里 <code>E_t</code> 已对 token 求和),DPO 的 <code>β</code> 乘的是整条序列上<strong>未缩放的 log-ratio 差</strong>。两者都是无量纲系数、乘的都是 nats,量纲相同;不可直接比较的原因是<strong>惩罚对象与求和范围不同</strong>(KL vs 与 π_ref 的 log-prob 差;逐 token 求和后的量 vs 序列级量),不是单位不同。别把 0.02 与 0.1 当成同一个超参在调。</p>
+</blockquote>
+<h3 id="32-dpo-ipo-kto-orpo-grpo">3.2 DPO 家族:IPO / KTO / ORPO / GRPO<a class="headerlink" href="#32-dpo-ipo-kto-orpo-grpo" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p>名称展开:IPO = Identity Preference Optimization;KTO = Kahneman-Tversky Optimization;ORPO = Odds Ratio Preference Optimization;GRPO = Group Relative Policy Optimization。</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>数据形态</th>
+<th>核心损失/机制</th>
+<th>要不要 RM</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>DPO</strong></td>
+<td>成对 <code>(y_w, y_l)</code></td>
+<td><code>-log σ(β(Δ_w-Δ_l))</code></td>
+<td>否</td>
+<td>简单稳定,离线</td>
+</tr>
+<tr>
+<td><strong>IPO</strong></td>
+<td>成对</td>
+<td><code>(Δ_w-Δ_l - 1/(2β))²</code></td>
+<td>否</td>
+<td>给偏好差一个目标间隔,缓解 DPO 对确定性偏好的过拟合</td>
+</tr>
+<tr>
+<td><strong>KTO</strong></td>
+<td>单条 + 好/坏标签</td>
+<td>用前景理论效用(人对收益/损失非对称),分别推高/压低好/坏样本</td>
+<td>否</td>
+<td>不需要成对,适合只有二元反馈的数据</td>
+</tr>
+<tr>
+<td><strong>ORPO</strong></td>
+<td>成对</td>
+<td>SFT loss + λ·odds-ratio loss</td>
+<td>否</td>
+<td>单阶段,reference-free,省一个参考模型</td>
+</tr>
+<tr>
+<td><strong>GRPO</strong></td>
+<td>prompt + 一组采样</td>
+<td>组内归一化优势 + PPO 裁剪/ KL</td>
+<td>可选(免 critic,但奖励仍需 RM/规则/验证器)</td>
+<td>在线 RL,适合可验证奖励(数学/代码)</td>
+</tr>
+</tbody>
+</table>
+<p>ORPO 的 odds ratio(OR)= <code>[π(y_w)/(1-π(y_w))] / [π(y_l)/(1-π(y_l))]</code>,即好回答与坏回答的几率比;λ 控制偏好项相对 SFT 损失的权重。</p>
+<p><img alt="偏好优化家族:DPO / IPO / KTO / ORPO / GRPO 的数据与损失" src="../../diagrams/31e_pref_family.landscape.png" /></p>
+<p><strong>GRPO 的一句话</strong>:对同一个 prompt 采样 <code>G</code> 个回答,用奖励的组内均值/标准差算优势,省掉 PPO 的 value 网络:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>A_i = (r_i - mean(r_1..r_G)) / std(r_1..r_G)
+</code></pre></div>
+<p>数值:<code>r=[1,0,1,0]</code>,<code>mean=0.5</code>,<code>std=0.5</code>(总体标准差),<code>A=[1,-1,1,-1]</code>。组内比较让“这个回答比同组平均好多少”成为信号,适合答案可自动判对错的推理任务。</p>
+<blockquote>
+<p><strong>preview(1C 展开)</strong>:GRPO 只需要<strong>组内奖励</strong>(可来自学习 RM、规则或验证器),并不等同于 RLVR;RLVR 特指用 exact match/单测等可验证信号做 RL。<code>notes/13_reasoning.md §4</code> 会讲完整训练管线与数值链。这里先记住:GRPO 省掉 critic,但仍要参考策略做 KL 约束。</p>
+</blockquote>
+<p><strong>DPO 的失败模式(面试加分)</strong>:</p>
+<ul>
+<li><strong>likelihood displacement</strong>:DPO 可能同时降低 chosen 和 rejected 的绝对概率,只保证二者<strong>相对差</strong>变大;生成质量不一定同步提升。</li>
+<li><strong>长度偏置</strong>:log-prob 对 token 求和,长回答的 margin 天然更大;需长度归一化或长度平衡数据。</li>
+<li><strong>离线分布偏移</strong>:偏好对固定,策略跑出数据分布后无法纠正;迭代/在线 DPO(用当前策略采样、重新标注)可缓解。</li>
+<li><strong>变体</strong>:SimPO(Simple Preference Optimization)去掉 reference model、用长度归一化奖励与目标 margin;cDPO(conservative DPO)对标签噪声做保守处理;KTO/ORPO 见上表。引用具体方法时以原论文公式为准。</li>
+</ul>
+<h3 id="33-best-of-n">3.3 拒绝采样与 best-of-N<a class="headerlink" href="#33-best-of-n" title="Permanent link">&para;</a></h3>
+<p><strong>拒绝采样(rejection sampling)</strong>:用当前策略对每个 prompt 采 <code>k</code> 个回答,用 RM/验证器打分,只保留高分回答,再做 SFT。它是<strong>离线</strong>的,实现简单,常用于:</p>
+<ul>
+<li>冷启动 SFT 数据增强(STaR、RAFT 类方法);</li>
+<li>迭代式自我改进:采样 → 过滤 → 再训练;</li>
+<li>蒸馏:把大模型的好回答给小模型学。</li>
+</ul>
+<p><strong>Best-of-N</strong>:推理时采 <code>N</code> 个,用 RM/验证器选最好的一个。代价是推理算力 ×N;收益取决于奖励模型质量与多样性。和拒绝采样是同一思想在训练/推理两端的应用。</p>
+<p><img alt="拒绝采样:采样 k 个 → 打分 → 过滤 → SFT" src="../../diagrams/31g_rejection.landscape.png" /></p>
+<h3 id="34-constitutional-ai-rlaif">3.4 Constitutional AI 与 RLAIF<a class="headerlink" href="#34-constitutional-ai-rlaif" title="Permanent link">&para;</a></h3>
+<p>Constitutional AI(Anthropic, 2022)用一套<strong>书面原则</strong>让模型自我批评/修订,减少人工标注:</p>
+<ol>
+<li><strong>Supervised 阶段</strong>:模型对有害回答做 critique → revise,用修订后的数据做 SFT。</li>
+<li><strong>RL 阶段</strong>:用 AI 对成对回答按原则打分,训练偏好模型(RLAIF,RL from AI Feedback),再做 RL。</li>
+</ol>
+<p>优点:可扩展、原则可审计;风险:原则覆盖不全、模型自我评价有偏见、可能学到“表面合规”。它不能替代红队与人工审核。</p>
+<h2 id="4-alignment-tax">4. 安全对齐与 alignment tax<a class="headerlink" href="#4-alignment-tax" title="Permanent link">&para;</a></h2>
+<h3 id="41">4.1 安全对齐做什么<a class="headerlink" href="#41" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>有用、无害、诚实</strong>(HHH):不仅要拒答明显有害请求,还要避免过度拒绝正常请求。</li>
+<li><strong>越狱与注入</strong>:角色扮演、编码绕过、长上下文夹带、间接 prompt injection;防御包括安全分类器、系统提示、工具权限隔离、输出过滤。</li>
+<li><strong>隐私与版权</strong>:训练数据中的 PII、记忆复现;需要去重、脱敏、输出过滤与许可审查。</li>
+<li><strong>偏见与公平</strong>:评测不同群体的表现,避免系统性歧视。</li>
+</ul>
+<p><img alt="安全对齐:原则 → 红队 → 拒答/修订 → 评测" src="../../diagrams/31h_safety.landscape.png" /></p>
+<h3 id="42-alignment-tax">4.2 Alignment tax:对齐不是免费的<a class="headerlink" href="#42-alignment-tax" title="Permanent link">&para;</a></h3>
+<p>对齐可能带来能力回退:</p>
+<ul>
+<li>RLHF 后某些基准(代码、数学、长文)掉点;</li>
+<li>过度安全导致“什么都不敢答”(over-refusal);</li>
+<li>风格变得模板化、啰嗦。</li>
+</ul>
+<p>缓解:</p>
+<ul>
+<li><strong>PPO-ptx</strong>:在 RL 目标里混入预训练 loss,保留基座能力(InstructGPT 的做法);</li>
+<li>数据混合:SFT/偏好数据里保留通用任务与推理数据;</li>
+<li>同时评测<strong>有用性</strong>与<strong>无害性</strong>,不只看安全分;</li>
+<li>对拒答做误拒率测试,设“安全-有用”权衡曲线。</li>
+</ul>
+<blockquote>
+<p>面试口径:alignment tax 不是“对齐必然降智”,而是<strong>优化目标变窄 + 数据分布偏移</strong>的结果;用 ptx/数据混合/多目标评测可以显著缓解。</p>
+</blockquote>
+<h2 id="5">5. 对齐评测<a class="headerlink" href="#5" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>有用性</strong>:MT-Bench、Chatbot Arena(见 <code>notes/09_evaluation.md §1</code>;Arena 的 Elo/BT 口径见 §3)、AlpacaEval(本层补充,<code>notes/</code> 暂无条目,数字以官方 leaderboard 为准)。</li>
+<li><strong>无害性</strong>:安全基准、红队集、越狱鲁棒性、过度拒绝率。</li>
+<li><strong>事实性</strong>:TruthfulQA、幻觉率、引用一致性。</li>
+<li><strong>偏好一致性</strong>:RM 打分与人类判断的一致性;对抗样本。</li>
+<li><strong>在线指标</strong>:点赞/点踩、追问率、会话完成率、人工抽检。</li>
+</ul>
+<p>评测要固定 prompt 模板、解码参数、judge 版本;否则分数不可比。</p>
+<h2 id="6">6. 面试要点<a class="headerlink" href="#6" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>SFT 和 RLHF 的区别?</strong> → SFT 教“照着好回答做”(token 级监督);RLHF 用比较学奖励,再优化“人类更喜欢”的行为。</li>
+<li><strong>SFT 为什么要 mask prompt?</strong> → 只学回答,避免把算力花在预测用户输入上,也避免模型学成“复读机”。</li>
+<li><strong>RM 的损失是什么?</strong> → Bradley-Terry:<code>-log σ(r_w-r_l)</code>;只要求相对排序,不要求绝对分数。</li>
+<li><strong>PPO 的 clip 在干什么?</strong> → 限制策略比率,超出 <code>[1-ε,1+ε]</code> 的更新不再带来额外收益,防止一步走太远。</li>
+<li><strong>KL 惩罚为什么必要?</strong> → 防止策略钻 RM 空子、偏离参考模型太远;β 控制保守程度。</li>
+<li><strong>DPO 和 RLHF 的关系?</strong> → DPO 在 KL 正则下把最优策略的隐式奖励代入 BT,直接在偏好对上优化,不需要显式 RM 与在线 RL。</li>
+<li><strong>DPO 的 β 是什么?</strong> → 偏离参考模型的强度;β 小更敢跑,β 大更保守。</li>
+<li><strong>IPO/KTO/ORPO/GRPO 各解决什么?</strong> → IPO 加目标间隔;KTO 支持单条二元反馈;ORPO 单阶段 reference-free;GRPO 组内归一化、免 critic,适合 RLVR。</li>
+<li><strong>reward hacking 怎么防?</strong> → KL、RM 集成/更新、规则验证器、长度/风格归一化、在线红队。</li>
+<li><strong>alignment tax 怎么缓解?</strong> → PPO-ptx、数据混合、多目标评测、误拒率监控。</li>
+</ol>
+<h2 id="_1">常见坑<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<ul>
+<li>把 SFT 的 loss 算在 prompt 上:回答的梯度被稀释,模型会去学“用户会说什么”。</li>
+<li>以为 RM 分数是绝对质量:它只在训练分布附近可靠,且会继承标注偏差。</li>
+<li>把 PPO 的 clip 说成“把比率夹住”:实际是目标里的 <code>min</code>,超出区间后梯度不再奖励继续偏离。</li>
+<li>把 DPO 当成“不需要参考模型”:DPO 仍然要冻结的 <code>π_ref</code> 算 log-prob。</li>
+<li>把 DPO 的 log-prob 做平均/求和混用:两者数值不可比,报告时要写清口径。</li>
+<li>只测安全、不测有用:过度拒绝也是失败;要同时报告误拒率与能力回退。</li>
+<li>把 Constitutional AI 当成“完全自动对齐”:原则、红队、人工审核仍然必要。</li>
+</ul>
+<h2 id="_2">动手清单<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>SFT mask 实验</strong>:构造一条 prompt+response,分别用“全序列 loss”和“只算回答 loss”训练 50 步;验收:能打印两种 loss 曲线并解释差异。</li>
+<li><strong>DPO 手算</strong>:给定四组 log-prob,手算 margin、σ、loss;再用 PyTorch 实现 <code>-logsigmoid</code> 对照;验收:数值与 §3.1 一致。</li>
+<li><strong>PPO clip 表格</strong>:枚举 <code>r∈{0.5,0.8,1.0,1.2,1.5}</code>、<code>A∈{+1,-1}</code>,算 <code>min(rA, clip(r)A)</code>;验收:能画出裁剪后的目标曲线。</li>
+<li><strong>拒答评测</strong>:准备 20 条正常请求 + 20 条有害请求,统计误拒率与漏拒率;验收:给出“安全-有用”权衡,而不是单一分数。</li>
+</ol>
+<h2 id="_3">相关图<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p><code>31a_posttrain_pipeline</code> · <code>31b_sft_mask</code> · <code>31c_ppo_clip</code> · <code>31d_dpo_loss</code>
+· <code>31e_pref_family</code> · <code>31f_reward_hacking</code> · <code>31g_rejection</code> · <code>31h_safety</code>
+(均在 <code>diagrams/</code>,横竖双版本)</p>
+<h2 id="_4">下一步<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<p>第九层 · 评测:benchmark 怎么选、污染怎么查、pass@k 与 LLM-as-judge 怎么算——没有可靠评测,对齐就只是“感觉变好了”。</p>
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.top", "navigation.indexes", "content.code.copy", "search.suggest", "search.highlight", "toc.follow"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+        <script src="../../javascripts/mathjax.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs" type="module"></script>
+      
+    
+  </body>
+</html>

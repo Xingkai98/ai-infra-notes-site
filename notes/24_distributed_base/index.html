@@ -1,0 +1,3488 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="从 Transformer 骨架到推理系统的 29 篇讲义（本地预览）">
+      
+      
+      
+      
+        <link rel="prev" href="../23_training_systems/">
+      
+      
+        <link rel="next" href="../25_platform_sre/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>第 4 层 · M2-4 分布式底座 - AI Infra 讲义</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#m2-4" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="../.." title="AI Infra 讲义" class="md-header__button md-logo" aria-label="AI Infra 讲义" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            AI Infra 讲义
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              第 4 层 · M2-4 分布式底座
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切到深色"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="切到深色" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切到浅色"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="切到浅色" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="AI Infra 讲义" class="md-nav__button md-logo" aria-label="AI Infra 讲义" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    AI Infra 讲义
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI Infra 讲义
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Notes
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Notes
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01_skeleton/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第一层 · 骨架 —— 从文本到矩阵
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02_attention/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二层 · 心脏 —— Self-Attention 的 Q/K/V
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03_block/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第三层 · 加强 —— Multi-Head、残差、LayerNorm、FFN
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04_architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第四层 · 组装 —— Encoder / Decoder / 掩码 / Cross-Attention
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05_modern/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第五层 · 现代变体 —— 从原论文到 LLaMA/GPT
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_inference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第六层 · 跑起来 —— 训练/推理、KV Cache、完整 forward
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_pretraining/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第七层 · 预训练 —— 目标、数据与 Scaling Law
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../08_alignment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第八层 · 对齐 —— SFT、RLHF、DPO 与安全
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09_evaluation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第九层 · 评测 —— benchmark、污染、judge 与可复现
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../10_decoding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十层 · 解码 —— 从 logits 到 token
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../11_applications/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十一层 · 应用 —— Prompt、RAG、工具与 Agent
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../12_multimodal/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十二层 · 多模态 —— VLM、扩散与语音
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../13_reasoning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十三层 · 推理模型 —— 测试时计算、长 CoT 与 RLVR
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../14_long_context/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十四层 · 长上下文 —— 位置外推、注意力模式与 KV 账本
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../15_peft_lora/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十五层 · PEFT 与 LoRA —— 用 0.1% 参数做微调
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../16_agent_rl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十六层 · Agent RL —— rollout、环境、奖励与异步训练
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../17_data_engineering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十七层 · 数据工程 —— 从原始语料到数据飞轮
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../18_interpretability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十八层 · 可解释性 —— 从探针到电路与 SAE
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../19_multimodal_deep/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十九层 · 多模态深化 —— VLM、视频/音频与扩散
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../20_ai_infra_map/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模块二 · M2-0 地图与坐标系
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（2026-10-21 补全景图 20g）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../21_single_node_ops/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模块二 · M2-1 单机与算子
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（2026-10-21 补结构图 20h/20i/20j/20k）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../22_inference_systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模块二 · M2-3 推理系统
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（2026-10-21 补结构图 20l–20q）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../23_training_systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 2 层 · M2-2 训练系统
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 4 层 · M2-4 分布式底座
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 4 层 · M2-4 分布式底座
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0. 依赖图（学习顺序）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. 为什么需要分布式底座
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. 集合通信：多卡协作的动词
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. 集合通信：多卡协作的动词">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 六个基本原语
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-ring-all-reduce" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 ring all-reduce：两阶段、通信量
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.3 其他原语的量级
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#24-ring-vs-tree" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.4 ring vs tree
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#25-nccl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.5 NCCL 常用旋钮
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#26-all-reducenvlink" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.6 分层 all-reduce：NVLink 域内 + 跨节点
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. 互联与拓扑：数据走哪条路
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. 互联与拓扑：数据走哪条路">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-nvlink-nvswitch-pcie" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 节点内：NVLink / NVSwitch / PCIe
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-ib-roce-rdma" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 节点间：IB / RoCE / RDMA
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33-fat-tree-rail-optimized" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.3 拓扑：fat-tree / rail-optimized / 收敛比
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#34-roce-pfc-ecn" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.4 RoCE 的稳定性：PFC / ECN / 拥塞
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-p2p" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. 集合通信之外的通信：P2P 与重叠
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-checkpoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. 存储：数据与 Checkpoint 的底座
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. 存储：数据与 Checkpoint 的底座">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#51" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.1 四层存储
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#52-checkpoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.2 Checkpoint 账本
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#53" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.3 数据加载
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#54-kv-cache" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.4 KV Cache 持久化
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-dp-tp-pp-ep" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. 并行通信账本：DP / TP / PP / EP
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. 并行通信账本：DP / TP / PP / EP">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#61-3d" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.1 3D 映射与流水线调度
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. 调度与虚拟化：资源怎么分、怎么切
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7. 调度与虚拟化：资源怎么分、怎么切">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#71-k8s-gpu" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.1 K8s 的 GPU 抽象
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#72-gang-scheduling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.2 gang scheduling
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#73" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.3 拓扑感知与碎片治理
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#74-slurm-vs-k8s" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.4 Slurm vs K8s
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#75" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.5 调度器性能、仿真与碎片算例
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-hang" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. 可靠性：坏卡、坏链路、hang
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. 可靠性：坏卡、坏链路、hang">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#81" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.1 常见硬件错误
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#82" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.2 健康检查与自愈
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#83-nccl-hang" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.3 NCCL hang 排查
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#84" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.4 长稳训练
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. 面试要点
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. 常见坑
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6090" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        动手清单（60–90 分钟）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        相关图
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        下一步
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../25_platform_sre/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 5 层 · M2-5 平台与稳定性
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../26_frontier_edge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 6 层 · M2-6 前沿与端侧
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../27_agent_engineering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二十七层 · Agent 工程化：Context / Harness / Loop / Graph
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--v1"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../28_vllm_source_trace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二十八层 · vLLM v1 源码 trace：一次请求怎么走
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--v1"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../29_agent_eval_infra/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二十九层 · Agent 评测 Infra：从打分到可复现的评测平台
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--v1"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../worksheets/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Worksheets
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Worksheets
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0. 依赖图（学习顺序）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. 为什么需要分布式底座
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. 集合通信：多卡协作的动词
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. 集合通信：多卡协作的动词">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 六个基本原语
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-ring-all-reduce" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 ring all-reduce：两阶段、通信量
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.3 其他原语的量级
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#24-ring-vs-tree" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.4 ring vs tree
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#25-nccl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.5 NCCL 常用旋钮
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#26-all-reducenvlink" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.6 分层 all-reduce：NVLink 域内 + 跨节点
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. 互联与拓扑：数据走哪条路
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. 互联与拓扑：数据走哪条路">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-nvlink-nvswitch-pcie" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 节点内：NVLink / NVSwitch / PCIe
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-ib-roce-rdma" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 节点间：IB / RoCE / RDMA
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33-fat-tree-rail-optimized" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.3 拓扑：fat-tree / rail-optimized / 收敛比
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#34-roce-pfc-ecn" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.4 RoCE 的稳定性：PFC / ECN / 拥塞
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-p2p" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. 集合通信之外的通信：P2P 与重叠
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-checkpoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. 存储：数据与 Checkpoint 的底座
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. 存储：数据与 Checkpoint 的底座">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#51" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.1 四层存储
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#52-checkpoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.2 Checkpoint 账本
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#53" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.3 数据加载
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#54-kv-cache" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.4 KV Cache 持久化
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-dp-tp-pp-ep" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. 并行通信账本：DP / TP / PP / EP
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. 并行通信账本：DP / TP / PP / EP">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#61-3d" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.1 3D 映射与流水线调度
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. 调度与虚拟化：资源怎么分、怎么切
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7. 调度与虚拟化：资源怎么分、怎么切">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#71-k8s-gpu" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.1 K8s 的 GPU 抽象
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#72-gang-scheduling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.2 gang scheduling
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#73" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.3 拓扑感知与碎片治理
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#74-slurm-vs-k8s" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.4 Slurm vs K8s
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#75" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.5 调度器性能、仿真与碎片算例
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-hang" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. 可靠性：坏卡、坏链路、hang
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. 可靠性：坏卡、坏链路、hang">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#81" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.1 常见硬件错误
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#82" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.2 健康检查与自愈
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#83-nccl-hang" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.3 NCCL hang 排查
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#84" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.4 长稳训练
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. 面试要点
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. 常见坑
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6090" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        动手清单（60–90 分钟）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        相关图
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        下一步
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="m2-4">M2-4 · 分布式底座<a class="headerlink" href="#m2-4" title="Permanent link">&para;</a></h1>
+<blockquote>
+<p>本层回答：多张 GPU、多台机器，如何连成一台“可编程的训练机”？
+通信、网络、存储、调度、可靠性各自解决什么问题？为什么训练系统的瓶颈经常不在 GPU 里？</p>
+<p><strong>前置（按节）</strong>：
+- §2–§4：<code>notes/21_single_node_ops.md §2–§4</code>（GPU 访存层次 / Roofline）——只需要知道“搬数据很贵”。
+- §5：无硬前置；会看 <code>ls</code>/<code>fio</code> 即可。
+- §6：<code>notes/20_ai_infra_map.md §8–§9</code>（7 层与深度标尺）；TP/PP/DP/EP 会在 §6 就地定义。
+- §7–§8：<code>notes/21_single_node_ops.md §9</code>（Profiling 思路）可选。</p>
+<p><strong>建议路径（每次 45 分钟）</strong>：
+① §2–§4（集合通信 / 互联 / 拓扑）；② §5–§6（存储 / 并行通信账本）；
+③ §7（调度与虚拟化）；④ §8（可靠性 / 排障）。</p>
+<p><strong>深度标注</strong>：§2–§4、§6–§7 为必学；§5、§8 为必学（至少会算账/会分层排查）；
+RDMA 调优、拓扑设计、容量模型为加分；可编程交换、在网计算为了解。</p>
+</blockquote>
+<h2 id="0">0. 依赖图（学习顺序）<a class="headerlink" href="#0" title="Permanent link">&para;</a></h2>
+<pre class="mermaid"><code>graph TD
+  A["单机 GPU / 访存 / Roofline&lt;br/&gt;(M2-1)"] --&gt; B["集合通信&lt;br/&gt;all-reduce / all-gather / all-to-all"]
+  B --&gt; C["互联与拓扑&lt;br/&gt;NVLink / IB / RoCE / rail"]
+  C --&gt; D["并行通信账本&lt;br/&gt;DP / TP / PP / EP"]
+  D --&gt; E["存储与 Checkpoint&lt;br/&gt;吞吐 / IOPS / 元数据"]
+  E --&gt; F["调度与虚拟化&lt;br/&gt;K8s / gang / MIG"]
+  F --&gt; G["可靠性&lt;br/&gt;ECC / XID / NCCL hang"]
+  G --&gt; H["支撑 M2-2 训练系统&lt;br/&gt;与 M2-3 推理部署"]</code></pre>
+<blockquote>
+<p>根节点是“单机搬数据很贵”；每往上一层，问题从“一张卡”变成“一个域/一个集群”。
+汇点是：能判断一个分布式任务<strong>卡在通信、存储、调度还是硬件</strong>，并给出可验证的下一步。</p>
+</blockquote>
+<p><strong>术语速查（后文第一次出现时也会解释）</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>术语</th>
+<th>一句话</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>rank</td>
+<td>一个参与通信的进程/GPU 编号；<code>N</code> 个 rank 组成通信组</td>
+</tr>
+<tr>
+<td>chunk</td>
+<td>把一个大向量切成的等长分片；ring 算法按 chunk 传</td>
+</tr>
+<tr>
+<td><code>S</code></td>
+<td>每个 rank 上的数据量（字节）；注意“每 rank”还是“全网”</td>
+</tr>
+<tr>
+<td>NVLink 域</td>
+<td>通过 NVLink/NVSwitch 全互联的一组 GPU；域内带宽远高于跨节点</td>
+</tr>
+<tr>
+<td>rail</td>
+<td>节点上一组网卡/端口的编号；同一 rail 通常接同一台 leaf 交换机</td>
+</tr>
+<tr>
+<td>leaf / spine</td>
+<td>两层交换机的下/上层；leaf 接节点，spine 连 leaf</td>
+</tr>
+<tr>
+<td>bisection</td>
+<td>把集群对半切，两半之间的可用带宽；全 bisection = 无收敛</td>
+</tr>
+<tr>
+<td>收敛比</td>
+<td>下行带宽 ÷ 上行带宽；越大越容易拥塞</td>
+</tr>
+<tr>
+<td>PFC / ECN</td>
+<td>无损以太网的流控 / 拥塞标记机制</td>
+</tr>
+<tr>
+<td>GPUDirect</td>
+<td>网卡/存储直接读写 GPU 显存，绕过 CPU 拷贝</td>
+</tr>
+<tr>
+<td>MIG</td>
+<td>把一张 GPU 硬件切成多个隔离实例</td>
+</tr>
+<tr>
+<td>SR-IOV</td>
+<td>网卡/GPU 的硬件虚拟化直通</td>
+</tr>
+<tr>
+<td>XID</td>
+<td>NVIDIA 驱动报的硬件/驱动错误码</td>
+</tr>
+<tr>
+<td>straggler</td>
+<td>拖慢整个同步 step 的慢节点/慢 reader</td>
+</tr>
+<tr>
+<td>bin-packing</td>
+<td>把任务尽量塞进已有节点，减少碎片</td>
+</tr>
+</tbody>
+</table>
+<h2 id="1">1. 为什么需要分布式底座<a class="headerlink" href="#1" title="Permanent link">&para;</a></h2>
+<p>单卡放不下 70B 模型：FP16 权重 140 GB，而单卡 80 GB。即使放得下，训练也要把
+梯度、优化器状态和激活同时放进显存。于是必须把模型/数据/流水线切开，切开的代价就是<strong>通信</strong>。</p>
+<p>分布式底座回答四个问题：</p>
+<table>
+<thead>
+<tr>
+<th>问题</th>
+<th>本层内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>卡之间怎么传数据？</td>
+<td>集合通信、NVLink/PCIe、IB/RoCE、RDMA</td>
+</tr>
+<tr>
+<td>怎么切模型、切完要传多少？</td>
+<td>DP/TP/PP/EP 的通信账本</td>
+</tr>
+<tr>
+<td>数据与 Checkpoint 放哪？</td>
+<td>本地 NVMe、并行文件系统、对象存储、缓存</td>
+</tr>
+<tr>
+<td>任务怎么分到卡上、坏了怎么办？</td>
+<td>K8s/Slurm、gang、拓扑感知、虚拟化、可靠性</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>一句话</strong>：M2-1 让一张卡跑得快；M2-4 让一万张卡<strong>像一台机器一样</strong>跑得稳、跑得便宜。</p>
+<p><strong>术语速查</strong>：<code>rank</code> = 一个参与通信的进程/GPU（编号 0..N-1）；<code>leaf/spine</code> = 交换机层级；
+<code>NVLink 域</code> = 同一 NVSwitch 下、可高带宽直连的 GPU 集合；<code>XID</code> = NVIDIA 驱动的错误码；
+<code>DCQCN</code> = RoCE 的拥塞控制算法；<code>bin-packing</code> = 把任务塞进已有空隙以提高利用率。</p>
+</blockquote>
+<h2 id="2">2. 集合通信：多卡协作的动词<a class="headerlink" href="#2" title="Permanent link">&para;</a></h2>
+<h3 id="21">2.1 六个基本原语<a class="headerlink" href="#21" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>原语</th>
+<th>做什么</th>
+<th>输入 → 输出</th>
+<th>典型用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Broadcast</td>
+<td>一个 rank 的数据发给所有 rank</td>
+<td>root 的 <code>S</code> → 所有 rank 的 <code>S</code></td>
+<td>广播参数/配置</td>
+</tr>
+<tr>
+<td>Scatter</td>
+<td>root 把不同分片发给不同 rank</td>
+<td>root 的 <code>N×S/N</code> → 各 rank <code>S/N</code></td>
+<td>分发数据</td>
+</tr>
+<tr>
+<td>Gather</td>
+<td>各 rank 的分片收给 root</td>
+<td>各 rank <code>S/N</code> → root <code>N×S/N</code></td>
+<td>收集结果</td>
+</tr>
+<tr>
+<td>Reduce</td>
+<td>各 rank 的数据按 op 归约到 root</td>
+<td>各 rank <code>S</code> → root <code>S</code></td>
+<td>汇总指标</td>
+</tr>
+<tr>
+<td>AllReduce</td>
+<td>所有 rank 归约，结果给所有 rank</td>
+<td>各 rank <code>S</code> → 所有 rank <code>S</code></td>
+<td>梯度同步</td>
+</tr>
+<tr>
+<td>AllGather</td>
+<td>各 rank 的分片拼给所有 rank</td>
+<td>各 rank <code>S/N</code> → 所有 rank <code>S</code></td>
+<td>收集分片参数</td>
+</tr>
+<tr>
+<td>ReduceScatter</td>
+<td>归约后按分片散给各 rank</td>
+<td>各 rank <code>S</code> → 各 rank <code>S/N</code></td>
+<td>ZeRO/FSDP</td>
+</tr>
+<tr>
+<td>AllToAll</td>
+<td>每个 rank 给每个 rank 发不同分片</td>
+<td>各 rank <code>N×S/N</code> → 各 rank <code>N×S/N</code></td>
+<td>MoE 路由、转置</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><code>S</code> 是每个 rank 上的数据量（字节）；<code>N</code> 是 rank 数。表中“输入/输出”是<strong>每个 rank 的视角</strong>。</p>
+</blockquote>
+<p><strong>一句话记法</strong>：AllReduce = ReduceScatter + AllGather。这也是 ring all-reduce 的两阶段。</p>
+<h3 id="22-ring-all-reduce">2.2 ring all-reduce：两阶段、通信量<a class="headerlink" href="#22-ring-all-reduce" title="Permanent link">&para;</a></h3>
+<p><img alt="ring all-reduce 两阶段与通信量" src="../../diagrams/24a_ring_allreduce.landscape.png" /></p>
+<p>把 <code>N</code> 个 rank 排成环，把向量切成 <code>N</code> 个 chunk：</p>
+<ol>
+<li><strong>reduce-scatter</strong>（<code>N-1</code> 步）：每个 rank 把自己的一个 chunk 与邻居的局部和合并后传给下一个；
+   走完 <code>N-1</code> 步，每个 rank 持有<strong>一个完整归约好的 chunk</strong>。</li>
+<li><strong>all-gather</strong>（<code>N-1</code> 步）：每个 rank 把自己负责的 chunk 沿环传一圈；
+   走完 <code>N-1</code> 步，所有 rank 都有完整向量。</li>
+</ol>
+<p><strong>通信量账本</strong>（<code>S</code> = 每 rank 向量字节数）：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>每 rank 单向发送/接收 ≈ 2 × S × (N-1)/N
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>全网总流量       = 2 × S × (N-1)
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>总步数           = 2 × (N-1)
+</code></pre></div>
+<p>例：<code>N=8</code>、<code>S=1 GB</code> → 每 rank <strong>单向</strong>发送/接收 <code>2×1×7/8 = 1.75 GB</code>，全网 <code>14 GB</code>；
+100 GB/s 下约 <code>17.5 ms</code>，300 GB/s 下约 <code>5.8 ms</code>。</p>
+<blockquote>
+<p><strong>大消息看带宽，小消息看延迟</strong>：ring 的带宽最优，但有 <code>2(N-1)</code> 步的延迟；
+tree 的延迟是 <code>O(log N)</code>，但大消息的带宽不如 ring。NCCL 会按拓扑和消息大小自动选。</p>
+</blockquote>
+<h3 id="23">2.3 其他原语的量级<a class="headerlink" href="#23" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>原语</th>
+<th>每 rank 通信量（近似）</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Broadcast</td>
+<td><code>S</code></td>
+<td>root 发一圈/树</td>
+</tr>
+<tr>
+<td>Reduce</td>
+<td><code>S</code></td>
+<td>收到 root</td>
+</tr>
+<tr>
+<td>AllGather</td>
+<td><code>S(N-1)/N</code></td>
+<td>每 rank 发自己的 <code>S/N</code> 给其他 <code>N-1</code> 个</td>
+</tr>
+<tr>
+<td>ReduceScatter</td>
+<td><code>S(N-1)/N</code></td>
+<td>归约后只保留自己那份</td>
+</tr>
+<tr>
+<td>AllToAll</td>
+<td><code>S(N-1)/N</code></td>
+<td>每 rank 给其他每个 rank 发 <code>S/N</code>，共 <code>N-1</code> 份</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>这些是“每 rank 发送量”的口径；全网总流量再乘 <code>N</code>。面试先说口径，否则数字会差 <code>N</code> 倍。</p>
+</blockquote>
+<h3 id="24-ring-vs-tree">2.4 ring vs tree<a class="headerlink" href="#24-ring-vs-tree" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>ring</th>
+<th>tree</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>延迟</td>
+<td><code>O(N)</code> 步</td>
+<td><code>O(log N)</code> 步</td>
+</tr>
+<tr>
+<td>大消息带宽</td>
+<td>最优（每 rank 约 <code>2S</code>）</td>
+<td>较差（上层链路成为瓶颈）</td>
+</tr>
+<tr>
+<td>适用</td>
+<td>大梯度/大张量</td>
+<td>小消息、延迟敏感</td>
+</tr>
+<tr>
+<td>NCCL</td>
+<td>Ring</td>
+<td>Tree / 双二叉树</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>NCCL 的默认策略不是“永远 ring”：它会根据拓扑、消息大小、通道数选择
+Ring / Tree / CollNet / NVLS。调优时不要盲目 <code>NCCL_ALGO=Ring</code>，先看拓扑和消息大小。</p>
+</blockquote>
+<h3 id="25-nccl">2.5 NCCL 常用旋钮<a class="headerlink" href="#25-nccl" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>变量</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>NCCL_DEBUG=INFO</code></td>
+<td>打印拓扑、算法、通道、错误</td>
+</tr>
+<tr>
+<td><code>NCCL_DEBUG_SUBSYS=INIT,NET</code></td>
+<td>只看初始化/网络</td>
+</tr>
+<tr>
+<td><code>NCCL_ALGO=Ring/Tree</code></td>
+<td>强制算法（排障用，不要长期写死）</td>
+</tr>
+<tr>
+<td><code>NCCL_PROTO=LL/LL128/Simple</code></td>
+<td>协议；小消息 LL、大消息 Simple</td>
+</tr>
+<tr>
+<td><code>NCCL_IB_HCA</code></td>
+<td>指定 RDMA 网卡</td>
+</tr>
+<tr>
+<td><code>NCCL_SOCKET_IFNAME</code></td>
+<td>指定 TCP 控制面网卡</td>
+</tr>
+<tr>
+<td><code>NCCL_P2P_LEVEL</code></td>
+<td>P2P 走 NVLink/PCIe 的层级</td>
+</tr>
+<tr>
+<td><code>NCCL_NET_GDR_LEVEL</code></td>
+<td>GPUDirect RDMA 的层级</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>排障顺序：<code>NCCL_DEBUG=INFO</code> 看它选了哪条路径 → <code>ibstat/ibv_devinfo</code> 看网卡 →
+<code>nvidia-smi topo -m</code> 看 GPU 拓扑 → <code>nccl-tests</code> 复现。</p>
+</blockquote>
+<h3 id="26-all-reducenvlink">2.6 分层 all-reduce：NVLink 域内 + 跨节点<a class="headerlink" href="#26-all-reducenvlink" title="Permanent link">&para;</a></h3>
+<p>真实集群不是一张平 ring，而是<strong>两级</strong>：</p>
+<ol>
+<li><strong>节点内（NVLink 域）</strong>：先做 reduce-scatter，把每个 GPU 负责的 chunk 归约好；</li>
+<li><strong>跨节点（IB/RoCE）</strong>：每个节点把对应 chunk 发给其他节点，做一次 all-reduce；</li>
+<li><strong>节点内 all-gather</strong>：把跨节点结果拼回每个 GPU。</li>
+</ol>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>节点内 reduce-scatter → 跨节点 all-reduce(按节点) → 节点内 all-gather
+</code></pre></div>
+<blockquote>
+<p>这样跨节点只传“每节点一份”的 chunk，而不是每个 GPU 都发一遍；这也是 NCCL
+拓扑检测的价值。若跨节点链路是瓶颈，可以调小跨节点消息、增大节点内 chunk；
+NVLS/CollNet 则把归约放到交换机/网卡里做（了解即可）。</p>
+<p>面试画 AllReduce 路径时，要画出“节点内 NVLink + 节点间 IB”两层，而不是一条 ring 画到底；
+瓶颈通常在 leaf/spine 上行、rail 不均衡和跨 rail 流量。</p>
+</blockquote>
+<h2 id="3">3. 互联与拓扑：数据走哪条路<a class="headerlink" href="#3" title="Permanent link">&para;</a></h2>
+<h3 id="31-nvlink-nvswitch-pcie">3.1 节点内：NVLink / NVSwitch / PCIe<a class="headerlink" href="#31-nvlink-nvswitch-pcie" title="Permanent link">&para;</a></h3>
+<p><img alt="GPU 互联与集群拓扑" src="../../diagrams/24b_topology.landscape.png" /></p>
+<table>
+<thead>
+<tr>
+<th>链路</th>
+<th>带宽（数量级）</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>NVLink 3（A100）</td>
+<td>600 GB/s 双向 / GPU</td>
+<td>8 卡节点内全互联</td>
+</tr>
+<tr>
+<td>NVLink 4（H100）</td>
+<td>900 GB/s 双向 / GPU</td>
+<td>NVSwitch 全互联</td>
+</tr>
+<tr>
+<td>PCIe 4 x16</td>
+<td>64 GB/s 双向</td>
+<td>GPU–CPU、跨节点</td>
+</tr>
+<tr>
+<td>PCIe 5 x16</td>
+<td>128 GB/s 双向</td>
+<td>新一代 CPU/网卡</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>双向口径</strong>：厂商标称的 900 GB/s 是整卡 18 条 link 的双向合计（约 450 GB/s 单向）。
+IB/RoCE 的 400/200 Gb/s 则是<strong>单端口</strong>带宽。算“传一个梯度要多久”时，要用<strong>单向有效带宽</strong>，
+再乘上协议效率（通常 80–90%）；不要拿整卡 NVLink 去和单口 IB 直接比。</p>
+</blockquote>
+<h3 id="32-ib-roce-rdma">3.2 节点间：IB / RoCE / RDMA<a class="headerlink" href="#32-ib-roce-rdma" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>网络</th>
+<th>带宽</th>
+<th>延迟</th>
+<th>特点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>InfiniBand NDR</td>
+<td>400 Gb/s ≈ 50 GB/s</td>
+<td>~1–2 µs</td>
+<td>专用网络、无损、生态成熟</td>
+</tr>
+<tr>
+<td>InfiniBand HDR</td>
+<td>200 Gb/s ≈ 25 GB/s</td>
+<td>~1–2 µs</td>
+<td>上一代</td>
+</tr>
+<tr>
+<td>RoCEv2 200G</td>
+<td>200 Gb/s ≈ 25 GB/s</td>
+<td>~2–5 µs</td>
+<td>以太网承载 RDMA，依赖 PFC/ECN</td>
+</tr>
+<tr>
+<td>TCP 25G</td>
+<td>25 Gb/s ≈ 3 GB/s</td>
+<td>~10–100 µs</td>
+<td>通用、便宜、延迟高</td>
+</tr>
+</tbody>
+</table>
+<p><strong>RDMA</strong>（Remote Direct Memory Access）：网卡直接读写远端内存，绕过 CPU 和内核协议栈；
+<strong>GPUDirect RDMA</strong> 让网卡直接读写 GPU 显存，省掉一次 GPU→CPU 拷贝；
+<strong>GPUDirect Storage</strong> 让 NVMe 直接读写 GPU 显存，Checkpoint/数据加载更快。</p>
+<blockquote>
+<p>面试常问“RDMA vs TCP”：RDMA 省的是<strong>CPU 拷贝和内核路径</strong>，带来低延迟、低 CPU 占用；
+代价是需要无损网络（PFC/ECN）、配置复杂、故障域更敏感。</p>
+</blockquote>
+<h3 id="33-fat-tree-rail-optimized">3.3 拓扑：fat-tree / rail-optimized / 收敛比<a class="headerlink" href="#33-fat-tree-rail-optimized" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>fat-tree</strong>：leaf–spine 多层，任意两节点间有多条等价路径；<strong>全 bisection</strong> 时任意一半节点
+  能同时与另一半通信。代价是交换机和光模块数量。</li>
+<li><strong>rail-optimized</strong>：每个节点有 <code>R</code> 个网卡（rail），第 <code>r</code> 个网卡固定接第 <code>r</code> 个 leaf；
+  同一 rail 跨节点通信只经过一层 leaf，适合 all-to-all/专家并行。</li>
+<li><strong>收敛比（oversubscription）</strong>：下行带宽 ÷ 上行带宽。<code>1:1</code> 全无收敛最贵；
+  <code>3:1</code>、<code>4:1</code> 常见。收敛比越大，跨 spine 的流量越容易拥塞。</li>
+<li><strong>超节点</strong>：NVLink/NVSwitch 把更多 GPU 放进一个高带宽域（如 8/16/32 卡），
+  让 TP/EP 的通信留在域内。</li>
+</ul>
+<blockquote>
+<p>例：收敛比 <code>3:1</code> 表示下行 300 Gb/s 只配 100 Gb/s 上行；跨 spine 的流量一旦超过 1/3，
+就会在 leaf 上行拥塞。所以“非阻塞/全 bisection”很贵，通常只给关键 rail 或关键租户。</p>
+<p>选型直觉：<strong>TP 要低延迟、高带宽 → 放 NVLink 域；PP/DP 可跨节点；EP 的 all-to-all
+要对齐 rail</strong>。拓扑不是“画得好看”，它直接决定集合通信走几条链路、会不会拥塞。</p>
+</blockquote>
+<p><strong>万卡拓扑算例</strong>：1024 卡 = 128 节点 × 8 卡，每节点 8 个 400 Gb/s 网卡（8 rail）。</p>
+<ul>
+<li>全 bisection：每节点 8 条上行 = <code>128×8=1024</code> 条 400G 链路；leaf 层需要能同时承载
+  这 1024 条链路，spine 层再按收敛比配置。</li>
+<li><code>1:1</code> 收敛：spine 侧带宽 = leaf 侧带宽，最贵；<code>3:1</code> 收敛：上行只需 1/3 带宽，
+  跨 spine 流量会排队，适合 PP/DP 为主、EP 不跨 rail 的负载。</li>
+<li>rail-optimized：每个节点的第 <code>r</code> 张网卡接第 <code>r</code> 台 leaf；同一 rail 的 all-to-all
+  只过一层 leaf，跨 rail 才走 spine。EP 的 token 路由要尽量让同一专家组的流量落在同一 rail。</li>
+</ul>
+<h3 id="34-roce-pfc-ecn">3.4 RoCE 的稳定性：PFC / ECN / 拥塞<a class="headerlink" href="#34-roce-pfc-ecn" title="Permanent link">&para;</a></h3>
+<p>RoCEv2 把 RDMA 跑在以太网上，需要“无损”语义：</p>
+<ul>
+<li><strong>PFC（Priority Flow Control）</strong>：按优先级暂停上游流量，防止丢包；配置不当会<strong>PFC 风暴</strong>，
+  一台交换机暂停扩散到全网。</li>
+<li><strong>ECN（Explicit Congestion Notification）</strong>：交换机标记拥塞，端侧 DCQCN 降速；
+  比 PFC 更“软”，但需要端网协同。</li>
+<li><strong>排查</strong>：<code>ethtool -S</code> 看 pause/丢包，<code>perfquery</code>/<code>mlxlink</code> 看链路误码，
+  <code>ibstat</code>/<code>ibv_devinfo</code> 看端口状态；先确认“是丢包、拥塞还是链路误码”。</li>
+</ul>
+<blockquote>
+<p>现象：训练周期性变慢、NCCL 超时、某个 rail 的带宽只有一半。
+先看交换机端口计数和 PFC 事件，不要一上来就换网卡。</p>
+</blockquote>
+<h2 id="4-p2p">4. 集合通信之外的通信：P2P 与重叠<a class="headerlink" href="#4-p2p" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>P2P（point-to-point）</strong>：<code>send/recv</code>，PP 的 stage 边界、PD 分离的 KV 传输都用它。</li>
+<li><strong>通信/计算重叠</strong>：反向传播算完一桶梯度就发一桶 all-reduce（bucket）；
+  PP 的激活传输与下一层计算重叠；TP 的 all-reduce 与下一层 GEMM 重叠。</li>
+<li><strong>压缩/低精度</strong>：FP8/INT8 梯度、稀疏通信、Top-k 压缩；代价是精度和实现复杂度。</li>
+<li><strong>异步</strong>：异步 all-reduce 可能引入 stale gradient，训练稳定性要评估。</li>
+</ul>
+<blockquote>
+<p>重叠的目标不是“通信消失”，而是<strong>把通信藏到计算后面</strong>。验证方法：Nsight 时间线里
+NCCL kernel 是否与 GEMM 并发；如果 NCCL 前后有大段空隙，说明没有重叠好。</p>
+</blockquote>
+<h2 id="5-checkpoint">5. 存储：数据与 Checkpoint 的底座<a class="headerlink" href="#5-checkpoint" title="Permanent link">&para;</a></h2>
+<p><img alt="存储层级与 Checkpoint IO" src="../../diagrams/24e_storage.landscape.png" /></p>
+<h3 id="51">5.1 四层存储<a class="headerlink" href="#51" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>层</th>
+<th>特点</th>
+<th>典型系统</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>本地 NVMe</td>
+<td>几 TB、高 IOPS、低延迟</td>
+<td>节点本地盘</td>
+</tr>
+<tr>
+<td>并行文件系统</td>
+<td>高吞吐、POSIX、元数据是瓶颈</td>
+<td>Lustre、GPFS、WeKA</td>
+</tr>
+<tr>
+<td>对象存储</td>
+<td>便宜、高吞吐、延迟高</td>
+<td>S3、OSS</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>缓存层是跨层逻辑</strong>，不是“更便宜的一层”：Alluxio/JuiceFS 把热点数据放到计算节点附近，
+命中时走本地/内存，未命中再回源对象存储。</p>
+<p><strong>吞吐 vs IOPS vs 元数据</strong>是三种不同的瓶颈：
+大文件顺序读看吞吐；小文件随机读看 IOPS/元数据；海量小文件还会打爆目录服务。</p>
+</blockquote>
+<p><strong>副本 vs 纠删码（EC）</strong>：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>3 副本</th>
+<th>8+3 纠删码</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>原始容量开销</td>
+<td>3×</td>
+<td>1.375×（11/8）</td>
+</tr>
+<tr>
+<td>可容忍故障</td>
+<td>2 份</td>
+<td>3 个 shard</td>
+</tr>
+<tr>
+<td>写放大</td>
+<td>3×</td>
+<td>8 数据 + 3 校验</td>
+</tr>
+<tr>
+<td>重建</td>
+<td>读 1 份</td>
+<td>读 8 个 shard，CPU/网络开销大</td>
+</tr>
+<tr>
+<td>适用</td>
+<td>热数据、低延迟</td>
+<td>冷数据、大容量、成本敏感</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>例：1 PB 可用容量，3 副本要 3 PB 原始盘；8+3 只要 1.375 PB。代价是重建更慢、
+小文件/随机读更不友好。训练 Checkpoint 常用“副本/多路径 + 分片”，数据湖冷存用 EC。
+Checkpoint 常见“热副本 + 冷 EC”：最近几个 Checkpoint 用副本保证快速恢复，旧的转 EC 省钱。</p>
+</blockquote>
+<h3 id="52-checkpoint">5.2 Checkpoint 账本<a class="headerlink" href="#52-checkpoint" title="Permanent link">&para;</a></h3>
+<p>70B 模型、Adam 混合精度，每个参数大约：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>权重 2 B + 梯度 2 B + master weights 4 B + Adam m 4 B + Adam v 4 B = 16 B
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>70B × 16 B = 1.12 TB / 次
+</code></pre></div>
+<p><code>1 TB/s</code> 聚合带宽下理论 <code>1.12 s</code>，但真实常慢 <code>10–100×</code>：元数据、小文件/小写入、客户端缓存、
+straggler、同步屏障。优化：</p>
+<ul>
+<li><strong>分片写</strong>：每个 rank 写自己的 shard，避免所有 rank 写一个文件；</li>
+<li><strong>本地 NVMe 暂存</strong>：先落本地，再异步上传；</li>
+<li><strong>异步 Checkpoint</strong>：训练继续，后台落盘；需要保证一致性/版本；</li>
+<li><strong>增量</strong>：只存变化的部分（实现复杂，慎用）。</li>
+</ul>
+<p><strong>Checkpoint 间隔与 RTO</strong>：设单次 Checkpoint 成本 <code>C</code>（秒），集群平均无故障时间 <code>MTBF</code>（秒），
+Young-Daly 的近似最优间隔：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>τ ≈ sqrt(2 × C × MTBF)
+</code></pre></div>
+<p>例：<code>C=60 s</code>、<code>MTBF=24 h=86,400 s</code> → <code>τ≈sqrt(2×60×86400)≈3,220 s≈54 min</code>。
+间隔太短，Checkpoint 开销大；太长，故障后重算多。<code>RTO = 故障检测 + 重新调度 + 加载 Checkpoint</code>，
+万卡集群要把“检测/调度”也算进去，不能只看盘上带宽。</p>
+<blockquote>
+<p>万卡训练里，节点故障是常态：Checkpoint 要<strong>异步、分片、可并发读</strong>；
+只写一个文件会被元数据和单客户端带宽卡死。</p>
+</blockquote>
+<h3 id="53">5.3 数据加载<a class="headerlink" href="#53" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>顺序读 + 大 shard</strong> 对并行文件系统更友好；海量小文件会打爆元数据。</li>
+<li><strong>本地 cache</strong>：每个 epoch 预取到本地 NVMe；注意容量和失效。</li>
+<li><strong>packing</strong>：把短样本拼到固定长度，减少 padding 和无效计算。</li>
+<li><strong>尾延迟</strong>：一个慢 reader 会拖住整个 step；用 <code>fio</code>/<code>iostat</code>/客户端指标定位。
+   checklist：shard 是否够大、prefetch 是否足够、本地 cache 命中率、是否有单文件热点、
+   reader 进程数是否匹配 CPU、是否被其他租户的 IO 抢占、网络重传/元数据延迟。</li>
+<li><strong>P99 而不是平均</strong>：平均吞吐够，P99 慢 reader 仍会让同步 step 等；用预取、分片重试、
+  本地 cache、reader 隔离把尾延迟压下来。</li>
+</ul>
+<blockquote>
+<p>Checkpoint 不是“存一下”：它决定故障恢复时间（RTO）和有效训练时间。
+万卡训练里，Checkpoint 写失败/写慢是常见的长稳问题。</p>
+<p><strong>间隔与 RTO</strong>：太频繁 → 训练被写盘拖慢；太稀疏 → 故障后重算多。Young/Daly 近似给出
+最优间隔 <code>≈ sqrt(2 × T_ckpt × MTBF)</code>。万卡集群还要考虑并发写、分片数、元数据服务；
+异步 Checkpoint 能把写盘藏到训练后面，但要保证版本一致、回滚可用。</p>
+</blockquote>
+<h3 id="54-kv-cache">5.4 KV Cache 持久化<a class="headerlink" href="#54-kv-cache" title="Permanent link">&para;</a></h3>
+<p><strong>价值</strong>：多轮对话/Agent 的相同前缀、PD 分离的 KV 交接、请求抢占后的恢复，都可以复用 KV，
+避免重复 prefill。<strong>挑战</strong>：KV 不是“小文件”，而是按请求/前缀组织的块。</p>
+<ul>
+<li>账本：70B GQA-8、4K 上下文，每请求 KV ≈ <code>1.25 GiB</code>；1000 个并发就是 <code>1250 GiB ≈ 1.22 TiB</code>。</li>
+<li>分层：本地 NVMe（热）→ 并行 FS/对象存储（温/冷）；按前缀 hash 建索引。</li>
+<li>一致性：KV 必须绑定<strong>模型版本 + tokenizer + RoPE 配置</strong>；模型一换，缓存全部失效。</li>
+<li>安全：KV 可能包含用户上下文，多租户要隔离/加密/TTL。</li>
+<li>传输：PD 分离/跨节点复用要走 RDMA；<code>1.25 GiB</code> 在 50 GB/s 下约 27 ms（见 M2-3 §7.2）。</li>
+</ul>
+<blockquote>
+<p>不要把 KV 持久化当“免费缓存”：命中率低、索引/元数据、版本失效都会吃掉收益。</p>
+</blockquote>
+<h2 id="6-dp-tp-pp-ep">6. 并行通信账本：DP / TP / PP / EP<a class="headerlink" href="#6-dp-tp-pp-ep" title="Permanent link">&para;</a></h2>
+<p><img alt="并行通信账本" src="../../diagrams/24c_parallel_comm.landscape.png" /></p>
+<p>先定义：<code>S_act = B × T × d_model × bytes</code>（一个激活张量），<code>S_grad = 参数字节</code>。</p>
+<table>
+<thead>
+<tr>
+<th>并行</th>
+<th>传什么</th>
+<th>每 rank 通信量（近似）</th>
+<th>放哪</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>DP</strong></td>
+<td>梯度 all-reduce；FSDP 用 reduce-scatter + all-gather</td>
+<td>all-reduce <code>2S_grad</code>；reduce-scatter <code>S_grad</code>(FSDP 总 <code>2S_grad</code>)</td>
+<td>跨节点；可与反向重叠</td>
+</tr>
+<tr>
+<td><strong>TP</strong></td>
+<td>每层 2 次 all-reduce（前向）</td>
+<td>前向 <code>4 S_act</code> / 层；反向再加 <code>4 S_act</code></td>
+<td>NVLink 域内，通常 ≤8</td>
+</tr>
+<tr>
+<td><strong>PP</strong></td>
+<td>stage 边界 P2P 激活</td>
+<td><code>2 S_act</code> / micro-batch</td>
+<td>跨节点；成本主要是 bubble</td>
+</tr>
+<tr>
+<td><strong>EP</strong></td>
+<td>MoE 层 2 次 all-to-all</td>
+<td>每 rank 约 <code>2·k·S_act</code>（dispatch+combine）</td>
+<td>高带宽 rail；注意负载均衡</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>为什么 TP 放节点内</strong>：TP 每层都要 all-reduce，通信频繁且延迟敏感；跨节点会拖垮。
+<strong>为什么 PP/DP 可跨节点</strong>：PP 只在 stage 边界传激活，DP 每个 step 只同步一次梯度，
+通信/计算比更低。</p>
+</blockquote>
+<p><strong>一个 3D 例子</strong>：70B、<code>TP=8</code>、<code>PP=8</code>、<code>DP=8</code>、<code>B=1</code>、<code>T=4096</code>、<code>d_model=8192</code>、FP16：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>S_act = 1 × 4096 × 8192 × 2 B ≈ 67 MB
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>TP:PP=8 时每个 stage 10 层;前向 10×4S ≈ 2.7 GB / rank / step
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>DP:梯度先按 TP×PP 分片 → 140/64 ≈ 2.2 GB;all-reduce 每 rank 2S ≈ 4.4 GB / step
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>PP:每个 micro-batch 传 67 MB 激活;主要成本是 bubble
+</code></pre></div>
+<blockquote>
+<p>关键：<strong>先分片，再 all-reduce</strong>。3D 下 DP 的 <code>S_grad</code> 是“每 rank 分片后的梯度”，
+不是完整 140 GB；TP 只计算本 stage 的 10 层，不是 80 层。面试时这两步最容易多乘。</p>
+<p><strong>EP 口径</strong>：表里的 <code>S_act</code> 是 <strong>每 rank</strong> 本层输入的激活量；<code>k</code> 是 top-k。
+若你手里是 EP 组内全局 token 数 <code>G</code>，每 rank 的 all-to-all 量约
+<code>2·G·k/E·d_model·bytes</code>。两种写法只差“B 是全局还是每 rank”，面试时先声明口径，
+否则会差 <code>E</code> 倍。</p>
+<p>这些是数量级，不是 benchmark。真实值还要乘协议效率、拓扑跳数、拥塞。
+面试时先写公式，再代数字；不要只报一个“很快/很慢”。</p>
+</blockquote>
+<h3 id="61-3d">6.1 3D 映射与流水线调度<a class="headerlink" href="#61-3d" title="Permanent link">&para;</a></h3>
+<p><img alt="GPipe 调度与 bubble" src="../../diagrams/24d_pipeline.landscape.png" /></p>
+<ul>
+<li><strong>global batch = B_micro × m × DP</strong>：<code>m</code> 是 micro-batch 数（流水线切分），不是 batch 维。</li>
+<li><strong>GPipe</strong>：每个 stage 先做完所有 micro-batch 的前向，再做所有反向；前向波 <code>S0→S3</code>，
+  反向波 <code>S3→S0</code>。气泡比例 <code>(p-1)/(m+p-1)</code>：<code>p=4,m=4</code> 时 <code>3/7≈42.9%</code>。</li>
+<li><strong>1F1B</strong>：稳态阶段每步一前一后，未完成 micro-batch 从 <code>O(m)</code> 降到 <code>O(p)</code>，省激活；
+  bubble 比例不变。</li>
+<li><strong>重叠</strong>：PP 的 P2P 激活、DP 的分桶 all-reduce、TP 的层内 all-reduce 都要尽量与计算重叠。</li>
+<li><strong>选择</strong>：显存紧 → 小 <code>m</code> + 重算/ZeRO；吞吐优先 → 大 <code>m</code>（bubble 小）但激活涨。</li>
+</ul>
+<h2 id="7">7. 调度与虚拟化：资源怎么分、怎么切<a class="headerlink" href="#7" title="Permanent link">&para;</a></h2>
+<p><img alt="集群调度与 GPU 虚拟化" src="../../diagrams/24f_scheduling.landscape.png" /></p>
+<h3 id="71-k8s-gpu">7.1 K8s 的 GPU 抽象<a class="headerlink" href="#71-k8s-gpu" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Device Plugin</strong>：把 <code>nvidia.com/gpu</code> 这类资源暴露给 K8s；</li>
+<li><strong>GPU Operator</strong>：自动装驱动、容器运行时、DCGM exporter；</li>
+<li><strong>MIG</strong>：把一张 GPU 切成多个硬件实例（A100 最多 7 个），隔离好、切分固定；</li>
+<li><strong>time-slicing</strong>：多个容器分时复用一张 GPU，隔离弱，适合开发/低负载；</li>
+<li><strong>SR-IOV / vGPU</strong>：SR-IOV 是硬件直通；vGPU 是中介虚拟化（hypervisor 调度），两者都依赖硬件/驱动。</li>
+</ul>
+<h3 id="72-gang-scheduling">7.2 gang scheduling<a class="headerlink" href="#72-gang-scheduling" title="Permanent link">&para;</a></h3>
+<p>分布式训练要求“所有 worker 同时启动”，否则先启动的 worker 会空等甚至死锁。
+<strong>gang scheduling</strong> 保证一个作业要么全拿到资源，要么不启动：</p>
+<ul>
+<li>K8s 的 gang 由 Volcano 等提供；Slurm 是另一套 HPC 调度器（K8s 外）；Kueue 主要做队列/配额/准入，不替代 gang 调度器，通常和 Volcano 组合；</li>
+<li>代价：排队时间变长、碎片可能增加；</li>
+<li>与优先级/抢占结合时，要避免低优先级作业被反复抢占。</li>
+</ul>
+<h3 id="73">7.3 拓扑感知与碎片治理<a class="headerlink" href="#73" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>拓扑感知</strong>：把 TP 放进同一 NVLink 域，把 EP 对齐 rail，把 NUMA/网卡亲和性考虑进去。</li>
+<li><strong>碎片</strong>：大作业要 8 卡整机，但集群只剩零散 2 卡 → 利用率下降。
+  治理：整机预留、bin-packing、队列分级、可抢占的碎片作业。</li>
+<li><strong>碎片算例</strong>：1000 张卡、碎片率 20% ≈ 200 张卡无法组成整机；如果大作业都要 8 卡整机，
+  这部分卡就“看着空闲、实际不可用”。治理：整机预留、bin-packing、队列分级、允许小作业
+  填缝、坏节点及时 drain。</li>
+<li><strong>在离线混部</strong>：在线服务保 SLO，离线训练用剩余资源；需要资源隔离、优先级、
+  动态配额和快速驱逐。混部不是“把空闲卡塞满”：在线 P99 一抖，离线任务就要让路。</li>
+</ul>
+<p><strong>多租户与公平性</strong>：</p>
+<ul>
+<li><strong>配额</strong>：namespace/ResourceQuota 限制每租户的 GPU 数、并发任务数；</li>
+<li><strong>fair share</strong>：按权重分配空闲资源，避免一个大租户饿死其他人；</li>
+<li><strong>隔离</strong>：MIG/time-slicing/SR-IOV；训练任务优先整卡，开发任务可共享；</li>
+<li><strong>优先级/抢占</strong>：高优任务可抢占低优任务；被抢占任务要能从 Checkpoint 恢复；</li>
+<li><strong>计量</strong>：按 GPU·小时/ token/存储计费，账单要能追溯到任务与租户；</li>
+<li><strong>准入</strong>：配额不足时排队或拒绝，不要让“先到先占”打乱公平性。</li>
+</ul>
+<blockquote>
+<p>例：32 卡集群，租户 A 配额 16 卡、B 配额 16 卡；A 空闲时 B 可以借用，但 A 有任务时要能
+在约定时间内收回（抢占/排队），这就是“弹性 + 公平”的取舍。</p>
+</blockquote>
+<p><strong>在离线混部算例</strong>：在线推理占 60% 卡、SLO <code>TTFT P99&lt;500 ms</code>；离线训练用剩余 40% 卡，
+但随时可能被抢占。做法：在线池预留 + 离线池 best-effort；离线任务每 10 分钟 Checkpoint，
+被抢占后 2 分钟内 drain 并从 Checkpoint 恢复；监控在线 P99、离线有效训练时间、抢占次数。
+如果离线流量把在线 P99 推高，就触发限流/降级，而不是继续塞任务。</p>
+<h3 id="74-slurm-vs-k8s">7.4 Slurm vs K8s<a class="headerlink" href="#74-slurm-vs-k8s" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Slurm</th>
+<th>K8s</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>出身</td>
+<td>HPC</td>
+<td>云原生</td>
+</tr>
+<tr>
+<td>强项</td>
+<td>gang/拓扑/作业数组、超算生态</td>
+<td>Operator、多租户、服务编排</td>
+</tr>
+<tr>
+<td>弱项</td>
+<td>云原生生态弱</td>
+<td>GPU 调度需插件/扩展</td>
+</tr>
+<tr>
+<td>选型</td>
+<td>纯训练/HPC 优先</td>
+<td>平台化/多租户/在线服务优先</td>
+</tr>
+</tbody>
+</table>
+<h3 id="75">7.5 调度器性能、仿真与碎片算例<a class="headerlink" href="#75" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>调度延迟</strong>：队列里有 1 万个作业时，调度器要在一秒内做出决策；常见优化是增量调度、
+  只重算受影响节点、缓存拓扑/配额、批量绑定。</li>
+<li><strong>吞吐</strong>：调度次数/秒、Pod 绑定次数/秒、API server 压力；大规模集群里 etcd 和
+  kube-scheduler 都可能成为瓶颈。</li>
+<li><strong>仿真/回放</strong>：用真实 trace（作业到达时间、资源需求、运行时长）回放调度策略，
+  比较利用率、排队时间、碎片率；不要直接在线上 A/B。</li>
+<li><strong>碎片定义</strong>：<strong>stranded（搁浅）GPU</strong> = 空闲但无法满足任何排队作业资源形状的卡。
+  碎片率 = stranded GPU 数 / 总 GPU 数。
+  例：32 卡集群，空闲是 <code>2+2+4</code> 三块，8 卡整机作业无法启动 → stranded = 8，
+  碎片率 <code>8/32=25%</code>。若 1000 卡里 200 卡 stranded，就是 20% 碎片率。
+  治理：整机预留、bin-packing、队列分级、可抢占碎片作业。</li>
+</ul>
+<blockquote>
+<p>面试问“调度器瓶颈在哪”：先分<strong>决策延迟</strong>、<strong>绑定吞吐</strong>、<strong>状态存储</strong>、<strong>碎片</strong>四层，
+再给一个可观测指标（queue latency / scheduling throughput / fragmentation / utilization）。</p>
+</blockquote>
+<p><strong>队列算例</strong>：作业到达 100 个/s，调度器稳定能处理 120 个/s → 利用率 83%，队列不会无限增长；
+若到达升到 150 个/s，积压速度 30 个/s，10 分钟就积压 1.8 万个作业。
+用 Little's Law 估队列长度 <code>L=λW</code>：到达 100/s、平均排队 30 s → 约 3000 个等待作业。</p>
+<p><strong>指标</strong>：调度吞吐（jobs/s）、绑定吞吐（pods/s）、排队 P99、利用率、碎片率、抢占次数、任务成功率。
+多租户/公平性见 §7.3；Slurm vs K8s 见 §7.4。</p>
+<h2 id="8-hang">8. 可靠性：坏卡、坏链路、hang<a class="headerlink" href="#8-hang" title="Permanent link">&para;</a></h2>
+<h3 id="81">8.1 常见硬件错误<a class="headerlink" href="#81" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>现象</th>
+<th>可能原因</th>
+<th>检查</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ECC 错误</td>
+<td>HBM 位翻转</td>
+<td><code>nvidia-smi -q</code>、DCGM</td>
+</tr>
+<tr>
+<td>XID 79</td>
+<td>GPU 掉卡/PCIe 问题</td>
+<td>dmesg、<code>nvidia-smi -q</code></td>
+</tr>
+<tr>
+<td>XID 48/63/94/95</td>
+<td>ECC/显存/驱动错误</td>
+<td>DCGM、厂商文档</td>
+</tr>
+<tr>
+<td>NVLink 错误</td>
+<td>链路误码/连接器</td>
+<td><code>nvidia-smi nvlink -e</code>、<code>dcgmi diag</code></td>
+</tr>
+<tr>
+<td>PCIe AER</td>
+<td>链路错误</td>
+<td>dmesg、<code>lspci -vv</code></td>
+</tr>
+<tr>
+<td>温度/功耗</td>
+<td>散热/供电</td>
+<td><code>nvidia-smi -q -d TEMPERATURE,POWER</code></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>XID 的具体含义随驱动/架构变化，面试时说“先查 XID 表和 dmesg，再决定 drain 还是重启”，
+不要背一个绝对映射。</p>
+</blockquote>
+<h3 id="82">8.2 健康检查与自愈<a class="headerlink" href="#82" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>burn-in</strong>：新节点跑 <code>dcgmi diag</code>、<code>nccl-tests</code>、<code>gpu-burn</code>；</li>
+<li><strong>巡检</strong>：定期 ECC/NVLink/PCIe 检查，发现坏节点 <code>cordon</code>/<code>drain</code>；</li>
+<li><strong>自愈</strong>：坏节点自动隔离、任务重调度、Checkpoint 恢复；</li>
+<li><strong>冗余</strong>：热备节点、N+1 电源/网络、双 rail。</li>
+</ul>
+<h3 id="83-nccl-hang">8.3 NCCL hang 排查<a class="headerlink" href="#83-nccl-hang" title="Permanent link">&para;</a></h3>
+<p>训练“卡住”不一定是 NCCL，但 NCCL hang 很常见：</p>
+<ol>
+<li><strong>看日志</strong>：<code>NCCL_DEBUG=INFO</code>、<code>NCCL_DEBUG_SUBSYS=INIT,NET</code>；确认卡在哪个 collective；</li>
+<li><strong>看是否异步错误</strong>：<code>CUDA_LAUNCH_BLOCKING=1</code> 复现，检查 <code>cudaGetLastError</code>；</li>
+<li><strong>看拓扑/网卡</strong>：<code>nvidia-smi topo -m</code>、<code>ibstat</code>、<code>ibv_devinfo</code>、<code>ping</code>；</li>
+<li><strong>看进程</strong>：<code>py-spy dump</code>、<code>gdb</code>、<code>strace</code>，确认是等通信还是等锁；</li>
+<li><strong>缩小规模</strong>：<code>nccl-tests</code> 从 2 卡到 8 卡逐级复现；换节点/换网卡做二分；</li>
+<li><strong>超时</strong>：<code>NCCL_TIMEOUT</code>/<code>TORCH_NCCL_TIMEOUT</code> 只用于暴露问题，不要用它“解决” hang。</li>
+</ol>
+<blockquote>
+<p>分层定位：单机内 → NVLink/PCIe；跨机 → IB/RoCE/交换机；框架 → 进程组/collective 顺序；
+存储 → Checkpoint/数据加载。不要一上来就重启整个集群。</p>
+</blockquote>
+<h3 id="84">8.4 长稳训练<a class="headerlink" href="#84" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>straggler</strong>：某张卡/某个 reader 慢，拖住整个同步 step；</li>
+<li><strong>silent data corruption</strong>：ECC 没报错但结果错，靠校验/对比/重复实验发现；</li>
+<li><strong>loss spike/NaN</strong>：可能是数据、精度、通信、优化器或框架 bug，按 M2-2 §9 排查；</li>
+<li><strong>弹性训练</strong>：节点故障后重新组网、恢复 Checkpoint；代价是复杂度和性能波动。</li>
+</ul>
+<h2 id="9">9. 面试要点<a class="headerlink" href="#9" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>ring all-reduce 的通信量怎么算？</strong> → 两阶段，每 rank <code>2S(N-1)/N</code>，总流量 <code>2S(N-1)</code>；
+   总步数 <code>2(N-1)</code>。大消息看带宽，小消息看延迟。</li>
+<li><strong>ring 和 tree 怎么选？</strong> → ring 大消息带宽最优；tree 延迟 <code>O(log N)</code>，适合小消息；
+   NCCL 会按拓扑/消息大小自动选。</li>
+<li><strong>为什么 TP 放节点内、PP/DP 跨节点？</strong> → TP 每层都 all-reduce，延迟敏感；
+   PP 只在 stage 边界传激活，DP 每步只同步一次梯度。</li>
+<li><strong>RDMA 和 TCP 的区别？</strong> → RDMA 绕过 CPU/内核，低延迟、低 CPU 占用；
+   需要无损网络（PFC/ECN），配置复杂。</li>
+<li><strong>fat-tree 和 rail-optimized 怎么选？</strong> → fat-tree 全 bisection、通用；
+   rail 让同一 rail 只过一层 leaf，适合 all-to-all/EP；看流量模式和成本。</li>
+<li><strong>Checkpoint 为什么慢？</strong> → 写放大、元数据、小文件、straggler、同步屏障；
+   优化：分片、本地 NVMe 暂存、异步、增量。</li>
+<li><strong>K8s 怎么调度 GPU？</strong> → device plugin 暴露 <code>nvidia.com/gpu</code>；gang scheduling 保证
+   全有或全无；拓扑感知把 TP 放进 NVLink 域；MIG/time-slicing/SR-IOV 做切分。</li>
+<li><strong>NCCL hang 怎么排查？</strong> → <code>NCCL_DEBUG=INFO</code> 看卡在哪个 collective；查拓扑/网卡/
+   进程；<code>nccl-tests</code> 缩小规模；二分换节点；不要只靠超时。</li>
+<li><strong>万卡集群碎片率 20% 怎么治理？</strong> → 整机预留、bin-packing、队列分级、可抢占碎片作业、
+   拓扑感知；先量化碎片来源（大作业/小作业/坏节点）。</li>
+<li><strong>GPU 虚拟化怎么选？</strong> → MIG 隔离好但固定；time-slicing 隔离弱、适合开发；
+    SR-IOV/vGPU 支持多租户但依赖硬件/驱动。</li>
+<li><strong>存储的吞吐、IOPS、元数据瓶颈怎么区分？</strong> → 大文件顺序读看吞吐；小文件随机看 IOPS；
+    海量小文件看元数据；用 <code>fio</code> 分场景测。</li>
+<li><strong>训练集群的 SLO 是什么？</strong> → 任务成功率、有效训练时间、Checkpoint 耗时、
+    故障恢复时间、GPU 利用率；不是单一“可用性”。</li>
+</ol>
+<h2 id="10">10. 常见坑<a class="headerlink" href="#10" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>把“带宽”当成“有效吞吐”</strong>：标称 900 GB/s 是双向峰值，实际单向、协议效率、拥塞都要打折。</li>
+<li><strong>只看单卡利用率</strong>：GPU 利用率高不代表在算，可能在等通信/等数据。</li>
+<li><strong>把 ring 当万能</strong>：小消息时 tree 更快；NCCL 的选择要看拓扑。</li>
+<li><strong>算通信量不写口径</strong>：每 rank 还是全网？发送还是收发？差 <code>N</code> 倍。</li>
+<li><strong>以为 TP 可以无限扩</strong>：TP 每层都通信，跨节点会拖垮；通常 ≤8。</li>
+<li><strong>忽略 bubble</strong>：PP 的 bubble 是理论下界，micro-batch 太少时利用率很低。</li>
+<li><strong>Checkpoint 只算写入时间</strong>：元数据、同步、straggler 才是大头。</li>
+<li><strong>把 MIG 当“免费切分”</strong>：切分固定、显存/带宽也切；不是所有模型都适合。</li>
+<li><strong>NCCL hang 就重启</strong>：不定位根因，下一次还会 hang；先看日志和拓扑。</li>
+<li><strong>把拓扑图画成“逻辑图”</strong>：真正决定性能的是物理链路、rail、收敛比。</li>
+</ul>
+<h2 id="6090">动手清单（60–90 分钟）<a class="headerlink" href="#6090" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p>环境：至少 2 张 NVIDIA GPU；没有多卡时用 <code>nccl-tests</code> 的单机多进程模式。</p>
+</blockquote>
+<ol>
+<li><strong>ring all-reduce 账本</strong>：写一个函数，输入 <code>N, S, BW</code>，输出每 rank 通信量、总流量、
+   理论时间；扫 <code>N=2..64</code>，画曲线并解释为什么大 <code>N</code> 下时间近似线性。</li>
+<li><strong>nccl-tests</strong>：跑 <code>all_reduce_perf -b 8M -e 1G -f 2 -g &lt;GPU 数&gt;</code>，记录不同消息大小的
+   bus bandwidth；对比 <code>NCCL_ALGO=Ring</code> 与默认，解释差异。</li>
+<li><strong>拓扑检查</strong>：<code>nvidia-smi topo -m</code>、<code>ibstat</code>、<code>ibv_devinfo</code>，画出本机/本集群的
+   GPU–网卡–交换机路径；标出 TP/PP 应该放哪。</li>
+<li><strong>Checkpoint 账本</strong>：用 7B/70B 参数，算 FP16/Adam 的 Checkpoint 大小；
+   用 <code>fio</code> 测本地 NVMe 与网络盘的顺序写带宽，估算实际 Checkpoint 时间。</li>
+<li><strong>K8s gang / 队列（可选）</strong>：用 Volcano 提交 2-worker job 观察“全有或全无”；用 Kueue 提交队列/配额实验观察排队/准入（Kueue 不是 gang 调度器）；
+   故意只给 1 张卡，确认不会启动半个作业。</li>
+</ol>
+<p>验收标准：能对“一次 all-reduce / 一次 Checkpoint / 一次 NCCL hang”分别给出
+<strong>公式 + 数量级 + 下一步验证</strong>，而不是只报一个现象。</p>
+<h2 id="_1">相关图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>24a_ring_allreduce</code> — ring all-reduce 两阶段与通信量；</li>
+<li><code>24b_topology</code> — NVLink/NVSwitch、IB/RoCE、rail-optimized；</li>
+<li><code>24c_parallel_comm</code> — DP/TP/PP/EP 通信账本；</li>
+<li><code>24d_pipeline</code> — GPipe 调度、bubble、1F1B、通信重叠；</li>
+<li><code>24e_storage</code> — 存储层级、Checkpoint 账本、数据加载；</li>
+<li><code>24f_scheduling</code> — gang、拓扑感知、MIG/time-slicing、Slurm vs K8s。</li>
+</ul>
+<h2 id="_2">下一步<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>M2-2 训练系统</strong>：把本层的通信账本、存储、调度用到一次完整的训练 step；
+  显存账本、ZeRO/FSDP、3D 并行、MFU、Checkpoint、RL。</li>
+<li><strong>M2-5 平台与稳定性</strong>：把本层的调度/可靠性上升为平台、SLO、on-call 与容量。</li>
+<li>若走推理线：回到 <strong>M2-3 §7</strong>，用 PD 分离/KV 传输把本层的 RDMA/NVLink 用起来。</li>
+</ul>
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.top", "navigation.indexes", "content.code.copy", "search.suggest", "search.highlight", "toc.follow"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+        <script src="../../javascripts/mathjax.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs" type="module"></script>
+      
+    
+  </body>
+</html>

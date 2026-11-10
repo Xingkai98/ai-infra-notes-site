@@ -1,0 +1,2760 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="从 Transformer 骨架到推理系统的 29 篇讲义（本地预览）">
+      
+      
+      
+      
+        <link rel="prev" href="../24_distributed_base/">
+      
+      
+        <link rel="next" href="../26_frontier_edge/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>第 5 层 · M2-5 平台与稳定性 - AI Infra 讲义</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#m2-5" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="../.." title="AI Infra 讲义" class="md-header__button md-logo" aria-label="AI Infra 讲义" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            AI Infra 讲义
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              第 5 层 · M2-5 平台与稳定性
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切到深色"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="切到深色" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切到浅色"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="切到浅色" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="AI Infra 讲义" class="md-nav__button md-logo" aria-label="AI Infra 讲义" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    AI Infra 讲义
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI Infra 讲义
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Notes
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Notes
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01_skeleton/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第一层 · 骨架 —— 从文本到矩阵
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02_attention/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二层 · 心脏 —— Self-Attention 的 Q/K/V
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03_block/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第三层 · 加强 —— Multi-Head、残差、LayerNorm、FFN
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04_architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第四层 · 组装 —— Encoder / Decoder / 掩码 / Cross-Attention
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05_modern/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第五层 · 现代变体 —— 从原论文到 LLaMA/GPT
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_inference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第六层 · 跑起来 —— 训练/推理、KV Cache、完整 forward
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_pretraining/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第七层 · 预训练 —— 目标、数据与 Scaling Law
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../08_alignment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第八层 · 对齐 —— SFT、RLHF、DPO 与安全
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09_evaluation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第九层 · 评测 —— benchmark、污染、judge 与可复现
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../10_decoding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十层 · 解码 —— 从 logits 到 token
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../11_applications/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十一层 · 应用 —— Prompt、RAG、工具与 Agent
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../12_multimodal/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十二层 · 多模态 —— VLM、扩散与语音
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../13_reasoning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十三层 · 推理模型 —— 测试时计算、长 CoT 与 RLVR
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../14_long_context/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十四层 · 长上下文 —— 位置外推、注意力模式与 KV 账本
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../15_peft_lora/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十五层 · PEFT 与 LoRA —— 用 0.1% 参数做微调
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../16_agent_rl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十六层 · Agent RL —— rollout、环境、奖励与异步训练
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../17_data_engineering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十七层 · 数据工程 —— 从原始语料到数据飞轮
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../18_interpretability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十八层 · 可解释性 —— 从探针到电路与 SAE
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../19_multimodal_deep/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十九层 · 多模态深化 —— VLM、视频/音频与扩散
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../20_ai_infra_map/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模块二 · M2-0 地图与坐标系
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（2026-10-21 补全景图 20g）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../21_single_node_ops/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模块二 · M2-1 单机与算子
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（2026-10-21 补结构图 20h/20i/20j/20k）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../22_inference_systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模块二 · M2-3 推理系统
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（2026-10-21 补结构图 20l–20q）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../23_training_systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 2 层 · M2-2 训练系统
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../24_distributed_base/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 4 层 · M2-4 分布式底座
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 5 层 · M2-5 平台与稳定性
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 5 层 · M2-5 平台与稳定性
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0. 依赖图（学习顺序）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. 平台分层：从资源到用户
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-maas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. MaaS：模型即服务
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. MaaS：模型即服务">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 多租户
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 模型路由、灰度、回滚
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23-sla" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.3 自动扩缩与 SLA
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-mlops" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. MLOps：可复现、可追溯、可治理
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. MLOps：可复现、可追溯、可治理">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 把研究员需求抽象成 API
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-metrics-logs-traces" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. 可观测：metrics / logs / traces
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. 可观测：metrics / logs / traces">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-oncall" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 告警与 OnCall
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42-runbook" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 Runbook 模板
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-slo-sli" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. SLO / SLI / 错误预算 / 容量
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. SLO / SLI / 错误预算 / 容量">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#51" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.1 指标口径
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#52-littles-law" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.2 容量：Little's Law 与排队
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#53-slosli" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.3 训练集群的 SLO/SLI
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. 故障与稳定性
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. 故障与稳定性">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#61" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.1 分层定位
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#62" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.2 降级、容灾与演练
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#63-gpu" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.3 GPU 故障自动发现与自愈
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#64" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.4 训练任务失败：分类、重试、恢复
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-token" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. 成本：单位 token 成本与利用率
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. 安全与合规（点到为止）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. 面试要点
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. 常见坑
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6090" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        动手清单（60–90 分钟）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        相关图
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        下一步
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../26_frontier_edge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 6 层 · M2-6 前沿与端侧
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../27_agent_engineering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二十七层 · Agent 工程化：Context / Harness / Loop / Graph
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--v1"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../28_vllm_source_trace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二十八层 · vLLM v1 源码 trace：一次请求怎么走
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--v1"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../29_agent_eval_infra/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二十九层 · Agent 评测 Infra：从打分到可复现的评测平台
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--v1"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../worksheets/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Worksheets
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Worksheets
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0. 依赖图（学习顺序）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. 平台分层：从资源到用户
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-maas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. MaaS：模型即服务
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. MaaS：模型即服务">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 多租户
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 模型路由、灰度、回滚
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23-sla" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.3 自动扩缩与 SLA
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-mlops" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. MLOps：可复现、可追溯、可治理
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. MLOps：可复现、可追溯、可治理">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 把研究员需求抽象成 API
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-metrics-logs-traces" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. 可观测：metrics / logs / traces
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. 可观测：metrics / logs / traces">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-oncall" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 告警与 OnCall
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42-runbook" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 Runbook 模板
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-slo-sli" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. SLO / SLI / 错误预算 / 容量
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. SLO / SLI / 错误预算 / 容量">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#51" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.1 指标口径
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#52-littles-law" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.2 容量：Little's Law 与排队
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#53-slosli" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.3 训练集群的 SLO/SLI
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. 故障与稳定性
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. 故障与稳定性">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#61" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.1 分层定位
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#62" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.2 降级、容灾与演练
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#63-gpu" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.3 GPU 故障自动发现与自愈
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#64" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.4 训练任务失败：分类、重试、恢复
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-token" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. 成本：单位 token 成本与利用率
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. 安全与合规（点到为止）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. 面试要点
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. 常见坑
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6090" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        动手清单（60–90 分钟）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        相关图
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        下一步
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="m2-5">M2-5 · 平台与稳定性<a class="headerlink" href="#m2-5" title="Permanent link">&para;</a></h1>
+<blockquote>
+<p>本层回答：怎么把训练/推理/数据/模型能力变成研究员和业务方<strong>自助、可观测、可计量</strong>的平台？
+线上出问题时，怎么在 5 分钟内判断“哪里坏了、影响多大、先做什么”？</p>
+<p><strong>前置（按节）</strong>：
+- §2–§3：<code>notes/24_distributed_base.md §7</code>（K8s/gang/多租户/虚拟化）、
+  <code>notes/23_training_systems.md §6</code>（Checkpoint/容错）。
+- §4–§6：<code>notes/22_inference_systems.md §1、§11–§13</code>（TTFT/TPOT/SLO/容量）。
+- §7–§8：<code>notes/24_distributed_base.md §8</code>（XID/NCCL hang/可靠性）。</p>
+<p><strong>建议路径（每次 45 分钟）</strong>：
+① §1–§3（平台分层 / MaaS / MLOps）；② §4–§5（可观测 / SLO / 容量）；
+③ §6–§7（故障 / 成本）；④ §8（安全合规，点到为止）。</p>
+<p><strong>深度标注</strong>：§1–§6 为必学；§7 成本为必学（至少会算单位 token 成本）；
+§8 安全/合规为了解；调度/网络/存储细节回到 M2-4。</p>
+</blockquote>
+<h2 id="0">0. 依赖图（学习顺序）<a class="headerlink" href="#0" title="Permanent link">&para;</a></h2>
+<pre class="mermaid"><code>graph TD
+  A["训练/推理/调度底座&lt;br/&gt;(M2-2/3/4)"] --&gt; B["平台分层&lt;br/&gt;数据/训练/模型/推理/流水线"]
+  B --&gt; C["MaaS 与多租户&lt;br/&gt;API/配额/计费/灰度/扩缩"]
+  B --&gt; D["MLOps&lt;br/&gt;CI/CD/CT/lineage/治理"]
+  C --&gt; E["可观测&lt;br/&gt;metrics/logs/traces/DCGM"]
+  E --&gt; F["SLO/SLI/错误预算&lt;br/&gt;P99/goodput/容量"]
+  F --&gt; G["故障与稳定性&lt;br/&gt;on-call/runbook/复盘/容灾"]
+  G --&gt; H["成本&lt;br/&gt;单位 token/利用率/分摊"]
+  H --&gt; I["安全与合规&lt;br/&gt;隔离/隐私/模型保护"]</code></pre>
+<blockquote>
+<p>汇点是：能把一个 AI 系统<strong>产品化、可观测、可计量、可恢复</strong>，并用 SLO 和成本做取舍。</p>
+</blockquote>
+<h2 id="1">1. 平台分层：从资源到用户<a class="headerlink" href="#1" title="Permanent link">&para;</a></h2>
+<p><img alt="平台分层与 MaaS 请求路径" src="../../diagrams/25a_platform.landscape.png" /></p>
+<table>
+<thead>
+<tr>
+<th>层</th>
+<th>解决什么</th>
+<th>典型能力</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>数据层</td>
+<td>数据从哪来、版本是什么</td>
+<td>数据集、lineage、feature store、质量</td>
+</tr>
+<tr>
+<td>训练层</td>
+<td>任务怎么跑</td>
+<td>任务提交、环境、队列、Checkpoint、实验追踪</td>
+</tr>
+<tr>
+<td>模型注册层</td>
+<td>哪个模型能上线</td>
+<td>版本、评测、审批、元数据</td>
+</tr>
+<tr>
+<td>推理层</td>
+<td>怎么服务</td>
+<td>部署、路由、扩缩容、灰度</td>
+</tr>
+<tr>
+<td>流水线层</td>
+<td>怎么串起来</td>
+<td>CI/CD/CT、数据/训练/评测编排</td>
+</tr>
+<tr>
+<td>应用/门户</td>
+<td>用户怎么用</td>
+<td>API、SDK、控制台、配额/计费</td>
+</tr>
+</tbody>
+</table>
+<p><strong>自建 vs 采购</strong>：调度、训练、推理、数据闭环是核心差异化，通常自建；
+监控/日志/CI/部分模型服务可以采购或开源。不要为了“全栈自研”重复造轮子。</p>
+<blockquote>
+<p>平台的价值不是“有 GPU”，而是让用户<strong>自助</strong>（不用找人开权限）、<strong>可观测</strong>（知道任务在干什么）、
+<strong>可计量</strong>（知道花了多少）。这三件事决定采用率。</p>
+</blockquote>
+<h2 id="2-maas">2. MaaS：模型即服务<a class="headerlink" href="#2-maas" title="Permanent link">&para;</a></h2>
+<p>一条请求的路径：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>客户端 → 网关(鉴权/限流/配额/路由) → 模型路由(租户/版本/成本)
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>      → 推理池(引擎/GPU) → 计量/计费 → 可观测
+</code></pre></div>
+<h3 id="21">2.1 多租户<a class="headerlink" href="#21" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>配额</strong>：每租户的 GPU 数、并发请求数、token/月上限；</li>
+<li><strong>隔离</strong>：命名空间、MIG/time-slicing、网络策略；训练任务优先整卡；</li>
+<li><strong>公平</strong>：fair-share/优先级/抢占；空闲资源可借用，但要有回收机制；</li>
+<li><strong>计费</strong>：按 token、GPU·小时、存储、网络分别计量；账单可追溯到任务/租户。</li>
+</ul>
+<blockquote>
+<p>多租户不是“加个 namespace”：要同时解决<strong>隔离、公平、配额、计费、审计</strong>。</p>
+</blockquote>
+<p><strong>任务状态机</strong>：<code>提交 → 准入(配额/权限) → 排队 → 运行 → Checkpoint → 成功/失败/取消</code>。
+每个状态都要可观测、可重试、可取消；准入要检查配额、镜像/环境、数据权限，
+避免“先占资源再失败”。</p>
+<p><strong>配额层级</strong>：租户 → 项目/团队 → 用户/任务；支持硬配额（不能超）和软配额（可借用，
+但高优任务来了要回收）。配额要和优先级/抢占一起设计。</p>
+<h3 id="22">2.2 模型路由、灰度、回滚<a class="headerlink" href="#22" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>路由</strong>：按租户/版本/成本/地域选择模型池；A/B 测试、影子流量；</li>
+<li><strong>灰度</strong>：按流量比例/用户群/请求特征逐步放量；</li>
+<li><strong>回滚</strong>：模型版本、配置、提示词都要可回滚；回滚要能在分钟级完成；</li>
+<li><strong>热更新</strong>：不中断服务地换权重；注意 KV Cache/前缀缓存要随模型版本失效。</li>
+</ul>
+<h3 id="23-sla">2.3 自动扩缩与 SLA<a class="headerlink" href="#23-sla" title="Permanent link">&para;</a></h3>
+<ul>
+<li>指标：队列长度、TTFT SLO、GPU 利用率、goodput；</li>
+<li>扩容有冷启动（拉镜像/加载模型），要预留 buffer；</li>
+<li><strong>SLA</strong> 是对外合同，<strong>SLO</strong> 是内部目标；SLA 通常比 SLO 宽松。</li>
+<li>过载时：限流、排队、降级（小模型/短输出）、切流；不要等雪崩。</li>
+</ul>
+<h2 id="3-mlops">3. MLOps：可复现、可追溯、可治理<a class="headerlink" href="#3-mlops" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>CI/CD/CT</strong>：代码/配置/数据/模型都要版本化；CT（continuous training）按数据漂移触发；</li>
+<li><strong>可复现</strong>：固定代码、数据、环境、随机种子、硬件；记录每一步的输入/输出；</li>
+<li><strong>Artifact lineage</strong>：数据 → 训练 → 模型 → 部署，每条边可追溯；</li>
+<li><strong>Feature store</strong>：离线/在线特征一致，避免训练-服务偏差；</li>
+<li><strong>模型治理</strong>：评测、审批、卡点、审计、合规；谁在什么时候把哪个模型放上线。</li>
+</ul>
+<blockquote>
+<p>面试问“平台怎么设计”：先讲<strong>任务模型/资源模型/权限模型</strong>，再讲生命周期
+（提交 → 排队 → 运行 → Checkpoint → 评测 → 注册 → 部署 → 监控），最后讲失败路径。</p>
+</blockquote>
+<h3 id="31-api">3.1 把研究员需求抽象成 API<a class="headerlink" href="#31-api" title="Permanent link">&para;</a></h3>
+<p>一个最小训练 API 的四块：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>POST /jobs            {image, command, resources(GPU/CPU/mem), dataset, priority}
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>GET  /jobs/{id}       → {state, queue_position, metrics, checkpoint_uri, error}
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>POST /jobs/{id}/cancel
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>POST /jobs/{id}/retry  {from_checkpoint: true}
+</code></pre></div>
+<ul>
+<li><strong>任务模型</strong>：镜像/命令/资源/数据/优先级/超时/重试策略；</li>
+<li><strong>资源模型</strong>：GPU 型号/数量、拓扑（整机/NVLink 域）、存储挂载；</li>
+<li><strong>权限模型</strong>：谁能提交到哪个队列、能看哪些数据/日志、能花多少配额；</li>
+<li><strong>错误模型</strong>：可重试（硬件/抢占）vs 不可重试（代码/数据 poison）；返回结构化错误码；</li>
+<li><strong>异步</strong>：提交返回 job_id，状态用轮询/事件/Webhook；日志/指标用独立接口。</li>
+</ul>
+<blockquote>
+<p>API 要稳定、可组合、可观测；不要把内部调度细节泄漏给用户。</p>
+</blockquote>
+<h2 id="4-metrics-logs-traces">4. 可观测：metrics / logs / traces<a class="headerlink" href="#4-metrics-logs-traces" title="Permanent link">&para;</a></h2>
+<p><img alt="可观测与 OnCall" src="../../diagrams/25c_observability.landscape.png" /></p>
+<table>
+<thead>
+<tr>
+<th>信号</th>
+<th>看什么</th>
+<th>AI 专用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Metrics</td>
+<td>QPS、延迟、错误率、饱和度</td>
+<td>TTFT/TPOT/P99/goodput、GPU 利用率、KV 使用率</td>
+</tr>
+<tr>
+<td>Logs</td>
+<td>结构化日志、请求 ID、错误栈</td>
+<td>NCCL/驱动/XID、审计/计费</td>
+</tr>
+<tr>
+<td>Traces</td>
+<td>跨服务调用链、span 延迟</td>
+<td>网关→调度→引擎→工具调用</td>
+</tr>
+<tr>
+<td>GPU</td>
+<td>利用率、显存、温度、功耗</td>
+<td>DCGM：ECC/XID/NVLink</td>
+</tr>
+</tbody>
+</table>
+<p><strong>排障顺序</strong>：先看<strong>影响面</strong>（多少请求/任务、哪个租户/地域），再看<strong>时间线</strong>
+（何时开始、和什么变更重合），然后按层排查：网关 → 调度 → 引擎 → GPU → 网络 → 存储 → 模型。</p>
+<h3 id="41-oncall">4.1 告警与 OnCall<a class="headerlink" href="#41-oncall" title="Permanent link">&para;</a></h3>
+<ul>
+<li>告警要<strong>可执行</strong>：每条告警对应一个 runbook，不要求人“自己猜”；</li>
+<li>分级：P0（全站/数据损坏）、P1（核心功能降级）、P2（局部/可绕过）；</li>
+<li><strong>止血优先</strong>：限流/回滚/扩容/切流，先恢复再定位；</li>
+<li><strong>复盘</strong>：根因、影响、时间线、改进项、负责人、截止时间；不做“背锅会”。</li>
+</ul>
+<p><strong>AI 辅助 OnCall（点到为止）</strong>：</p>
+<ul>
+<li>告警聚合/去重、根因候选排序、日志摘要、runbook 检索、相似故障推荐；</li>
+<li>自动生成“影响面 + 建议止血步骤 + 需要谁确认”的卡片；</li>
+<li><strong>guardrail</strong>：高风险动作（删数据/改配额/重启集群）必须人工确认；只读诊断可自动；</li>
+<li>评估：MTTD/MTTR、误报率、建议采纳率；不要用“AI 说没事”替代验证。</li>
+</ul>
+<h3 id="42-runbook">4.2 Runbook 模板<a class="headerlink" href="#42-runbook" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>触发条件 / 影响面 / 看板链接
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>第一步做什么、不要做什么
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>止血手段(限流/降级/回滚/切流) + 验证指标
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>升级路径 / 负责人 / 沟通模板
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>复盘 action item + 截止时间
+</code></pre></div>
+<blockquote>
+<p>可观测的目标不是“有图”，而是 5 分钟内回答：<strong>哪里坏了、影响多大、先做什么</strong>。</p>
+</blockquote>
+<h2 id="5-slo-sli">5. SLO / SLI / 错误预算 / 容量<a class="headerlink" href="#5-slo-sli" title="Permanent link">&para;</a></h2>
+<p><img alt="SLO、goodput 与容量" src="../../diagrams/25b_slo.landscape.png" /></p>
+<h3 id="51">5.1 指标口径<a class="headerlink" href="#51" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>含义</th>
+<th>注意</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SLI</td>
+<td>可测指标</td>
+<td>要能稳定采集、和用户体验相关</td>
+</tr>
+<tr>
+<td>SLO</td>
+<td>内部目标</td>
+<td>如 TTFT P99 &lt; 500 ms、可用性 99.9%</td>
+</tr>
+<tr>
+<td>SLA</td>
+<td>对外合同</td>
+<td>通常比 SLO 宽松，带赔偿条款</td>
+</tr>
+<tr>
+<td>错误预算</td>
+<td><code>1 - SLO</code></td>
+<td>用完就停止发布/降级/扩容</td>
+</tr>
+<tr>
+<td>P99</td>
+<td>99% 请求的延迟上界</td>
+<td>容量看尾延迟，不看均值</td>
+</tr>
+<tr>
+<td>goodput</td>
+<td>满足 SLO 的有效吞吐</td>
+<td>不是裸吞吐</td>
+</tr>
+</tbody>
+</table>
+<h3 id="52-littles-law">5.2 容量：Little's Law 与排队<a class="headerlink" href="#52-littles-law" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>平均并发 L = 吞吐 λ × 平均延迟 W
+</code></pre></div>
+<p>例：50 req/s × 2 s = 100 平均并发。但<strong>P99 容量</strong>要用 SLO 对应的尾延迟 +
+安全系数，不能直接用平均延迟。单实例 P99 只能扛 20 并发 → 至少 5 实例 + headroom。</p>
+<blockquote>
+<p>利用率接近 100% 时，排队延迟非线性爆炸；goodput 会在饱和前达峰后下降。
+过载时主动限流/降级，比“让所有请求都超时”好。</p>
+</blockquote>
+<h3 id="53-slosli">5.3 训练集群的 SLO/SLI<a class="headerlink" href="#53-slosli" title="Permanent link">&para;</a></h3>
+<p>训练集群的 SLO 不是“可用性 99.9%”这么简单：</p>
+<ul>
+<li><strong>任务成功率</strong>：提交后能跑完的比例；</li>
+<li><strong>有效训练时间</strong>：扣除故障/排队/Checkpoint 后的时间；</li>
+<li><strong>Checkpoint 耗时/RTO</strong>：故障后多久能恢复；</li>
+<li><strong>调度排队 P99</strong>：大作业等多久；</li>
+<li><strong>GPU 利用率/碎片率</strong>：资源效率；</li>
+<li><strong>故障率/MTTR</strong>：硬件/网络/存储故障的恢复时间。</li>
+</ul>
+<blockquote>
+<p>训练 SLO 要和业务目标绑定：比如“7 天内完成 1T token 训练，故障导致的回退不超过 2 次”。</p>
+</blockquote>
+<h2 id="6">6. 故障与稳定性<a class="headerlink" href="#6" title="Permanent link">&para;</a></h2>
+<h3 id="61">6.1 分层定位<a class="headerlink" href="#61" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>层</th>
+<th>症状</th>
+<th>检查</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>网关/客户端</td>
+<td>超时、限流、错误码</td>
+<td>网关指标、配额、队列</td>
+</tr>
+<tr>
+<td>调度</td>
+<td>排队久、任务起不来</td>
+<td>队列、gang、配额、节点状态</td>
+</tr>
+<tr>
+<td>引擎</td>
+<td>TTFT/TPOT 高、吞吐低</td>
+<td>batching、preemption、KV</td>
+</tr>
+<tr>
+<td>GPU</td>
+<td>OOM、XID、降频</td>
+<td>DCGM、nvidia-smi、dmesg</td>
+</tr>
+<tr>
+<td>网络</td>
+<td>多卡/PD 变慢、NCCL 超时</td>
+<td>IB/RoCE、PFC、NCCL 日志</td>
+</tr>
+<tr>
+<td>存储</td>
+<td>Checkpoint/数据加载慢</td>
+<td>fio、iostat、元数据</td>
+</tr>
+<tr>
+<td>模型/输入</td>
+<td>长 prompt/长输出</td>
+<td>输入输出长度分布</td>
+</tr>
+</tbody>
+</table>
+<p><strong>大面积 hang 的三步</strong>：① 看是否所有节点都卡在同一个 collective（<code>NCCL_DEBUG=INFO</code>/进程栈）；
+② 缩小到 2/8 卡复现，换节点/网卡二分；③ 查坏节点/链路/存储，隔离后从 Checkpoint 恢复。
+不要先重启整个集群。</p>
+<h3 id="62">6.2 降级、容灾与演练<a class="headerlink" href="#62" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>降级</strong>：小模型、短输出、关闭非核心功能、缓存兜底；</li>
+<li><strong>fallback</strong>：多模型/多地域/多供应商；切换要能自动触发；</li>
+<li><strong>多地域/容灾</strong>：数据/模型复制、DNS/流量切换、RTO/RPO 目标；</li>
+<li><strong>混沌工程</strong>：定期注入故障（节点/网络/依赖），验证预案；</li>
+<li><strong>演练</strong>：on-call 轮值、runbook 走查、复盘 action 闭环。</li>
+</ul>
+<blockquote>
+<p>不要等故障发生才第一次打开 runbook；平时要演练。</p>
+</blockquote>
+<h3 id="63-gpu">6.3 GPU 故障自动发现与自愈<a class="headerlink" href="#63-gpu" title="Permanent link">&para;</a></h3>
+<p>状态机：<code>健康 → 可疑 → 隔离(cordon) → drain → 维修/重启 → 回归验证 → 健康</code>。</p>
+<ul>
+<li><strong>检测</strong>：DCGM 巡检 ECC/XID/NVLink/温度/功耗；连续 N 次阈值/自检失败才判可疑，
+  避免误杀；<code>dcgmi diag</code>/<code>nvidia-smi -q</code> 做二次确认。</li>
+<li><strong>隔离</strong>：cordon 阻止新任务；drain 驱逐/等待 Checkpoint；不要直接拔卡。</li>
+<li><strong>恢复</strong>：重启驱动/节点、跑 burn-in、<code>nccl-tests</code> 验证；通过后才回到资源池。</li>
+<li><strong>任务侧</strong>：坏节点上的任务从 Checkpoint 重调度；记录故障根因，避免反复踩同一节点。</li>
+</ul>
+<blockquote>
+<p>自愈的目标是“缩短 MTTR”，不是“永不故障”；要有误判保护和人工兜底。</p>
+</blockquote>
+<h3 id="64">6.4 训练任务失败：分类、重试、恢复<a class="headerlink" href="#64" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>例子</th>
+<th>处理</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>硬件</td>
+<td>XID/ECC/NVLink/节点掉线</td>
+<td>隔离节点、重调度、从 Checkpoint 恢复</td>
+</tr>
+<tr>
+<td>软件</td>
+<td>OOM、NCCL hang、镜像/依赖</td>
+<td>修配置/换镜像；不要盲目重试</td>
+</tr>
+<tr>
+<td>数据 poison</td>
+<td>某个 shard 导致 NaN/崩溃</td>
+<td>定位 shard、跳过/修复；重试会再次失败</td>
+</tr>
+<tr>
+<td>抢占</td>
+<td>高优任务来了</td>
+<td>保存 Checkpoint、优雅退出、排队重试</td>
+</tr>
+</tbody>
+</table>
+<p><strong>重试策略</strong>：指数退避 + 上限（如 3 次）；同一失败原因连续出现要停止并告警；
+重试要<strong>幂等</strong>（从 Checkpoint 恢复，不重复写坏数据）；gang 作业要整组重调度，
+避免半组启动。<strong>恢复点</strong>：最近的 Checkpoint + 数据 loader/RNG 状态；
+恢复后要校验 step/学习率/优化器状态。</p>
+<blockquote>
+<p>“失败就重启”是最贵的策略：先分类，再决定重试/修复/隔离。</p>
+</blockquote>
+<h2 id="7-token">7. 成本：单位 token 成本与利用率<a class="headerlink" href="#7-token" title="Permanent link">&para;</a></h2>
+<p><img alt="成本与利用率" src="../../diagrams/25d_cost.landscape.png" /></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>每百万 token 成本 = GPU 小时成本 / (tokens/s × 3600) × 1e6
+</code></pre></div>
+<p>例：<code>$2/h</code>、<code>2000 tok/s</code> → <code>2/(2000×3600)×1e6 ≈ $0.28/M token</code>。
+真实成本还要加空闲容量、冗余、网络、存储、运维；<strong>goodput 低时单位成本会显著上升</strong>。</p>
+<p><strong>降本杠杆</strong>：利用率（batching/混部）、硬件（FP8/INT4/合适卡型）、算法（蒸馏/小模型/
+投机/缓存）、调度（spot/弹性/配额）、SLO 分层、计量分摊。</p>
+<blockquote>
+<p>降本不是“买便宜卡”：要同时看 <strong>利用率、SLO、精度、调度</strong>；
+把利用率从 40% 提到 70% 可能降本 43%，但 P99 可能变差。</p>
+</blockquote>
+<p><strong>Showback vs Chargeback</strong>：</p>
+<ul>
+<li><strong>Showback</strong>：给租户看账单/用量，不真正扣钱；适合平台早期；</li>
+<li><strong>Chargeback</strong>：按预算真实扣减/结算；需要准确的计量、标签、价格表；</li>
+<li><strong>共享资源</strong>：网关/存储/监控按用量分摊；空闲容量按配额或实际使用分摊，规则要透明；</li>
+<li><strong>标签</strong>：租户/项目/任务/模型/环境；账单可下钻到任务，支持预算告警。</li>
+</ul>
+<p>例：租户 A 本月用 10,000 GPU·h（<span class="arithmatex">\(2/h）+ 5 亿 token（\)</span>0.28/M）→
+<code>$20,000 + $140 = $20,140</code>；再按共享存储/网络分摊。</p>
+<h2 id="8">8. 安全与合规（点到为止）<a class="headerlink" href="#8" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>多租户隔离</strong>：网络/存储/GPU 隔离；防止跨租户数据泄漏；</li>
+<li><strong>数据隐私</strong>：脱敏、加密、访问控制、审计；训练数据/日志的保留策略；</li>
+<li><strong>模型/IP 保护</strong>：权重加密、访问审批、水印；防止模型被窃取/滥用；</li>
+<li><strong>合规</strong>：数据出境、许可证、内容安全；按业务所在地要求处理。</li>
+</ul>
+<blockquote>
+<p>这一节不展开：面试点到“隔离/隐私/审计/合规”即可，深入要看具体行业。</p>
+</blockquote>
+<h2 id="9">9. 面试要点<a class="headerlink" href="#9" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>训练平台怎么设计？</strong> → 任务模型/资源模型/权限模型；生命周期（提交→排队→运行→
+   Checkpoint→评测→注册→部署→监控）；失败路径（重试/恢复/降级）。</li>
+<li><strong>LLM 服务的 SLO 怎么定？</strong> → TTFT/TPOT/可用性/错误率/goodput；按业务分层；
+   P99 容量 + 安全系数；错误预算。</li>
+<li><strong>GPU 利用率怎么提高？</strong> → batching/continuous batching、混部、拓扑感知调度、
+   MIG/共享、减少空闲/碎片；但不要牺牲 P99。</li>
+<li><strong>线上 P99 升高怎么定位？</strong> → 先止血（限流/回滚/扩容），再按网关→调度→引擎→GPU→
+   网络→存储→模型分层排查；看时间线和变更。</li>
+<li><strong>训练任务大面积 hang 怎么排查？</strong> → NCCL_DEBUG、进程栈、网络/存储、坏节点；
+   缩小规模复现；区分“真死”和“慢”。</li>
+<li><strong>GPU 故障怎么自动发现/自愈？</strong> → DCGM/XID/ECC 巡检、cordon/drain、任务重调度、
+   Checkpoint 恢复；热备/冗余。</li>
+<li><strong>模型上线怎么灰度/回滚/计量？</strong> → 按流量/用户/版本切分；回滚模型/配置/提示词；
+   按 token/GPU·h/租户计量。</li>
+<li><strong>平台怎么分摊成本？</strong> → GPU·小时 + token + 存储 + 网络；按租户/任务/模型打标签；
+   账单可追溯；配额/预算告警。</li>
+<li><strong>怎么把研究员需求抽象成 API？</strong> → 先看任务生命周期与失败路径，再定义资源/权限/
+   产物模型；API 要稳定、可组合、可观测。</li>
+<li><strong>怎么用 AI 提升 OnCall？</strong> → 告警聚合/根因推荐/日志摘要/runbook 检索/自动止血；
+    但要有 guardrail，不能自动执行高风险操作。</li>
+</ol>
+<blockquote>
+<p><strong>AI OnCall 的边界</strong>：数据要有权限/脱敏；建议要可解释、可回滚；自动动作只允许
+低风险（查状态、拉日志、扩容只读副本），高风险（回滚/删数据/切流）必须人工确认。
+指标：MTTR、误报率、建议采纳率、自动化覆盖率。</p>
+</blockquote>
+<h2 id="10">10. 常见坑<a class="headerlink" href="#10" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>只建平台不管采用率</strong>：接口难用、文档缺失，研究员绕开平台。</li>
+<li><strong>SLO 只看平均值</strong>：P99 超时，用户已经跑了。</li>
+<li><strong>把 SLA 当 SLO</strong>：对外承诺和内部目标混为一谈。</li>
+<li><strong>告警没有 runbook</strong>：值班的人不知道先做什么。</li>
+<li><strong>降级没有演练</strong>：真故障时切不过去。</li>
+<li><strong>成本只看 GPU 单价</strong>：利用率/goodput 低，便宜卡也贵。</li>
+<li><strong>多租户只做 namespace</strong>：没有隔离/配额/计费，迟早出事。</li>
+<li><strong>监控只有 dashboard</strong>：没有告警/追踪/日志关联，定位靠猜。</li>
+</ul>
+<h2 id="6090">动手清单（60–90 分钟）<a class="headerlink" href="#6090" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>SLO 账本</strong>：给定 QPS、平均延迟、SLO P99，用 Little's Law 估并发与实例数；
+   再加 30% headroom，比较“按平均”和“按 P99”的差异。</li>
+<li><strong>单位成本</strong>：给定 GPU 单价、tokens/s、利用率，算 <code>$/M token</code>；扫利用率 30–80%，
+   画成本曲线。</li>
+<li><strong>Runbook</strong>：为一个 LLM 服务写一页 runbook（触发条件/影响面/止血/升级/复盘）。</li>
+<li><strong>可观测清单</strong>：列出你会采集的 10 个指标（含 DCGM/TTFT/TPOT/goodput/队列/KV），
+   说明每个指标的告警阈值和动作。</li>
+<li><strong>成本分摊</strong>：给一个多租户平台设计标签体系（租户/任务/模型/环境），
+   说明如何把 GPU·h 和 token 账单分摊到租户。</li>
+</ol>
+<p>验收标准：能对一个线上故障给出“影响面 + 止血 + 分层定位 + 复盘”的完整链路，
+并能用 SLO/成本数字解释取舍。</p>
+<h2 id="_1">相关图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>25a_platform</code> — 平台分层 + MaaS 请求路径；</li>
+<li><code>25b_slo</code> — SLO/goodput/容量曲线；</li>
+<li><code>25c_observability</code> — metrics/logs/traces + OnCall 流程；</li>
+<li><code>25d_cost</code> — 单位 token 成本与降本杠杆。</li>
+</ul>
+<h2 id="_2">下一步<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>M2-6 前沿与端侧</strong>：Agent Runtime、RL Infra、端侧部署、异构芯片。</li>
+<li>回到 <strong>M2-4 §7–§8</strong> 补调度/可靠性细节；回到 <strong>M2-3 §11–§13</strong> 补推理 SLO/容量。</li>
+</ul>
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.top", "navigation.indexes", "content.code.copy", "search.suggest", "search.highlight", "toc.follow"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+        <script src="../../javascripts/mathjax.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs" type="module"></script>
+      
+    
+  </body>
+</html>

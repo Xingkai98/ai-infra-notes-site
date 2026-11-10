@@ -1,0 +1,2740 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="从 Transformer 骨架到推理系统的 29 篇讲义（本地预览）">
+      
+      
+      
+      
+        <link rel="prev" href="../19_multimodal_deep/">
+      
+      
+        <link rel="next" href="../21_single_node_ops/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>模块二 · M2-0 地图与坐标系 - AI Infra 讲义</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#m2-0" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="../.." title="AI Infra 讲义" class="md-header__button md-logo" aria-label="AI Infra 讲义" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            AI Infra 讲义
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              模块二 · M2-0 地图与坐标系
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切到深色"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="切到深色" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切到浅色"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="切到浅色" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="AI Infra 讲义" class="md-nav__button md-logo" aria-label="AI Infra 讲义" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    AI Infra 讲义
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI Infra 讲义
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Notes
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Notes
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01_skeleton/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第一层 · 骨架 —— 从文本到矩阵
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02_attention/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二层 · 心脏 —— Self-Attention 的 Q/K/V
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03_block/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第三层 · 加强 —— Multi-Head、残差、LayerNorm、FFN
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04_architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第四层 · 组装 —— Encoder / Decoder / 掩码 / Cross-Attention
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05_modern/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第五层 · 现代变体 —— 从原论文到 LLaMA/GPT
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_inference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第六层 · 跑起来 —— 训练/推理、KV Cache、完整 forward
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_pretraining/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第七层 · 预训练 —— 目标、数据与 Scaling Law
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../08_alignment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第八层 · 对齐 —— SFT、RLHF、DPO 与安全
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09_evaluation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第九层 · 评测 —— benchmark、污染、judge 与可复现
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../10_decoding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十层 · 解码 —— 从 logits 到 token
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../11_applications/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十一层 · 应用 —— Prompt、RAG、工具与 Agent
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../12_multimodal/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十二层 · 多模态 —— VLM、扩散与语音
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../13_reasoning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十三层 · 推理模型 —— 测试时计算、长 CoT 与 RLVR
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../14_long_context/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十四层 · 长上下文 —— 位置外推、注意力模式与 KV 账本
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../15_peft_lora/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十五层 · PEFT 与 LoRA —— 用 0.1% 参数做微调
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../16_agent_rl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十六层 · Agent RL —— rollout、环境、奖励与异步训练
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../17_data_engineering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十七层 · 数据工程 —— 从原始语料到数据飞轮
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../18_interpretability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十八层 · 可解释性 —— 从探针到电路与 SAE
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../19_multimodal_deep/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十九层 · 多模态深化 —— VLM、视频/音频与扩散
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模块二 · M2-0 地图与坐标系
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（2026-10-21 补全景图 20g）"></span>
+  
+
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模块二 · M2-0 地图与坐标系
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（2026-10-21 补全景图 20g）"></span>
+  
+
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0. 依赖图（学习顺序）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. 一句话定义
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. 两个坐标系
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. 技术栈分层
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-10-35" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. 10 个岗位族 × 35 个子方向
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. 7 维能力模型
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. 4 个级别与证据
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. 6 组岗位边界
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. 7 层学习路径
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. 7 层学习路径">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#81" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.1 两条推荐路线
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. 深度标尺
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. 两条学习主线
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="10. 两条学习主线">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        推理线（先走这条）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        训练线（推理线之后或并行）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11. 怎么用岗位地图（不要背）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12. 面试要点
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        13. 常见坑
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        14. 相关参考
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        15. 下一步
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../21_single_node_ops/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模块二 · M2-1 单机与算子
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（2026-10-21 补结构图 20h/20i/20j/20k）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../22_inference_systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模块二 · M2-3 推理系统
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（2026-10-21 补结构图 20l–20q）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../23_training_systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 2 层 · M2-2 训练系统
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../24_distributed_base/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 4 层 · M2-4 分布式底座
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../25_platform_sre/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 5 层 · M2-5 平台与稳定性
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../26_frontier_edge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 6 层 · M2-6 前沿与端侧
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../27_agent_engineering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二十七层 · Agent 工程化：Context / Harness / Loop / Graph
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--v1"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../28_vllm_source_trace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二十八层 · vLLM v1 源码 trace：一次请求怎么走
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--v1"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../29_agent_eval_infra/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二十九层 · Agent 评测 Infra：从打分到可复现的评测平台
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--v1"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../worksheets/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Worksheets
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Worksheets
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0. 依赖图（学习顺序）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. 一句话定义
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. 两个坐标系
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. 技术栈分层
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-10-35" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. 10 个岗位族 × 35 个子方向
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. 7 维能力模型
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. 4 个级别与证据
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. 6 组岗位边界
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. 7 层学习路径
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. 7 层学习路径">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#81" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.1 两条推荐路线
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. 深度标尺
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. 两条学习主线
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="10. 两条学习主线">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        推理线（先走这条）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        训练线（推理线之后或并行）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11. 怎么用岗位地图（不要背）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12. 面试要点
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        13. 常见坑
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        14. 相关参考
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        15. 下一步
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="m2-0">M2-0 · 地图与坐标系<a class="headerlink" href="#m2-0" title="Permanent link">&para;</a></h1>
+<blockquote>
+<p>本层回答：AI Infra 到底在解决什么问题？市场上有哪些岗位族？这些岗位对应哪些学习层？
+每个方向要学到什么深度？——先把坐标系建起来，后面每一层才知道自己站在哪、为什么学。</p>
+<p><strong>前置</strong>：1A 模型结构总览（<code>notes/01</code>–<code>06</code>）；KV Cache 基础可先看 <code>notes/06_inference.md §3–5</code>，
+量化直觉可先看 <code>notes/21_single_node_ops.md §8</code>。<strong>1B/1C 尚未归档</strong>。
+<strong>说明</strong>：本层是地图，不要求学完 1A 全部再读；读到 M2-3 时再回补第 4–5 层即可。</p>
+</blockquote>
+<h2 id="0">0. 依赖图（学习顺序）<a class="headerlink" href="#0" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p>根节点 = 可以无条件接受的事实；箭头 = 前者支撑后者；汇点 = 模块目标。
+<strong>注意</strong>：这是「概念依赖图」，不是唯一课程顺序。
+<code>L4 --&gt; L2</code> 表示训练系统依赖分布式底座；<code>L4 -.-&gt; L3</code> 是「规模化增强」而非前置：
+M2-3 §7.0 已给出最小前置，可以先学推理核心，再补 M2-4。
+推荐路线见 §8.1（推理线 / 训练线两条），那里是唯一真源。</p>
+</blockquote>
+<pre class="mermaid"><code>graph TD
+  L0["M2-0 地图与坐标系"] --&gt; L1["M2-1 单机与算子&lt;br/&gt;GPU / CUDA / Kernel / 编译"]
+  L1 --&gt; L2["M2-2 训练系统&lt;br/&gt;并行 / 显存 / MFU / 容错"]
+  L1 --&gt; L3["M2-3 推理系统&lt;br/&gt;KV Cache / Batching / 量化"]
+  L1 --&gt; L4["M2-4 分布式底座&lt;br/&gt;网络 / 存储 / 集群调度"]
+  L4 --&gt; L2
+  L4 -.-&gt;|"规模化增强（非前置）"| L3
+  L2 --&gt; L5["M2-5 平台与稳定性&lt;br/&gt;MLOps / SRE / 可观测"]
+  L3 --&gt; L5
+  L4 --&gt; L5
+  L2 --&gt; L6["M2-6 前沿与端侧&lt;br/&gt;Agent/RL / 端侧 / 异构"]
+  L3 --&gt; L6</code></pre>
+<h2 id="1">1. 一句话定义<a class="headerlink" href="#1" title="Permanent link">&para;</a></h2>
+<p><strong>AI Infra = 让大模型在真实硬件和集群上，以可接受的成本、延迟和稳定性完成训练与推理。</strong></p>
+<p>它有三个递进目标：</p>
+<table>
+<thead>
+<tr>
+<th>层次</th>
+<th>目标</th>
+<th>典型问题</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>跑得起来</td>
+<td>correctness</td>
+<td>模型能不能在目标硬件上跑通？精度对不对？</td>
+</tr>
+<tr>
+<td>跑得快</td>
+<td>performance</td>
+<td>吞吐、时延、MFU、显存是否达标？</td>
+</tr>
+<tr>
+<td>跑得稳、跑得便宜</td>
+<td>production</td>
+<td>千卡/万卡、7×24、SLO、故障、成本是否可控？</td>
+</tr>
+</tbody>
+</table>
+<p><strong>核心 KPI 小词典</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>缩写</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MFU</td>
+<td>实际模型 FLOP/s ÷ 硬件峰值 FLOP/s（训练常用；不含重算/通信）</td>
+</tr>
+<tr>
+<td>TTFT</td>
+<td>首 token 延迟（≈ 排队 + prefill）</td>
+</tr>
+<tr>
+<td>TPOT / ITL</td>
+<td>首 token 后每个 token 的间隔（decode）</td>
+</tr>
+<tr>
+<td>P99</td>
+<td>99% 请求的延迟上界（容量看尾延迟，不看均值）</td>
+</tr>
+<tr>
+<td>goodput</td>
+<td>满足 SLO 的有效吞吐（不是裸吞吐）</td>
+</tr>
+<tr>
+<td>SLI / SLO / SLA</td>
+<td>指标 / 目标 / 合同</td>
+</tr>
+<tr>
+<td>单位 token 成本</td>
+<td>GPU 成本 ÷ 生成 token 数</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>一句话区分算法与 Infra：<strong>算法决定「效果上限」，Infra 决定「能否把效果高效、稳定、便宜地跑出来」。</strong></p>
+</blockquote>
+<h2 id="2">2. 两个坐标系<a class="headerlink" href="#2" title="Permanent link">&para;</a></h2>
+<p>学习 AI Infra 最容易犯的错，是把「招聘目录」当成「学习顺序」。这里必须分开：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>岗位地图</th>
+<th>学习地图</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>组织轴</td>
+<td>岗位：10 族 × 35 子方向</td>
+<td>依赖：7 层学习路径</td>
+</tr>
+<tr>
+<td>回答</td>
+<td>市场要什么、要求什么</td>
+<td>先学什么、后学什么、学到多深</td>
+</tr>
+<tr>
+<td>来源</td>
+<td>107 份 JD 的结构化归纳</td>
+<td>技术栈的依赖关系</td>
+</tr>
+<tr>
+<td>用途</td>
+<td>目标、深度标尺、面试题</td>
+<td>实际教学顺序</td>
+</tr>
+</tbody>
+</table>
+<p>岗位地图回答「<strong>为什么学</strong>」，学习地图回答「<strong>怎么学</strong>」。两者叠起来，才是完整的模块二。</p>
+<h2 id="3">3. 技术栈分层<a class="headerlink" href="#3" title="Permanent link">&para;</a></h2>
+<p>从下往上，每一层都在回答不同的问题：</p>
+<table>
+<thead>
+<tr>
+<th>层</th>
+<th>解决什么</th>
+<th>关键问题</th>
+<th>代表岗位族</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>硬件</td>
+<td>算力、显存、互联、功耗</td>
+<td>GPU/NPU 的峰值和瓶颈在哪？</td>
+<td>—（本次样本未覆盖）</td>
+</tr>
+<tr>
+<td>系统软件</td>
+<td>OS、驱动、虚拟化、网络、存储</td>
+<td>资源怎么抽象、隔离、传输？</td>
+<td>网络、存储</td>
+</tr>
+<tr>
+<td>算子与编译</td>
+<td>把模型映射到硬件指令</td>
+<td>怎么把 GEMM/Attention/MoE 写到接近物理极限？</td>
+<td>算子/编译</td>
+</tr>
+<tr>
+<td>框架与引擎</td>
+<td>训练框架、推理引擎、运行时</td>
+<td>怎么组织计算、显存、并行与调度？</td>
+<td>训练、推理、Agent/RL、模型优化</td>
+</tr>
+<tr>
+<td>平台与运维</td>
+<td>资源、任务、模型、流程的产品化</td>
+<td>怎么让研发自助使用、可观测、可计量？</td>
+<td>AI 平台、MLOps、SRE、集群调度</td>
+</tr>
+<tr>
+<td>产品与解决方案</td>
+<td>AI 云、MaaS、行业方案</td>
+<td>怎么把能力交付给客户？</td>
+<td>—（本次样本未覆盖）</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>集群调度跨「系统软件 / 平台运维」两层；表中按 <code>reference/ai-infra/job-map.md</code> 的口径放在平台与运维。
+10 个岗位族是<strong>本样本的分类</strong>，不是全行业 taxonomy；芯片/服务器/IDC、解决方案/产品未纳入 107 份 JD。</p>
+</blockquote>
+<p><strong>越往下，越接近物理极限；越往上，越接近用户和业务。</strong> AI Infra 的核心岗位集中在「算子/编译 → 框架/引擎 → 平台/运维」这三层。</p>
+<h2 id="4-10-35">4. 10 个岗位族 × 35 个子方向<a class="headerlink" href="#4-10-35" title="Permanent link">&para;</a></h2>
+<p>数据快照 2026-10-17，6 家公司、107 份公开在招 JD。</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>岗位族</th>
+<th style="text-align: right;">JD</th>
+<th>子方向</th>
+<th>主学习层</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>训练系统与框架</td>
+<td style="text-align: right;">16</td>
+<td>分布式训练框架、训练性能与并行优化、后训练/RL 系统、训练稳定性与 Checkpoint</td>
+<td><strong>M2-2</strong></td>
+</tr>
+<tr>
+<td>2</td>
+<td>推理系统与引擎</td>
+<td style="text-align: right;">21</td>
+<td>推理引擎/运行时、在线推理服务与平台、推理性能与量化加速、多模态/语音推理</td>
+<td><strong>M2-3</strong></td>
+</tr>
+<tr>
+<td>3</td>
+<td>算子、编译与芯片工具链</td>
+<td style="text-align: right;">9</td>
+<td>GPU 算子开发、AI 编译器、AI 芯片工具链、软硬件协同/HPC</td>
+<td><strong>M2-1</strong></td>
+</tr>
+<tr>
+<td>4</td>
+<td>集群、调度与异构算力</td>
+<td style="text-align: right;">15</td>
+<td>集群调度、异构资源与 GPU 虚拟化、算力规划与容量、云原生/容器</td>
+<td><strong>M2-4</strong></td>
+</tr>
+<tr>
+<td>5</td>
+<td>高性能网络与通信</td>
+<td style="text-align: right;">6</td>
+<td>RDMA 与高性能网络、通信库与集合通信、网络架构与运维</td>
+<td><strong>M2-4</strong></td>
+</tr>
+<tr>
+<td>6</td>
+<td>存储与数据基础设施</td>
+<td style="text-align: right;">7</td>
+<td>分布式存储/文件系统、训练数据管道、Checkpoint/模型存储</td>
+<td><strong>M2-4</strong></td>
+</tr>
+<tr>
+<td>7</td>
+<td>AI 平台与 MLOps</td>
+<td style="text-align: right;">14</td>
+<td>机器学习平台、MaaS/模型服务平台、研发效能与 MLOps、可观测与多租户</td>
+<td><strong>M2-5</strong></td>
+</tr>
+<tr>
+<td>8</td>
+<td>模型优化与端侧部署</td>
+<td style="text-align: right;">4</td>
+<td>量化与压缩、端侧/边缘部署、模型加速</td>
+<td><strong>M2-3 + M2-6</strong></td>
+</tr>
+<tr>
+<td>9</td>
+<td>AI 原生基础设施（Agent/RL）</td>
+<td style="text-align: right;">6</td>
+<td>Agent Runtime/沙箱、RL Infra、Agent 平台与弹性计算</td>
+<td><strong>M2-6</strong></td>
+</tr>
+<tr>
+<td>10</td>
+<td>稳定性与性能工程（SRE）</td>
+<td style="text-align: right;">9</td>
+<td>集群 SRE、训练/推理稳定性、性能工程与 Profiling</td>
+<td><strong>M2-5</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>需求量排序（热度，不是学习顺序）：<strong>推理 21 &gt; 训练 16 &gt; 集群 15 &gt; 平台 14 &gt; 算子 9 = SRE 9 &gt; 存储 7 &gt; 网络 6 = Agent 6 &gt; 端侧 4</strong>。</p>
+<p><strong>子方向证据密度不均</strong>：35 个子方向里有 6 个在本次样本中没有直接 JD、6 个只有 1 份 JD；
+完整 JD 数列见 <code>reference/ai-infra/job-map.md</code>。不要把「子方向存在」误读成「需求高」。</p>
+<p>「多模态/语音推理」在本次样本中 0 个直接 JD，但作为跨族技能出现在推理/优化岗位中；
+学习时放在 M2-3（系统部分）与 M2-6（端侧/加速部分）。</p>
+<p>完整子方向说明、典型 title、相邻岗位、边界，见 <code>reference/ai-infra/job-map.md</code>。</p>
+</blockquote>
+<h2 id="5-7">5. 7 维能力模型<a class="headerlink" href="#5-7" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>含义</th>
+<th>在 AI Infra 里的体现</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>系统基础</td>
+<td>OS、网络、存储、分布式系统、并发、性能分析</td>
+<td>定位跨层故障、做容量与调度</td>
+</tr>
+<tr>
+<td>AI 与模型理解</td>
+<td>Transformer/LLM/VLM/MoE、训练与推理、量化、RL</td>
+<td>知道在优化什么、精度损失是否可接受</td>
+</tr>
+<tr>
+<td>硬件与体系结构</td>
+<td>GPU/NPU、显存层次、互联、roofline</td>
+<td>判断瓶颈在计算、访存还是通信</td>
+</tr>
+<tr>
+<td>编程与工程</td>
+<td>C++/Python/Go/Rust、CUDA/Triton、调试与测试</td>
+<td>能改框架/引擎/算子源码</td>
+</tr>
+<tr>
+<td>平台与工具链</td>
+<td>PyTorch/Megatron/vLLM、K8s、NCCL、可观测、CI/CD</td>
+<td>把系统搭起来、跑起来、看得见</td>
+</tr>
+<tr>
+<td>规模化与生产</td>
+<td>千卡/万卡、线上流量、SLO、故障、成本</td>
+<td>从「能跑」到「生产可用」</td>
+</tr>
+<tr>
+<td>协作与影响力</td>
+<td>跨团队、开源/论文、技术判断、带人</td>
+<td>从「做模块」到「定方向」</td>
+</tr>
+</tbody>
+</table>
+<p><strong>用法</strong>：不要七项平均用力。先按目标岗位族的画像（<code>reference/ai-infra/profiles.md</code>）确定 2–3 个主维度，其余保持「够用」。</p>
+<h2 id="6-4">6. 4 个级别与证据<a class="headerlink" href="#6-4" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>级别</th>
+<th>年限</th>
+<th>重点</th>
+<th>典型证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>校招 / 实习</td>
+<td>0–1 年</td>
+<td>基础与潜力</td>
+<td>课程/竞赛/实习、开源 PR、能讲清一个性能问题</td>
+</tr>
+<tr>
+<td>中级</td>
+<td>2–5 年</td>
+<td>独立交付子系统</td>
+<td>框架/引擎二次开发、算子优化、平台功能、线上排障</td>
+</tr>
+<tr>
+<td>资深</td>
+<td>5–8 年</td>
+<td>架构与端到端结果</td>
+<td>从 0 到 1 的系统、万卡/大规模流量、成本下降、开源影响力</td>
+</tr>
+<tr>
+<td>专家 / 负责人</td>
+<td>8 年以上</td>
+<td>方向与组织</td>
+<td>技术路线、跨 BU 项目、团队与标准</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>面试时，「你做过什么」不如「你改变了哪个指标、怎么验证的」。<strong>可复现的性能/稳定性数据</strong>是硬通货。</p>
+</blockquote>
+<h2 id="7-6">7. 6 组岗位边界<a class="headerlink" href="#7-6" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>边界</th>
+<th>左侧</th>
+<th>右侧</th>
+<th>判断</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>算法 vs AI Infra</td>
+<td>模型结构、数据配方、效果</td>
+<td>吞吐、时延、成本、稳定性</td>
+<td>算法对效果上限负责，Infra 对高效跑出来负责</td>
+</tr>
+<tr>
+<td>业务后端 vs AI 平台</td>
+<td>业务逻辑、API、数据库</td>
+<td>GPU/任务/模型抽象、多租户、调度</td>
+<td>平台也要后端能力，但必须理解任务与资源模型</td>
+</tr>
+<tr>
+<td>数据开发 vs 存储/数据 Infra</td>
+<td>SQL、数仓、指标、报表</td>
+<td>文件系统、对象存储、IO 路径、数据管道</td>
+<td>数据开发消费存储，存储 Infra 交付底座</td>
+</tr>
+<tr>
+<td>运维 vs SRE</td>
+<td>值班、重启、工单</td>
+<td>SLO、可观测、容量、自动化</td>
+<td>SRE 用软件工程做运维，产出可复用能力</td>
+</tr>
+<tr>
+<td>芯片/驱动 vs 算子/编译</td>
+<td>芯片架构、驱动、固件、指令集</td>
+<td>Kernel、编译器、工具链、模型适配</td>
+<td>芯片交付硬件能力，算子/编译把它变成可用接口</td>
+</tr>
+<tr>
+<td>解决方案 vs 研发</td>
+<td>客户需求、方案、POC、交付</td>
+<td>系统实现、性能、稳定性</td>
+<td>解决方案要广度与表达，研发要深度与可复现结果</td>
+</tr>
+</tbody>
+</table>
+<h2 id="8-7">8. 7 层学习路径<a class="headerlink" href="#8-7" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>层</th>
+<th>主题</th>
+<th>核心内容</th>
+<th>覆盖岗位族</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>M2-0</strong></td>
+<td>地图与坐标系</td>
+<td>定义、栈、岗位族、能力维度、边界、KPI</td>
+<td>全部（元层）</td>
+</tr>
+<tr>
+<td><strong>M2-1</strong></td>
+<td>单机与算子</td>
+<td>GPU 架构、CUDA、Roofline、GEMM、FlashAttention、MoE 算子、低精度、Profiling、编译器</td>
+<td>算子/编译（深）、训练/推理（中）</td>
+</tr>
+<tr>
+<td><strong>M2-2</strong></td>
+<td>训练系统</td>
+<td>并行策略、显存账本、MFU、Checkpoint、容错、后训练/RL</td>
+<td>训练（深）、集群/存储（中）</td>
+</tr>
+<tr>
+<td><strong>M2-3</strong></td>
+<td>推理系统</td>
+<td>KV Cache、Batching、PagedAttention、引擎、量化、投机解码、SLO</td>
+<td>推理（深）、端侧（中）</td>
+</tr>
+<tr>
+<td><strong>M2-4</strong></td>
+<td>分布式底座</td>
+<td>集合通信、RDMA、存储、K8s 调度、GPU 虚拟化、容量</td>
+<td>网络/存储/集群（深）</td>
+</tr>
+<tr>
+<td><strong>M2-5</strong></td>
+<td>平台与稳定性</td>
+<td>ML 平台、MaaS、MLOps、可观测、SLO、容量、自愈</td>
+<td>平台/SRE（深）</td>
+</tr>
+<tr>
+<td><strong>M2-6</strong></td>
+<td>前沿与端侧</td>
+<td>Agent Runtime/沙箱、RL Infra、端侧部署、异构芯片</td>
+<td>Agent/端侧（深）</td>
+</tr>
+</tbody>
+</table>
+<h3 id="81">8.1 两条推荐路线<a class="headerlink" href="#81" title="Permanent link">&para;</a></h3>
+<p><strong>推理线（先走）</strong>：M2-0 → M2-1 → M2-3 → M2-4 → M2-5</p>
+<p><strong>训练线（随后）</strong>：M2-0 → M2-1 → M2-4 → M2-2 → M2-5</p>
+<p><strong>前沿/端侧</strong>：在 M2-2/M2-3 之后接 M2-6。</p>
+<blockquote>
+<p>为什么 M2-3 可以排在 M2-4 前：M2-3 §7 只用到「AllReduce / AllToAll / TP / PP / stage /
+micro-batch / bubble / NVLink / RDMA」的最小前置，正文已给出一句话定义；完整的分布式底座留到 M2-4。
+推理线不要求学完 M2-4；训练线把 M2-4 放在 M2-2 前。
+<strong>若已走完推理线（含 M2-4），训练线从 M2-2 继续；否则先补 M2-4。</strong>
+DAG 是概念依赖，不是唯一的课时顺序。</p>
+</blockquote>
+<p><img alt="AI Infra 全景：7 层学习路径 × 10 岗位族 × 7 维能力" src="../../diagrams/20g_ai_infra_map.landscape.png" /></p>
+<p>图里把三件事叠在同一张坐标系里：</p>
+<ul>
+<li><strong>左列</strong>是 7 个学习层（M2-0 到 M2-6），也是本模块的学习顺序；</li>
+<li><strong>中列</strong>是 10 个岗位族分别落在哪一层（有些族跨两层，例如端侧跨 M2-3/M2-6）；</li>
+<li><strong>右列</strong>是每层的 <strong>must</strong> 深度基线；should/nice 见下面的 §9，具体族以画像为准；</li>
+<li><strong>底部</strong>是 7 维能力：不要七项平均用力，先按目标岗位选 2–3 个主维度。</li>
+</ul>
+<blockquote>
+<p>看图方法：先找到你的目标岗位族（中列），再沿它所在的行往右看 must 深度，
+最后回到左列确定从哪一层开始学。<strong>不要按中列的顺序学</strong>——中列是招聘地图，不是课程顺序。</p>
+</blockquote>
+<h2 id="9">9. 深度标尺<a class="headerlink" href="#9" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p>下表是<strong>层基线</strong>。具体目标岗位族的深度以其画像 <code>must_have</code> 为准（见 <code>reference/ai-infra/profiles.md</code>）；
+两者冲突时，以目标族画像为准。例如 PTX/CUTLASS 源码对算子族是 must，对其他族只是了解。</p>
+</blockquote>
+<p>同一层，不同岗位族的深度要求不同：</p>
+<table>
+<thead>
+<tr>
+<th>层</th>
+<th>面试必备（must）</th>
+<th>加分（should）</th>
+<th>了解（nice）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>M2-1</td>
+<td>访存层次、Roofline、CUDA 执行模型、FlashAttention 思路</td>
+<td>写 Triton/CUDA 算子；编译器 pipeline（算子族必学）</td>
+<td>芯片指令集、PTX、CUTLASS 源码（算子族必学）</td>
+</tr>
+<tr>
+<td>M2-2</td>
+<td>DP/TP/PP、显存账本、MFU、Checkpoint</td>
+<td>ZeRO/FSDP 细节、通信重叠、RL rollout</td>
+<td>弹性训练、异构训练</td>
+</tr>
+<tr>
+<td>M2-3</td>
+<td>KV Cache、Batching、PagedAttention、量化、TTFT/TPOT</td>
+<td>引擎源码（推理族必学）、投机解码、PD 分离</td>
+<td>多模态推理、端侧 runtime</td>
+</tr>
+<tr>
+<td>M2-4</td>
+<td>集合通信、K8s 调度、分布式存储、GPU 虚拟化</td>
+<td>RDMA 调优、拓扑设计、容量模型</td>
+<td>可编程交换、在网计算</td>
+</tr>
+<tr>
+<td>M2-5</td>
+<td>SLO/SLI、可观测、容量、故障复盘</td>
+<td>平台抽象、计量计费（平台族必学）、混沌工程</td>
+<td>AIOps、多集群</td>
+</tr>
+<tr>
+<td>M2-6</td>
+<td>沙箱隔离、rollout、端侧约束</td>
+<td>轨迹回放、异构适配</td>
+<td>co-design、新硬件</td>
+</tr>
+</tbody>
+</table>
+<h2 id="10">10. 两条学习主线<a class="headerlink" href="#10" title="Permanent link">&para;</a></h2>
+<p>模型侧（大模型基础）和 Infra 侧是同一座栈的两个视角，推荐<strong>配对学习</strong>：</p>
+<h3 id="_1">推理线（先走这条）<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>模型侧（1C）</th>
+<th>Infra 侧（M2）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>KV Cache 概念（<code>notes/06 §3–5</code>）；解码/采样待 1C 补</td>
+<td>M2-1 单机与算子（含量化直觉 <code>§8</code>）</td>
+</tr>
+<tr>
+<td>2</td>
+<td>解码策略、结构化输出（1C 待补）</td>
+<td><strong>M2-3 推理系统</strong></td>
+</tr>
+<tr>
+<td>3</td>
+<td>多模态基础、长上下文模型侧（1C 待补）</td>
+<td>M2-4 分布式底座</td>
+</tr>
+<tr>
+<td>4</td>
+<td>RAG / Agent 的推理链路（1C 待补）</td>
+<td>M2-5 平台与稳定性</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_2">训练线（推理线之后或并行）<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>模型侧（1B）</th>
+<th>Infra 侧（M2）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>预训练目标、数据、Scaling Law（1B 待补）</td>
+<td>M2-4 网络/存储/集群</td>
+</tr>
+<tr>
+<td>2</td>
+<td>SFT、RLHF/DPO、评测（1B 待补）</td>
+<td><strong>M2-2 训练系统</strong></td>
+</tr>
+<tr>
+<td>3</td>
+<td>RL/Agent RL（1B/1C 待补）</td>
+<td>M2-6 Agent/RL Infra</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>1B/1C 尚未归档；学到对应阶段时先补讲义，或先用现有 <code>notes/06 §3–5</code>、<code>notes/21 §8</code> 的章节。
+顺序不是铁律。原则只有一条：<strong>先知道模型在干什么，再看系统怎么让它跑。</strong></p>
+</blockquote>
+<h2 id="11">11. 怎么用岗位地图（不要背）<a class="headerlink" href="#11" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>选目标</strong>：从 10 个族里选 1 个主方向 + 1 个次方向，不要 10 个都要。</li>
+<li><strong>读画像</strong>：看 <code>profiles.md</code> 里该族的 KPI、must_have、toolchain、interview，确定深度。</li>
+<li><strong>用题探底</strong>：优先从 <code>QA-BANK.md</code> 抽 3–5 道<strong>可判分</strong>题；<code>interview-questions.md</code> 是方向清单，
+   开放式题先补答题骨架再用于 Probe。</li>
+<li><strong>按层学</strong>：回到学习地图，按依赖顺序补，不要从岗位族标题直接开学。</li>
+<li><strong>留证据</strong>：每学完一层，产出一个可验证的东西（benchmark、profile、mini 实现、排障记录）。</li>
+</ol>
+<h2 id="12">12. 面试要点<a class="headerlink" href="#12" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>AI Infra 和算法工程师的区别？</strong> → 算法对效果上限负责，Infra 对吞吐/时延/成本/稳定性负责。</li>
+<li><strong>AI Infra 有哪些方向？</strong> → 训练、推理、算子/编译、集群/网络/存储、平台/SRE、Agent/RL、端侧。</li>
+<li><strong>你怎么判断一个系统是计算瓶颈还是访存瓶颈？</strong> → Roofline：算术强度对比机器峰值，结合 profiler 的 SM/内存吞吐。</li>
+<li><strong>训练和推理的系统差异？</strong> → 训练整句并行、算力密集、要反向；推理自回归、decode 访存密集、要 KV Cache 与调度。</li>
+<li><strong>为什么说「JD 关键词不等于能力」？</strong> → 关键词只说明被提到，不说明硬性要求或使用深度；要看原文和上下文。</li>
+<li><strong>你如何为一个新方向做技术选型？</strong> → 先定 KPI 和约束，再列候选方案，做小规模 benchmark，最后看可维护性与成本。</li>
+</ol>
+<h2 id="13">13. 常见坑<a class="headerlink" href="#13" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>把岗位族当学习顺序</strong>：先学 SRE 再学训练，会缺少系统直觉。</li>
+<li><strong>只学工具不学原理</strong>：会 vLLM 命令不等于理解 KV Cache 与调度。</li>
+<li><strong>把 JD 关键词当能力</strong>：JD 写「熟悉 CUDA」不代表岗位每天都在写 kernel。</li>
+<li><strong>追新工具、忽视基础</strong>：Roofline、访存层次、集合通信这些十年不变。</li>
+<li><strong>用单点数字当结论</strong>：某个 benchmark 快 2 倍，不代表生产吞吐也快 2 倍。</li>
+<li><strong>只学一个方向</strong>：AI Infra 的故障往往跨层，训练问题可能出在网络或存储。</li>
+<li><strong>把 0 JD 子方向当成不重要</strong>：样本里 6 个子方向 0 个直接 JD，可能是跨族技能或本次样本没覆盖。</li>
+<li><strong>把画像里的 <code>x/y</code> 当成硬性要求</strong>：它是「JD 是否提及」的关键词统计，不是 must 强度。</li>
+<li><strong>把「长上下文一定 KV 先爆」当无条件结论</strong>：4K/低并发时权重仍是大头，要看交叉点。</li>
+</ul>
+<h2 id="14">14. 相关参考<a class="headerlink" href="#14" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>20g_ai_infra_map</code> —— 7 层 × 10 岗位族 × 7 维能力全景（横竖双版）</li>
+<li><code>reference/ai-infra/job-map.md</code> —— 10 族 / 35 子方向 / 7 维 / 级别 / 边界</li>
+<li><code>reference/ai-infra/profiles.md</code> —— 10 份能力画像（KPI、must_have、技术栈、面试题）</li>
+<li><code>reference/ai-infra/interview-questions.md</code> —— 50 道面试方向题（可判分 Probe 以 <code>QA-BANK.md</code> 为主）</li>
+<li><code>reference/ai-infra/jd_index.json</code> —— 107 条 JD 轻量索引（不含原文）</li>
+<li>源仓库：<code>../ai-infra-jd</code>（本地）/ https://github.com/Xingkai98/ai-infra-jd</li>
+</ul>
+<blockquote>
+<p><strong>证据口径</strong>：参考层的 <code>x/y</code> 计数来自上游 <code>ai-infra-jd</code> 的关键词统计，口径是「JD 是否提及」，
+不是硬性要求；6 个子方向在样本中 0 个直接 JD。数据质量与口径见
+<code>reference/ai-infra/README.md</code>（含 3 条 <code>skills</code> 为空的 JD、58 条未写学历等说明）。</p>
+</blockquote>
+<h2 id="15">15. 下一步<a class="headerlink" href="#15" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>M2-1 单机与算子</strong>：先建立 GPU/访存/Roofline/Kernel 的底层直觉。</li>
+<li><strong>推理线</strong>：M2-3 推理系统 → M2-4 分布式底座 → M2-5。</li>
+<li><strong>训练线</strong>：若已走完推理线（含 M2-4），从 M2-2 继续；否则先补 M2-4。</li>
+<li>本层是元层，路线以 §8.1 为准，不设动手清单。</li>
+</ul>
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.top", "navigation.indexes", "content.code.copy", "search.suggest", "search.highlight", "toc.follow"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+        <script src="../../javascripts/mathjax.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs" type="module"></script>
+      
+    
+  </body>
+</html>

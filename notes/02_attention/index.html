@@ -1,0 +1,2248 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="从 Transformer 骨架到推理系统的 29 篇讲义（本地预览）">
+      
+      
+      
+      
+        <link rel="prev" href="../01_skeleton/">
+      
+      
+        <link rel="next" href="../03_block/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>第二层 · 心脏 —— Self-Attention 的 Q/K/V - AI Infra 讲义</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#self-attention-qkv" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="../.." title="AI Infra 讲义" class="md-header__button md-logo" aria-label="AI Infra 讲义" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            AI Infra 讲义
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              第二层 · 心脏 —— Self-Attention 的 Q/K/V
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切到深色"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="切到深色" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切到浅色"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="切到浅色" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="AI Infra 讲义" class="md-nav__button md-logo" aria-label="AI Infra 讲义" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    AI Infra 讲义
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI Infra 讲义
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Notes
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Notes
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01_skeleton/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第一层 · 骨架 —— 从文本到矩阵
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二层 · 心脏 —— Self-Attention 的 Q/K/V
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二层 · 心脏 —— Self-Attention 的 Q/K/V
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0. 依赖图(学习顺序)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. 一句话直觉:注意力 = 软性查字典
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-x-qkv" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. 从 X 到 Q/K/V:三个线性投影
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-q-kt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. 打分:Q · Kᵀ
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-d_k" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. 缩放:为什么除以 √d_k(本层最经典的面试题)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-softmax" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. softmax + 加权求和
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#55" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.5 数值演算(逐步可手算)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. 手写一遍(带维度标注)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. 一个能拿笔算的小例子(演示"跨词关注")
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-reference-resolution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. 实际案例:指代消解(reference resolution)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. 复杂度(面试常问)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. 和前后的衔接
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        面试要点(务必能脱口而出)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        常见坑
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        相关图
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        下一步
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03_block/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第三层 · 加强 —— Multi-Head、残差、LayerNorm、FFN
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04_architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第四层 · 组装 —— Encoder / Decoder / 掩码 / Cross-Attention
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05_modern/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第五层 · 现代变体 —— 从原论文到 LLaMA/GPT
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_inference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第六层 · 跑起来 —— 训练/推理、KV Cache、完整 forward
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_pretraining/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第七层 · 预训练 —— 目标、数据与 Scaling Law
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../08_alignment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第八层 · 对齐 —— SFT、RLHF、DPO 与安全
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09_evaluation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第九层 · 评测 —— benchmark、污染、judge 与可复现
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../10_decoding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十层 · 解码 —— 从 logits 到 token
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../11_applications/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十一层 · 应用 —— Prompt、RAG、工具与 Agent
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../12_multimodal/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十二层 · 多模态 —— VLM、扩散与语音
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../13_reasoning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十三层 · 推理模型 —— 测试时计算、长 CoT 与 RLVR
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../14_long_context/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十四层 · 长上下文 —— 位置外推、注意力模式与 KV 账本
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../15_peft_lora/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十五层 · PEFT 与 LoRA —— 用 0.1% 参数做微调
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../16_agent_rl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十六层 · Agent RL —— rollout、环境、奖励与异步训练
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../17_data_engineering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十七层 · 数据工程 —— 从原始语料到数据飞轮
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../18_interpretability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十八层 · 可解释性 —— 从探针到电路与 SAE
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../19_multimodal_deep/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十九层 · 多模态深化 —— VLM、视频/音频与扩散
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../20_ai_infra_map/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模块二 · M2-0 地图与坐标系
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（2026-10-21 补全景图 20g）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../21_single_node_ops/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模块二 · M2-1 单机与算子
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（2026-10-21 补结构图 20h/20i/20j/20k）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../22_inference_systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模块二 · M2-3 推理系统
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（2026-10-21 补结构图 20l–20q）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../23_training_systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 2 层 · M2-2 训练系统
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../24_distributed_base/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 4 层 · M2-4 分布式底座
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../25_platform_sre/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 5 层 · M2-5 平台与稳定性
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../26_frontier_edge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 6 层 · M2-6 前沿与端侧
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../27_agent_engineering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二十七层 · Agent 工程化：Context / Harness / Loop / Graph
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--v1"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../28_vllm_source_trace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二十八层 · vLLM v1 源码 trace：一次请求怎么走
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--v1"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../29_agent_eval_infra/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二十九层 · Agent 评测 Infra：从打分到可复现的评测平台
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--v1"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../worksheets/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Worksheets
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Worksheets
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0. 依赖图(学习顺序)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. 一句话直觉:注意力 = 软性查字典
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-x-qkv" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. 从 X 到 Q/K/V:三个线性投影
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-q-kt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. 打分:Q · Kᵀ
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-d_k" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. 缩放:为什么除以 √d_k(本层最经典的面试题)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-softmax" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. softmax + 加权求和
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#55" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.5 数值演算(逐步可手算)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. 手写一遍(带维度标注)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. 一个能拿笔算的小例子(演示"跨词关注")
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-reference-resolution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. 实际案例:指代消解(reference resolution)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. 复杂度(面试常问)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. 和前后的衔接
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        面试要点(务必能脱口而出)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        常见坑
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        相关图
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        下一步
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="self-attention-qkv">第二层 · 心脏 —— Self-Attention 的 Q/K/V<a class="headerlink" href="#self-attention-qkv" title="Permanent link">&para;</a></h1>
+<blockquote>
+<p>本层回答:手里有一堆 <code>[B, T, d_model]</code> 的向量(每个词一个),怎么让<strong>每个词看到别的词、并按相关度汇总信息</strong>?这是整个 Transformer 最核心的机制。</p>
+</blockquote>
+<h2 id="0">0. 依赖图(学习顺序)<a class="headerlink" href="#0" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p>根节点是<strong>可以无条件接受</strong>的事实(个别根节点正文会补推导,如 §4 的 D,可先接受、后自证);箭头表示「前者支撑后者」。学习顺序 = 从根到汇点的拓扑序。</p>
+</blockquote>
+<pre class="mermaid"><code>graph TD
+  X["输入 X: [B, T, d_model]&lt;br/&gt;B=批量大小, T=词数, d_model=每词向量维度"] --&gt; P["线性投影 → Q, K, V"]
+  P --&gt; C["scores = Q · Kᵀ&lt;br/&gt;[B, T, T]"]
+  C --&gt; S["除以 √d_k&lt;br/&gt;稳定方差"]
+  D["点积方差 ≈ d_k&lt;br/&gt;(前提:q、k 分量独立、均值 0、方差 1)"] --&gt; S
+  S --&gt; A["softmax → 权重 A&lt;br/&gt;每行和 = 1"]
+  A --&gt; O["加权求和 out = A · V"]
+  P --&gt; O
+  O --&gt; R["每个 token 的新表示&lt;br/&gt;[B, T, d_model]"]</code></pre>
+<h2 id="1">1. 一句话直觉:注意力 = 软性查字典<a class="headerlink" href="#1" title="Permanent link">&para;</a></h2>
+<p>想象你在图书馆找书:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>你手里的问题        → Query  (我想找什么)
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>每本书的标签/编号    → Key    (检索依据)
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>每本书的内容        → Value  (真正要取的信息)
+</code></pre></div>
+<p>检索过程 = 用你的 Query 去和每本书的 Key 比对相似度 → 得到一组"该看哪本书"的权重 → 按权重把各本书的 <strong>Value</strong> 加权求和,就是你带走的答案。</p>
+<p>和真实查字典的区别:字典是<strong>硬检索</strong>(要么命中要么不命中),注意力是<strong>软检索</strong>——每本书都给一个 <code>[0,1]</code> 的权重,最后取"所有书的加权混合"。软的好处:<strong>全程可微</strong>,能端到端训练。</p>
+<blockquote>
+<p>关键:Q、K、V <strong>都来自同一个输入 X</strong>(所以才叫 <strong>self</strong>-attention)。是 X 乘三个不同的<strong>可学习</strong>权重矩阵投影出来的。</p>
+</blockquote>
+<h2 id="2-x-qkv">2. 从 X 到 Q/K/V:三个线性投影<a class="headerlink" href="#2-x-qkv" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>Q = X · W_Q        X [B, T, d_model]   W_Q [d_model, d_k]   → Q [B, T, d_k]
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>K = X · W_K        X [B, T, d_model]   W_K [d_model, d_k]   → K [B, T, d_k]
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>V = X · W_V        X [B, T, d_model]   W_V [d_model, d_v]   → V [B, T, d_v]
+</code></pre></div>
+<ul>
+<li><code>d_k</code> 是每个头的 key/query 维度,<code>d_v</code> 是 value 维度。原论文在多头设定里取 <strong>每个头</strong> <code>d_k = d_v = d_model / h</code>(h=8 时即 64)。</li>
+</ul>
+<p><strong>先把三条运算规则写出来,否则下面的形状约束只是空壳:</strong>
+① <strong>转置 <code>ᵀ</code>(代码里写 <code>T</code> 或 <code>.transpose</code>)</strong>:行列互换,数值不变、只换排布。<code>W [d_model, d_k]</code> 转置后是 <code>Wᵀ [d_k, d_model]</code>;<code>K [T, d_k]</code> 转置成 <code>Kᵀ [d_k, T]</code>。它唯一的作用就是让后面的乘法形状对得上。
+② <strong>矩阵乘 <code>A·B</code></strong>:要求 <code>A</code> 的列数 = <code>B</code> 的行数,结果的第 i 行第 j 列 = <strong><code>A</code> 的第 i 行与 <code>B</code> 的第 j 列「对应位置相乘、再全部相加」</strong>:<code>C[i][j] = Σ_p A[i][p] · B[p][j]</code>(p 走完 A 的列 = B 的行)。所以 <code>[T, d_model] · [d_model, d_k] = [T, d_k]</code>——形状规则就是「中间那两维必须相等,然后一起消失」。<strong>记住这条乘加规则,§5.5 的 ①–⑦ 每一步都是同一个动作,只是换了矩阵。</strong>
+③ <strong>点积 <code>q · k</code></strong>:两个<strong>等长</strong>向量对应位置相乘再相加,结果是一个<strong>数</strong>(标量):<code>q · k = Σ_p q[p] · k[p]</code>。它就是矩阵乘在「一行 × 一列」时的特例,所以 <code>scores = Q·Kᵀ</code> 里 <code>scores[i][j]</code> = 「Q 的第 i 行」与「Kᵀ 的第 j 列(= K 的第 j 行)」的点积。
+<strong>拿 §5.5 的第一格先验一遍:</strong> <code>X</code> 第 0 行 <code>[1,0,1,0]</code> × <code>W_Q</code> 第 0 列 <code>[1,0,1,0]</code>,对应位置相乘得 <code>1·1, 0·0, 1·1, 0·0</code>,再相加 <code>1+0+1+0 = 2</code>,即 <code>Q[0][0] = 2</code>——正是 14a 图上填的那一格。遮住图自己算出这个 2,后面 ④–⑦ 的图像核对才有意义。</p>
+<p><strong>先把「头(head)」说清,否则 64 只能死记:</strong> 一个「头」= 一条独立的「投影出 Q/K/V → 打分 → 加权求和」通道。多头 = 把这条通道并行做 h 份:<code>d_model</code> 维切成 h 份,每份 <code>d_model/h</code> 维、各有自己的 <code>W_Q/W_K/W_V</code>,各算出一份输出再拼回 <code>d_model</code>。所以「每个头 <code>d_k = d_model/h</code>」说的是<strong>单个通道内部</strong>的维度:512 维切 8 头,每头 64 维,<code>d_k</code> 就是这 64,<strong>不是</strong> 512。本篇讲的是单头(只有一条通道),<code>d_k</code>、<code>d_v</code> 可取任意值(§5.5 的例子就取 <code>d_model=4, d_k=2</code>);h=8 只是原论文 base 配置的取值,多头怎么拼见第三层。</p>
+<ul>
+<li><strong>为什么 <code>W_Q</code> / <code>W_K</code> 都是 <code>[d_model, d_k]</code>?</strong> 因为 <code>scores = Q·Kᵀ</code> 是点积,矩阵乘要求 <code>Q</code> 的最后一维 = <code>Kᵀ</code> 的第一维,所以 <strong>Q 和 K 必须同维</strong>——数学上可写 <code>d_q = d_k</code>,工程上通常只用一个符号 <code>d_k</code>。不是"恰好相等",是<strong>约束使然</strong>。</li>
+<li><strong><code>d_v</code> 可以 ≠ <code>d_k</code></strong>:<code>out = A·V</code> 中 <code>A</code> 是 <code>[T,T]</code>,不约束 <code>V</code> 的最后一维;原论文 base 配置取 <code>d_v = d_k = d_model/h = 64</code>(Vaswani 2017 §3.2.2 只给了这个取值,未说明取等的理由;「为简单」是后人补的动机,不算原文)。</li>
+<li>三个 <code>W</code> 是<strong>独立的、可训练的</strong>——这是模型自己学出来"怎么问、怎么标注、怎么取值"。</li>
+<li><strong>为什么不直接拿 X 自己点乘,而要三套投影?</strong> 直接 <code>X·Xᵀ</code> 是对称的,无法表达“我找你”与“你被找”的非对称关系;Q/K 投影把同一个 X 映射到两个<strong>不同的比较空间</strong>,V 再提供一套<strong>独立的内容空间</strong>。没有可学的投影,注意力就退化成固定的相似度,表达能力大幅下降。</li>
+<li>维度上 <code>[B,T,d_model] @ [d_model,d_k] = [B,T,d_k]</code>,逐 token 独立投影,不跨位置混合。<strong>注意混合点不是 <code>Q·Kᵀ</code></strong>:<code>Q·Kᵀ</code> 只产出两两相似度分数 <code>[B,T,T]</code>,不改变任何 token 的表示;真正的跨位置混合发生在 §5 的 <code>A·V</code>——每个位置按权重把所有位置的 value 汇总成自己的新表示。</li>
+</ul>
+<h2 id="3-q-kt">3. 打分:Q · Kᵀ<a class="headerlink" href="#3-q-kt" title="Permanent link">&para;</a></h2>
+<p>每个 query 要和<strong>每个</strong> key 算一个相似度(点积):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>scores = Q · Kᵀ                            [B, T, d_k] · [B, d_k, T] → [B, T, T]
+</code></pre></div>
+<p>得到的 <code>[B, T, T]</code> 矩阵:<code>scores[b, i, j]</code> = 第 i 个词(query)对第 j 个词(key)的关注分数。<strong>这就是那张"注意力矩阵",行是 query、列是 key。</strong>
+注意:这里的「注意力矩阵」指 softmax <strong>之前</strong>的原始分数(可正可负、行和不为 1);归一化后的权重矩阵专指 §5 的 <code>A = softmax(scores/√d_k)</code>(每行和为 1),两者别混用。</p>
+<p><img alt="注意力权重矩阵 A(softmax 后)" src="../../diagrams/06_attention_heatmap.landscape.png" /></p>
+<p>(上图:softmax 后每行和为 1,颜色越深=关注度越高。第 3 行"学"把最多注意力给了它自己——<strong>但 06 是构造出来的示意矩阵(每行恰好归一到 1.00),不是任何模型的输出</strong>:这种对角占优只是"画法",不能当成"模型自己学出来的"观测结论——图内注脚本身就写明真实模型大量权重落在非对角。)</p>
+<p><img alt="Scaled Dot-Product Attention:张量怎么流" src="../../diagrams/05_attention_flow.landscape.png" /></p>
+<h2 id="4-d_k">4. 缩放:为什么除以 √d_k(本层最经典的面试题)<a class="headerlink" href="#4-d_k" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>scaled_scores = scores / √d_k
+</code></pre></div>
+<p><strong>原因(方差论证,务必能推):</strong> 假设 q、k 的各分量是独立、均值 0、方差 1 的随机变量,那么点积</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>q · k = Σ_{i=1}^{d_k} q_i k_i
+</code></pre></div>
+<p>的均值是 0,方差是 <strong>d_k</strong>(各分量乘积的方差逐个累加)。所以 <code>q·k</code> 的标准差是 <strong>√d_k</strong>。
+<strong>先把「方差」定义清楚,再补两条恒等式——这一步才是「能推」的关键:</strong> 方差 = 偏离均值的平方的平均,<code>Var(z) = E[(z − E z)²]</code>,它衡量的是<strong>离散程度</strong>(数值摊得多开),不是整体抬高。
+① 两个独立变量之和,方差可加:<code>Var(a + b) = Var(a) + Var(b)</code>(独立保证交叉项 <code>2E[(a−Ea)(b−Eb)] = 0</code> 消失)。
+② 均值 0、方差 1 且彼此独立的 <code>q_i</code>、<code>k_i</code>,乘积的方差是 1:<code>Var(q_i k_i) = E[q_i²k_i²] − (E[q_i k_i])² = E[q_i²]·E[k_i²] − 0 = 1×1 = 1</code>。
+把 ①② 套到 <code>q·k = Σ q_i k_i</code>:每一项 <code>q_i k_i</code> 相互独立、方差都是 1,<code>d_k</code> 项相加 → 方差 = <code>1 + 1 + … + 1</code> = <code>d_k</code>,标准差 = √d_k;除以 √d_k 就把标准差(以及方差)拉回 1。</p>
+<blockquote>
+<p>依赖顺序先说明:依赖图里 A(softmax)画在 S 之后,那是<strong>计算顺序</strong>;本节走的是<strong>论证顺序</strong>——要先讲清 softmax 在极端输入下会怎样,才能说明「为什么非缩放不可」。所以下面这段提前借用了 §5 的三句话(softmax 把一行分数指数归一化 / 输入过大会变 one-hot 尖峰 / 饱和处导数≈0),§5 才正式定义它。读到 softmax 先当已知往下走,读完 §5 再回看这段即可闭环。
+<strong>再补三个词的定义(下面整段论证都靠它们):</strong> 训练 = 反复调整参数(这里的 <code>W_Q/W_K/W_V</code>)让<strong>损失</strong>(loss,一个数,衡量模型输出离正确答案有多远)变小;<strong>梯度</strong> = 损失对某个参数的敏感度,即「这个参数动一点点,损失会变多少」;<strong>反向传播</strong>(backprop)= 从损失出发,按链式法则一层层往回算这个敏感度——每退一层,就把「上游传来的梯度 × 本层自己的导数」乘起来,得到更前面那层的梯度。所以链上任何一层的导数 ≈0,敏感度传到它这里就被乘成 0,它前面的参数就收不到「该往哪改」的信号。下面这段就从这条链推。</p>
+</blockquote>
+<p><strong>不缩放会怎样?</strong> <code>d_k</code> 越大,logits(这里的 scores,即 softmax 之前的原始打分,§5 正式定义)的数值范围越大(量级 ~√d_k)。softmax(把一行打分经指数归一化成和为 1 的概率,§5 正式定义,此处先只需记住这一句)对大幅度输入会<strong>饱和</strong>——分布被推成一个近乎 one-hot 的尖峰(某个位置≈1,其余≈0)。饱和指输出几乎不再随输入变化,即<strong>导数≈0</strong>;而导数(梯度)是反向传播唯一的传递媒介——从损失往回每层都要乘本层导数,乘到 0 梯度就没了。后果:</p>
+<ul>
+<li><strong>梯度消失</strong>:softmax 在饱和区导数≈0,反向传播几乎传不动。</li>
+<li>训练不稳定、难收敛。</li>
+</ul>
+<p>除以 √d_k 把 logits 的方差<strong>拉回 1</strong>,softmax 落在敏感区间,梯度健康。
+<strong>「导数≈0」为什么等于「训练不动」:</strong> softmax 的输出对输入的导数在饱和区趋近 0——输入再加,输出几乎停在 1 或 0,曲线走平。反向传播时每层拿到的梯度 = 上游梯度 × 本层导数;乘上 ≈0 的导数,这一层参数的更新量就 ≈0,损失再降也传不回去。所以「饱和 → 导数≈0 → 梯度传不动 → 训练不动」是一条因果链,不是三个并列结论。</p>
+<blockquote>
+<p>常见误区:缩放是除以 √<strong>d_k</strong>(每个头的维度),不是 √d_model,也不是随便一个常数。注意:原论文在 footnote 里<strong>给出了点积方差 ≈ d_k 的论证</strong>(所以除以 √d_k 把标准差拉回 1),但<strong>没有</strong>报告"不同缩放因子"的对照消融实验;「不同缩放因子/温度的系统比较」属后续工作,本篇未标文献出处,故不作结论。</p>
+</blockquote>
+<h2 id="5-softmax">5. softmax + 加权求和<a class="headerlink" href="#5-softmax" title="Permanent link">&para;</a></h2>
+<p>对 scores 的<strong>每一行</strong>做 softmax(行内归一化,每行和 = 1):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>A = softmax(scores / √d_k)                 A [B, T, T]   # 每行是一个概率分布
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>out = A · V                                [B,T,T] · [B,T,d_v] → [B,T,d_v]
+</code></pre></div>
+<p><code>out[b, i, :]</code> = 第 i 个词按对它相关度加权的、所有词 value 的混合。</p>
+<p><strong>完整公式:</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>Attention(Q, K, V) = softmax( Q Kᵀ / √d_k ) · V
+</code></pre></div>
+<h2 id="55">5.5 数值演算(逐步可手算)<a class="headerlink" href="#55" title="Permanent link">&para;</a></h2>
+<!-- ws-ref:begin -->
+<blockquote>
+<p>🧮 <strong>手算卡</strong>（打印出来在纸上算，算完拍照发我核对）
+- <code>ws-attention-chain</code> ｜ §5.5 数值演算 ｜ X→Q/K/V→scores→softmax→out 七步走完整条链，L=3、能手算</p>
+</blockquote>
+<!-- ws-ref:end -->
+
+<p>用 <code>B=1, T=3, d_model=4, d_k=2</code> 的小例子(14 系列图都按 <code>B=1</code> 画,矩阵全是二维:<code>X[3,4]</code>、<code>W_Q/W_K/W_V[4,2]</code>、<code>scores/A[3,3]</code>;batch 维只剩 1,本例不再写出),<strong>每一步一张图</strong>。矩阵画成方格,只显示参与运算的
+第 0 行/第 0 列,颜色标出"哪一行 × 哪一列 → 哪个结果格"。</p>
+<p><strong>① Q = X·W_Q</strong></p>
+<p><img alt="① Q = X·W_Q" src="../../diagrams/14a_q_proj.landscape.png" /></p>
+<p><strong>② K = X·W_K</strong></p>
+<p><img alt="② K = X·W_K" src="../../diagrams/14b_k_proj.landscape.png" /></p>
+<p><strong>③ V = X·W_V</strong></p>
+<p><img alt="③ V = X·W_V" src="../../diagrams/14c_v_proj.landscape.png" /></p>
+<p><strong>④ scores = Q·K^T</strong></p>
+<p><img alt="④ scores = Q·K^T" src="../../diagrams/14d_scores.landscape.png" /></p>
+<p><strong>⑤ 缩放:scaled = scores / √d_k</strong></p>
+<p><img alt="⑤ 缩放" src="../../diagrams/14e_scaled.landscape.png" /></p>
+<p><strong>⑤.5 因果掩码(加在 softmax 之前):scores(示意)→ +mask → softmax</strong></p>
+<blockquote>
+<p>为什么遮住未来?④ scores = Q·Kᵀ 这一步(即 §3 的打分)里,每个词都能看到它<strong>后面</strong>的词;做生成式任务时,预测第 i 个词不该看见第 i+1 个词(训练时会变成抄答案)。做法:在 softmax <strong>之前</strong>把 <code>j&gt;i</code>(未来位置)的分数加上 <code>-inf</code>,使 <code>e^{-inf}=0</code>、权重精确为 0。本节只要求会算"加 mask 后某一行如何归一化";它在完整架构里的位置(第四层 Masked Attention)见 §10,不属本层要求。
+位置说明:本小节<strong>不在 §0 依赖图里</strong>——依赖图只画本层必学主链(S → A → O),掩码是给第四层 Masked Attention 预热的前置阅读。所以在 §5 与 §6 之间多出这一段不算跳步,跳过它直接读 §6 也不影响本层主线。</p>
+</blockquote>
+<p><img alt="因果掩码的逐行数值" src="../../diagrams/14h_mask.landscape.png" /></p>
+<p>小例 <code>scores [3,3] = [[2,7,1],[0,3,5],[4,2,6]]</code>(本例略去 <code>÷√d_k</code>,只演示掩码)。注意:这组数是<strong>掩码专用</strong>的示意数,与 ④⑤⑥ 的 14d/14f 那条 <code>[3,3]</code> 链不是同一套,手算时各以对应图上的数字为准。future mask 在 <code>j&gt;i</code> 处加 <code>-inf</code>:</p>
+<ul>
+<li>第 0 行只剩 <code>j=0</code>:<code>exp(2.00)/(exp(2.00)+0+0)=1.00</code> → <code>A[0]=[1,0,0]</code>。</li>
+<li>第 1 行只剩 <code>j=0,1</code>:<code>exp(0)=1.000</code>、<code>exp(3)=20.086</code>,归一化 → <code>[0.05,0.95,0]</code>。</li>
+</ul>
+<p><code>mask</code> 必须加在 <strong>softmax 之前</strong>;被屏蔽位置的 <code>e^(-inf)=0</code>,权重精确为 0。
+想深入掩码的工程细节,可自行查阅 <code>notes/04_architecture.md §2</code>(本篇不依赖它:此处只需会算上面那两行)。</p>
+<p><strong>⑥ A = softmax(scaled)(按行)</strong></p>
+<p><img alt="⑥ softmax" src="../../diagrams/14f_softmax.landscape.png" /></p>
+<blockquote>
+<p>注意:⑥ 的 14f 是<strong>未加掩码</strong>的示例(其未缩放 <code>scores</code> 第 0 行为 <code>[4, 3, 3]</code>，除以 √2 得第 0 行 <code>[2.83, 2.12, 2.12]</code> → <code>[0.50, 0.25, 0.25]</code>);
+若加因果 mask,第 0 行只剩 <code>j=0</code>,softmax 变为 <code>[1, 0, 0]</code>,见 ⑤.5 的 14h。</p>
+</blockquote>
+<p><strong>⑦ out = A·V</strong></p>
+<p><img alt="⑦ out = A·V" src="../../diagrams/14g_out.landscape.png" /></p>
+<p><strong>总览(全部数值)</strong></p>
+<p><img alt="Self-Attention 数值演算总览" src="../../diagrams/14_attention_math.landscape.png" /></p>
+<p><strong>建议用法</strong>:先看 14a–14h,每一步遮住结果、自己手算 <code>[0][0]</code>;再用总览图核对全部数值。
+随讲义交付的只有横版(即上面这些 <code>../diagrams/*.landscape.png</code>);竖版<strong>未随本篇同步</strong>,需要时到源码仓 <code>ai-notes/diagrams/</code> 取 <code>14a_q_proj.portrait.png</code> … <code>14h_mask.portrait.png</code>。
+<strong>正文数值(图裂 / 纯文本粘贴时的兜底)</strong>:本例 <code>B=1, T=3, d_model=4, d_k=d_v=2</code>,矩阵都是二维,主链形状 <code>X[3,4] → Q/K[3,2] → scores[3,3] → A[3,3] → out[3,2]</code>。有一条可脱离图片独立核对的锚点链(第 0 行):<code>scores</code> 第 0 行 <code>[4, 3, 3]</code> → ÷√2 = <code>[2.83, 2.12, 2.12]</code> → softmax = <code>[0.50, 0.25, 0.25]</code> → <code>out[0][0] = 0.50·2 + 0.25·1 + 0.25·1 = 1.50</code>、<code>out[0][1] = 0.50·0 + 0.25·2 + 0.25·1 = 0.75</code>(14g 图只填了 <code>out[0][0] = 1.5</code> 一格,完整 <code>out[0] = [1.5, 0.74]</code> 在 <code>14_attention_math</code> 总览图;总览图的 0.74 是用未取整权重 0.503/0.248/0.248 算的,用上面已四舍五入的 <code>[0.50,0.25,0.25]</code> 手算得 0.75,差 0.01 来自取整,不是抄错)。
+<code>X</code>(3×4)与 <code>W_Q</code>/<code>W_K</code>/<code>W_V</code>(各 4×2)是示意数,逐格数值在 <code>14_attention_math</code> 总览图里<strong>是全量给全的</strong>(14a–14c 每张只填第 0 行/第 0 列,总览图才三行都填),正文照抄如下:<code>X = [[1,0,1,0],[0,1,0,1],[1,1,0,0]]</code>、<code>W_Q = [[1,0],[0,1],[1,1],[0,1]]</code>、<code>W_K = [[0,1],[1,0],[1,1],[0,1]]</code>、<code>W_V = [[1,0],[0,1],[1,0],[1,1]]</code>;乘出来 <code>Q = [[2,1],[0,2],[1,1]]</code>、<code>K = [[1,2],[1,1],[1,1]]</code>、<code>V = [[2,0],[1,2],[1,1]]</code>,于是 ④ 的 <code>scores = Q·Kᵀ = [[4,3,3],[4,2,2],[3,2,2]]</code>,①–③ 脱离图片也能一路算到 ④。自检:<code>Q</code> 第 0 行 <code>[2,1]</code> 的第一格,必须等于 14a 图上填的那一格 <code>Q[0][0] = 2</code>(14a 只填第 0 行第 0 列,整行 <code>[2,1]</code> 要到 <code>14_attention_math</code> 总览图里对照;抄错这里最先暴露)。</p>
+<h2 id="6">6. 手写一遍(带维度标注)<a class="headerlink" href="#6" title="Permanent link">&para;</a></h2>
+<p><strong>先认 6 个 PyTorch 记号,否则这段代码只能跳过:</strong> <code>nn.Linear(d_in, d_out, bias=False)</code> 就是一个线性层,内部存 <code>[d_out, d_in]</code> 的权重矩阵(注意是反的:§2 的 <code>W_Q [d_model, d_k]</code> 在这里存成 <code>[d_k, d_model]</code>),前向算 <code>x · Wᵀ</code>,即 §2 的 <code>X·W_Q</code>;<code>bias=False</code> 表示<strong>不加偏置项</strong>(不额外加一个可学常数向量),所以它和 §2 的纯矩阵乘一一对应。<code>@</code> 是<strong>批量矩阵乘</strong>:只对最后两维做矩阵乘法、前面维度当批量循环,故 <code>[B,T,d_k] @ [B,d_k,T]</code> → <code>[B,T,T]</code>。<code>K.transpose(-2, -1)</code> 交换最后两维(<code>-1</code>=最后一维、<code>-2</code>=倒数第二维),<code>[B,T,d_k]</code> 变成 <code>[B,d_k,T]</code>,即 §3 的 <code>Kᵀ</code>。<code>scores.softmax(dim=-1)</code> 沿<strong>最后一维</strong>(key 方向)归一化,就是 §5 的「每一行和为 1」。<code>Q.size(-1)</code> 取最后一维长度,即 <code>d_k</code>,所以 <code>math.sqrt(Q.size(-1))</code> = <code>√d_k</code>,与 §4 一致。看不懂代码时:把 <code>nn.Linear</code> 读成「乘一个可学矩阵」、<code>@</code> 读成「矩阵乘」,这段便与 §2–§5 的公式逐行对上。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span><span class="o">,</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span><span class="o">,</span><span class="w"> </span><span class="nn">math</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="k">class</span><span class="w"> </span><span class="nc">SelfAttention</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d_model</span><span class="p">,</span> <span class="n">d_k</span><span class="p">,</span> <span class="n">d_v</span><span class="p">):</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">W_q</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">d_k</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>   <span class="c1"># weight: [d_k, d_model]</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">W_k</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">d_k</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>   <span class="c1"># weight: [d_k, d_model]</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">W_v</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">d_v</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>   <span class="c1"># weight: [d_v, d_model]</span>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>                      <span class="c1"># x: [B, T, d_model]</span>
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>        <span class="n">Q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">W_q</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>                        <span class="c1"># [B, T, d_k]</span>
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>        <span class="n">K</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">W_k</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>                        <span class="c1"># [B, T, d_k]</span>
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>        <span class="n">V</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">W_v</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>                        <span class="c1"># [B, T, d_v]</span>
+<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>        <span class="n">scores</span> <span class="o">=</span> <span class="n">Q</span> <span class="o">@</span> <span class="n">K</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>       <span class="c1"># [B, T, T]     每个 query×key 点积</span>
+<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a>        <span class="n">scores</span> <span class="o">=</span> <span class="n">scores</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">Q</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span><span class="c1"># 缩放,√d_k</span>
+<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a>        <span class="n">A</span> <span class="o">=</span> <span class="n">scores</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>             <span class="c1"># [B, T, T]     按行归一化</span>
+<a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a>        <span class="n">out</span> <span class="o">=</span> <span class="n">A</span> <span class="o">@</span> <span class="n">V</span>                            <span class="c1"># [B, T, d_v]   加权求和</span>
+<a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a>        <span class="k">return</span> <span class="n">out</span><span class="p">,</span> <span class="n">A</span>
+<a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a>
+<a id="__codelineno-7-20" name="__codelineno-7-20" href="#__codelineno-7-20"></a><span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">512</span><span class="p">)</span>                     <span class="c1"># [B=2, T=5, d_model=512]</span>
+<a id="__codelineno-7-21" name="__codelineno-7-21" href="#__codelineno-7-21"></a><span class="n">out</span><span class="p">,</span> <span class="n">A</span> <span class="o">=</span> <span class="n">SelfAttention</span><span class="p">(</span><span class="mi">512</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">64</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<a id="__codelineno-7-22" name="__codelineno-7-22" href="#__codelineno-7-22"></a><span class="nb">print</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">A</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>                      <span class="c1"># [2, 5, 64]   [2, 5, 5]</span>
+</code></pre></div>
+<p><strong>维度追踪表:</strong></p>
+<table>
+<thead>
+<tr>
+<th>步骤</th>
+<th>形状</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>输入 X</td>
+<td><code>[B, T, d_model]</code></td>
+</tr>
+<tr>
+<td>Q / K</td>
+<td><code>[B, T, d_k]</code></td>
+</tr>
+<tr>
+<td>V</td>
+<td><code>[B, T, d_v]</code></td>
+</tr>
+<tr>
+<td>scores = Q·Kᵀ</td>
+<td><code>[B, T, T]</code></td>
+</tr>
+<tr>
+<td>A = softmax(·)</td>
+<td><code>[B, T, T]</code>,每行和=1</td>
+</tr>
+<tr>
+<td>out = A·V</td>
+<td><code>[B, T, d_v]</code></td>
+</tr>
+<tr>
+<td>&gt; 形状对不上的原因(必读):§2 的 <code>W_Q [d_model, d_k]</code> 是<strong>数学记号</strong>,<code>nn.Linear</code> 内部存的是它的转置 <code>[d_k, d_model]</code>,前向算的是 <code>x·Wᵀ</code>——两处不矛盾,只是<strong>存储约定</strong>不同。手算维度时统一走一条:<code>X [B,T,d_model] · W_Q [d_model,d_k] = [B,T,d_k]</code>。</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h2 id="7">7. 一个能拿笔算的小例子(演示"跨词关注")<a class="headerlink" href="#7" title="Permanent link">&para;</a></h2>
+<p>设 <code>T=2</code>(两个词:猫、鱼)、<code>d_k=2</code>,投影后让"猫的 query"和"鱼的 key"对上:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>Q = [[1, 0],   (猫)      K = [[0, 1],   (猫的 key)      V = [[10, 0],   (猫的 value)
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>     [0, 1]]   (鱼)           [1, 0]]   (鱼的 key)           [0, 10]]   (鱼的 value)
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>scores = Q·Kᵀ        = [[0, 1],     # 猫 vs (猫key,鱼key):和鱼的 key 更接近
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>                        [1, 0]]     # 鱼 vs (猫key,鱼key):和猫的 key 更接近
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>scaled = /√2 ≈         [[0, 0.71],
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>                        [0.71, 0]]
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>A = softmax(按行)   ≈  [[0.33, 0.67],   # 猫把 67% 注意力给了"鱼"
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>                        [0.67, 0.33]]   # 鱼把 67% 注意力给了"猫"
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>out = A·V           =  [[3.3, 6.7],     # 猫的表示,67% 来自鱼的 value
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>                        [6.7, 3.3]]     # 鱼的表示,67% 来自猫的 value
+</code></pre></div>
+<p>看 <code>out</code> 第 0 行 <code>[3.3, 6.7]</code>:这是"猫"的新表示,它 <strong>67% 取自鱼的 value、33% 取自自己的 value</strong>——每个词都从<strong>另一个词</strong>那里汇总了信息,这就是 self-attention 的核心动作。</p>
+<p><strong>关于缩放的一个准确说法:</strong> softmax 把 logit 差距(这里是 <code>0</code> 和 <code>0.71</code>)经<strong>指数</strong>变成 <code>1</code> 和 <code>2.03</code>,再归一化成 <code>0.33 / 0.67</code>。注意这里并没有"放大"到更极端——<strong>关键是如果不缩放</strong>,logit 的<strong>差距(spread)</strong>会随 <code>d_k</code> 变大而变大(方差 ≈ d_k),指数会把分布推向 one-hot(如 <code>0.01/0.99</code>),那才是问题。所以除以 √d_k 是<strong>防止过尖</strong>,而不是"主动放大差距"。</p>
+<h2 id="8-reference-resolution">8. 实际案例:指代消解(reference resolution)<a class="headerlink" href="#8-reference-resolution" title="Permanent link">&para;</a></h2>
+<p>经典例子(注意力可视化里广为流传的一个,出自 Alammar《The Illustrated Transformer》):</p>
+<blockquote>
+<p>"<strong>The animal</strong> didn't cross the street because <strong>it</strong> was too tired."</p>
+</blockquote>
+<p>人类知道 "it" 指 "the animal"(而不是 "the street")。模型怎么知道?看 "it" 那一行(query=it)的注意力权重(注意:这是<strong>某一个 head 的热力图</strong>上的观察)——按 Alammar 的描述，处理 "it" 时<strong>有一部分注意力落在 "the animal" 这个 key 上</strong>（原文是 "part of the attention"，不是「高度集中」）。
+(Alammar 原文本节的原话是:处理 "it" 时,<strong>一部分注意力落在 "The animal" 上</strong>;「一个 head 主要看 the animal、另一个 head 主要看 tired」这句就是 Alammar 正文的原话(该句位于小节「The Beast With Many Heads」末尾,原文并无「Attention heads」小节:one attention head is focusing most on "the animal", while another is focusing on "tired"),并非出自 Google 2017 博客或 Tensor2Tensor notebook 的转述。所以上面那行是<strong>单头</strong>热力图上的观察,不是 it 行权重的整体规律。)</p>
+<p>这正是 attention 在做的事:某一行权重 = "当前这个词把多少注意力分给了哪些词"。把注意力矩阵画成热力图,就能看见模型"看哪里"。这是可解释性研究的入口,也解释了为什么 attention 这么好用——它让<strong>任意两个位置直接建立联系</strong>,距离为 1(对比 RNN 要一步步背过去)。</p>
+<h2 id="9">9. 复杂度(面试常问)<a class="headerlink" href="#9" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>时间</strong>: <code>Q·Kᵀ</code> 是 <code>[B,T,d_k]·[B,d_k,T]</code>,约 <strong>O(B · T² · d_k)</strong>;<code>A·V</code> 约 O(B·T²·d_v)。合起来 <strong>O(T² · d)</strong>,对序列长度是<strong>平方</strong>。</li>
+<li><strong>显存</strong>: 注意力矩阵 <code>A</code> 是 <code>[B, T, T]</code>,也是 <strong>O(T²)</strong>——长序列显存爆炸的根源。</li>
+<li>这是长上下文(32K/128K/1M)研究的核心战场:FlashAttention(重算换显存,不改变 O(T²) 但大幅降显存)、稀疏/线性注意力(改结构降复杂度)、KV Cache(推理时复用,第六层讲)。</li>
+</ul>
+<h2 id="10">10. 和前后的衔接<a class="headerlink" href="#10" title="Permanent link">&para;</a></h2>
+<ul>
+<li>本层是<strong>单头</strong>。为什么要多头、怎么拼 → 第三层。</li>
+<li>把 <strong><code>scores</code>(softmax 之前的 logits)</strong> 的某些位置置为 <strong>-∞ 再 softmax</strong>(掩码),就能让一个词只许看前面的词 → 第四层的因果掩码 / Masked Attention。</li>
+<li>Q 来自一段、K/V 来自另一段 → Cross-Attention(第四层)。</li>
+</ul>
+<h2 id="_1">面试要点(务必能脱口而出)<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>Q/K/V 分别是什么?</strong> → X 经三个独立可学习投影得到;Q=我在找什么,K=我的标签,V=我的内容。</li>
+<li><strong>为什么要除以 √d_k?</strong> → 点积方差随 d_k 增长(≈d_k),softmax 会饱和成 one-hot → 梯度消失;除以 √d_k 把方差拉回 1。</li>
+<li><strong>self-attention 复杂度?</strong> → 时间 O(T²·d),显存 O(T²)(注意力矩阵),对序列长度平方。</li>
+<li><strong>attention 为什么可微、能训练?</strong> → 全程是矩阵乘 + softmax,没有不可微的硬选择,是"软检索"。</li>
+<li><strong>一个词的信息怎么流到另一个词?</strong> → 通过 <code>Q·Kᵀ</code> 得到的权重,对 <code>V</code> 加权求和。</li>
+<li><strong>attn 矩阵怎么读?</strong> → 行=query,列=key,<code>A[i,j]</code>=第 i 个词分给第 j 个词的注意力;每行和为 1。</li>
+</ol>
+<h2 id="_2">常见坑<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Q/K/V 都来自同一个 X</strong>(self-attn),不要以为 K/V 来自别的序列(那是 cross-attn)。</li>
+<li>缩放除的是 <strong>√d_k</strong>(key 维度),不是 √d_model。</li>
+<li>softmax 是<strong>沿最后一维(列=key 方向)</strong>归一化的,结果是<strong>每一行(query)和为 1</strong>;不是每列和为 1。</li>
+<li><code>d_k</code> vs <code>d_v</code> 可以不同,但不影响 <code>A·V</code> 的形状一致性(<code>A</code> 是 <code>[T,T]</code>,<code>V</code> 是 <code>[T,d_v]</code>)。</li>
+</ul>
+<p><strong>两个常见 follow-up:</strong>
+- <strong>点积 vs 加性(additive)注意力:</strong> 打分方式可以是点积 <code>q·k</code>,也可以是小 MLP <code>v·tanh(W_q q + W_k k)</code>(Bahdanau)。点积胜在能用高效矩阵乘、且与硬件契合,所以 Transformer 选它;代价是需要 √d_k 缩放。
+- <strong>温度(temperature):</strong> 缩放系数 <code>1/√d_k</code> 本质上是个"温度"。把 <code>scores/√d_k</code> 推广成 <code>scores/T</code>,T 越小分布越尖(越确定)、T 越大越平(越随机)。这既是理论视角,也是采样时的旋钮。</p>
+<h2 id="_3">相关图<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p><code>05_attention_flow</code>(张量流)· <code>06_attention_heatmap</code>(注意力矩阵热力图)
+· <code>14_attention_math</code>(数值总览)· <code>14a_q_proj</code> … <code>14h_mask</code>(逐步数值演算)
+(均在 <code>diagrams/</code>,横竖双版本)</p>
+<h2 id="_4">下一步<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<p>第三层 · 加强:<strong>Multi-Head、残差连接、LayerNorm、FFN</strong> —— 把单头 attention 组装成一个能堆很深的 Block。</p>
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.top", "navigation.indexes", "content.code.copy", "search.suggest", "search.highlight", "toc.follow"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+        <script src="../../javascripts/mathjax.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs" type="module"></script>
+      
+    
+  </body>
+</html>
