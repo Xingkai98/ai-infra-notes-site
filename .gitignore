@@ -1,0 +1,4 @@
+.venv-docs/
+site/
+docs/.publish-manifest.json
+.DS_Store
