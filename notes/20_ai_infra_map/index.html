@@ -1266,10 +1266,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+  <a href="#m2-4-81" class="md-nav__link">
     <span class="md-ellipsis">
       
-        训练线（推理线之后或并行）
+        训练线（随后；时间充裕可并行，但先完成 M2-4——以 §8.1 为准）
       
     </span>
   </a>
@@ -1913,10 +1913,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+  <a href="#m2-4-81" class="md-nav__link">
     <span class="md-ellipsis">
       
-        训练线（推理线之后或并行）
+        训练线（随后；时间充裕可并行，但先完成 M2-4——以 §8.1 为准）
       
     </span>
   </a>
@@ -2005,16 +2005,18 @@
 <p>本层回答：AI Infra 到底在解决什么问题？市场上有哪些岗位族？这些岗位对应哪些学习层？
 每个方向要学到什么深度？——先把坐标系建起来，后面每一层才知道自己站在哪、为什么学。</p>
 <p><strong>前置</strong>：1A 模型结构总览（<code>notes/01</code>–<code>06</code>）；KV Cache 基础可先看 <code>notes/06_inference.md §3–5</code>，
-量化直觉可先看 <code>notes/21_single_node_ops.md §8</code>。<strong>1B/1C 尚未归档</strong>。
-<strong>说明</strong>：本层是地图，不要求学完 1A 全部再读；读到 M2-3 时再回补第 4–5 层即可。</p>
+量化直觉可先看 <code>notes/21_single_node_ops.md §8</code>。1B/1C 已于 2026-10-21 归档：1B = <code>notes/07</code>–<code>09</code>，1C = <code>notes/10</code>–<code>13</code>。
+<strong>说明</strong>：本层是地图，不要求学完 1A 全部再读；读到 M2-3 时再回补 <code>notes/04</code>–<code>05</code> 即可。</p>
 </blockquote>
 <h2 id="0">0. 依赖图（学习顺序）<a class="headerlink" href="#0" title="Permanent link">&para;</a></h2>
 <blockquote>
 <p>根节点 = 可以无条件接受的事实；箭头 = 前者支撑后者；汇点 = 模块目标。
 <strong>注意</strong>：这是「概念依赖图」，不是唯一课程顺序。
 <code>L4 --&gt; L2</code> 表示训练系统依赖分布式底座；<code>L4 -.-&gt; L3</code> 是「规模化增强」而非前置：
-M2-3 §7.0 已给出最小前置，可以先学推理核心，再补 M2-4。
-推荐路线见 §8.1（推理线 / 训练线两条），那里是唯一真源。</p>
+M2-3 §7.0 已给出最小前置，可以先学推理核心，再补 M2-4（M2-4 只是可以晚于 M2-3，不能跳过：图中 <code>L4 --&gt; L5</code> 是实线前置）。
+<code>L2 -.-&gt; L5</code> 同理：只有训练侧平台/SRE 需要 M2-2 在前；推理线不必等 M2-2，但也不跳过 M2-4——层顺序本节不复述，一律按 §8.1。
+推荐路线见 §8.1（推理线 / 训练线两条），那里是唯一真源。
+§10 的两张主线表与 §15 的下一步是 §8.1 的入口与补充：<strong>层顺序</strong>以 §8.1 为唯一真源，任一处层顺序与 §8.1 不同时以 §8.1 为准；但 §10 的「模型侧 ↔ Infra 侧」配对（<code>notes/06 §3–5</code>、<code>10_decoding</code>、<code>12_multimodal</code>、<code>14_long_context</code>、<code>11_applications</code> 与 <code>07/08/09</code>、<code>13/16</code> 的逐阶段对应）只在 §10 出现，§8.1 里没有，这部分不能只读 §8.1 就跳过。</p>
 </blockquote>
 <pre class="mermaid"><code>graph TD
   L0["M2-0 地图与坐标系"] --&gt; L1["M2-1 单机与算子&lt;br/&gt;GPU / CUDA / Kernel / 编译"]
@@ -2023,7 +2025,7 @@ M2-3 §7.0 已给出最小前置，可以先学推理核心，再补 M2-4。
   L1 --&gt; L4["M2-4 分布式底座&lt;br/&gt;网络 / 存储 / 集群调度"]
   L4 --&gt; L2
   L4 -.-&gt;|"规模化增强（非前置）"| L3
-  L2 --&gt; L5["M2-5 平台与稳定性&lt;br/&gt;MLOps / SRE / 可观测"]
+  L2 -.-&gt;|"训练侧平台/SRE 才需要（非前置）"| L5["M2-5 平台与稳定性&lt;br/&gt;MLOps / SRE / 可观测"]
   L3 --&gt; L5
   L4 --&gt; L5
   L2 --&gt; L6["M2-6 前沿与端侧&lt;br/&gt;Agent/RL / 端侧 / 异构"]
@@ -2068,7 +2070,7 @@ M2-3 §7.0 已给出最小前置，可以先学推理核心，再补 M2-4。
 <tbody>
 <tr>
 <td>MFU</td>
-<td>实际模型 FLOP/s ÷ 硬件峰值 FLOP/s（训练常用；不含重算/通信）</td>
+<td>实际达到的模型 FLOP/s ÷ 硬件峰值 FLOP/s（训练常用；分子 = 模型 FLOP 总数 ÷ 单步耗时，模型 FLOP 按 2ND + 4ND = 6ND 计，N = 参数量、D = 单步处理的 token 数；不含重算/通信）</td>
 </tr>
 <tr>
 <td>TTFT</td>
@@ -2092,13 +2094,24 @@ M2-3 §7.0 已给出最小前置，可以先学推理核心，再补 M2-4。
 </tr>
 <tr>
 <td>单位 token 成本</td>
-<td>GPU 成本 ÷ 生成 token 数</td>
+<td>同一时间口径下：GPU 成本（元/小时）÷ 该小时生成的 token 数（token/小时）= 元/token。例：20 元/小时、3000 token/s，即 <span class="arithmatex">\(20\text{ 元} \div (3000\times3600)\approx 1.9\times10^{-6}\)</span> 元/token（≈1.9 元/百万 token）。若按全生命周期，则用总卡费 ÷ 总生成 token 数，两种口径不可混用</td>
 </tr>
 </tbody>
 </table>
 <blockquote>
 <p>一句话区分算法与 Infra：<strong>算法决定「效果上限」，Infra 决定「能否把效果高效、稳定、便宜地跑出来」。</strong></p>
+<p><strong>术语一次讲清</strong>（后文直接用）：<strong>MaaS</strong> = Model-as-a-Service，把模型做成按调用计费的托管服务；<strong>PagedAttention</strong> = 把 KV Cache 切成固定大小分页存放（像操作系统分页），减少显存碎片、支持前缀共享；<strong>PD 分离</strong> = Prefill 与 Decode 拆到不同机器部署（前者算力密集、后者访存密集），各自调优；<strong>ZeRO / FSDP</strong> = 分片数据并行（ZeRO 是分级的：ZeRO-1 只切优化器状态，ZeRO-2 再切梯度，ZeRO-3 / FSDP 才切参数并在前向 all-gather 补齐），用通信换显存；<strong>NCCL</strong> = NVIDIA 集合通信库（AllReduce / AllToAll 的常用实现）；三个集合通信原语先在这里讲清（§8.1 的清单只列名字）：<strong>AllReduce</strong> = 各卡数据求和后广播回所有卡（DP 同步梯度用它）；<strong>AllToAll</strong> = 每卡把不同分片发给不同卡（MoE 换 expert 用它）；<strong>all-gather</strong> = 各卡把自己那一片发出来、拼成完整张量（ZeRO-3 / FSDP 前向补参数用它，与 AllReduce 的差别是不做求和）；<strong>重算（activation recomputation）</strong> = 反向时丢掉部分激活、重新前向算一遍，用算力换显存；重算会压低 MFU，但原因不是 FLOP 计数变大，而是单步耗时变长：MFU = FLOP/s ÷ 硬件峰值 FLOP/s，其中 FLOP/s = 模型 FLOP 总数 ÷ 单步耗时；模型 FLOP 总数按常用口径只算参数相关项（前向 2ND + 反向 4ND = 6ND，N = 参数量、D = 单步处理的 token 数）。重算多出的前向不进这 6ND，只拉长单步耗时，所以 FLOP/s 变小、MFU 下降（分母硬件峰值不变）。该口径默认「短序列、attention 的 O(T²) 项可忽略」；长 prompt / 长上下文要另加 attention 项（O(L_layer·T²·d_model) 量级，L_layer = 层数、d_model = 隐藏维（不是 head 维 d_k）），否则分子偏小、MFU 被低估。
+补一句 4ND 的来历：前向每个参数每 token 是 1 次乘 + 1 次加 = 2 FLOP（即 2ND）；反向有两份梯度要算——对激活的梯度 dX（回传给前一层，2ND）和对权重的梯度 dW（留给本层更新，2ND），各 2 FLOP/参数/token，合计 4 FLOP/参数/token（即 4ND）。所以参数相关项是 2ND + 4ND = 6ND；这 4ND 是「不做重算」的口径。</p>
+<p><strong>prefill 与 decode</strong>（全文最常混的一对）：<strong>prefill</strong> = 把整段 prompt 一次性前向，所有位置并行算，大矩阵、算力密集，产出首 token 之前的那一步；<strong>decode</strong> = 之后每次只进 1 个新 token、逐 token 生成，要反复读全部权重和 KV Cache，访存密集。所以 TTFT ≈ 排队 + prefill（长 prompt 决定它），TPOT 由 decode 的单步时间决定；PD 分离就是把这两段拆到不同机器。</p>
 </blockquote>
+<p><strong>其余缩写一次展开</strong>（后文不再解释）：<strong>混合精度</strong> = 前向/反向的矩阵计算与梯度计算用 fp16（或 bf16），权重按 fp16 存，同时另留一份 fp32 主权重做参数更新、优化器状态按 fp32 累积；所以「梯度」才有 2 字节与 4 字节两种口径（按计算精度存 / 按 fp32 存）；<strong>MLOps</strong> = Machine Learning Operations，把训练、评测、部署、监控做成可重复的流水线；<strong>SFT</strong> = Supervised Fine-Tuning，用标注好的「指令 → 回答」做监督微调；<strong>RLHF</strong> = Reinforcement Learning from Human Feedback，先训奖励模型再用 RL（PPO 等）优化策略（DPO 不在此列：它不训奖励模型、也不是 RL 采样循环，直接用偏好对做对比式优化）——SFT 与 RLHF 是两个先后训练阶段，不是两套工具；<strong>IDC</strong> = Internet Data Center，托管服务器与机柜的机房；<strong>POC</strong> = Proof of Concept，小规模试点验证；<strong>BU</strong> = Business Unit，业务线/事业部；<strong>HPC</strong> = High Performance Computing，传统高性能计算（MPI / InfiniBand 那套生态）；<strong>RoCE / IB</strong> = 两种 RDMA 承载网络：RoCE 跑在以太网上、IB 是专用网络——两者是并列的两套网络 + 协议栈，不是同一个协议跑在两种网络上：RoCE 是「RDMA over Converged Ethernet」这个协议本身（承载在以太网上），IB（InfiniBand）有自己的链路层与传输层——两者共同的只是「RDMA 这一内存直读语义」。
+<strong>显存账本</strong>（§9 M2-2 的面试必备）：训练侧把每卡显存拆成四项——参数（fp16，2 字节/参数）、梯度（与参数同精度，2 字节/参数）、优化器状态（Adam = 每个参数多存两个统计量的优化器：一阶矩 = 梯度的滑动均值、二阶矩 = 梯度平方的滑动均值，各 1 份 4 字节；fp32 主权重 = 混合精度训练额外保留的 fp32 参数副本，1 份 4 字节；优化器状态合计 12 字节/参数）、激活（前向保存下来给反向用的中间张量）。<strong>这四项里前三项相加、激活另算</strong>——下文「三项相加」那句就是它的展开。</p>
+<p><strong>再乘并行切分</strong>：三项各按自己的切分维度折算，不是都除以同一个数：优化器状态按 ZeRO-1（在 DP 组内切）；梯度按 ZeRO-2 或 TP/PP 切；参数按 TP/PP 或 ZeRO-3/FSDP 切。DP 对三项的每卡份额都是 1（每卡留完整参数副本，只切 batch）。例：7B + ZeRO-1 + 8 卡 = 2 + 2 + 12/8 = 5.5 字节/参数 ≈ 38.5 GB；按「都除 8」会误得 14 GB。（DP = 每卡留完整参数副本、只切 batch，靠 AllReduce 同步梯度；TP = 切一层内的矩阵；PP = 不同层段放不同卡；ZeRO/FSDP 已在上文「术语一次讲清」给过定义，这里只用结论；这三个词的标准定义见 §8.1，两处不一致时以 §8.1 为准）。</p>
+<p><strong>最后留余量</strong>：工作区与显存碎片要额外预留（激活重算 = 反向时丢掉部分激活再前向算一遍，是拿算力换显存、降低激活占用；它减的是上面那项激活，不是再乘一遍，也不是额外多留一份激活）。</p>
+<p>推理侧的 KV Cache / GQA / MLA 账是另一本，两者不可混用。</p>
+<p><strong>三项相加（激活另算）</strong>：2（参数 fp16）+ 2（梯度 fp16）+ 12（优化器状态）= <strong>16 字节/参数</strong>，即通行口径；7B 模型约 112 GB，激活另算（全 fp32 同样约 112 GB，见下）。</p>
+<p><strong>量纲先写死</strong>：本文 GB 一律按十进制 10⁹ 字节（不是 GiB），1B 参数 = 10⁹；所以 7B = 7×10⁹ 参数，× 16 B = 112×10⁹ B = 112 GB。若换成 GiB 口径（1 GiB = 2³⁰ B），112×10⁹ B ≈ 104 GiB——只是单位不同，不是哪边算错；下文 126 GB / 140 GB 同此口径。分数矩阵的真实数字在 <code>notes/21_single_node_ops.md §6.1</code>：T=8K 时单头 FP16 的 S 是 128 MiB（≈134 MB），本来就不是 GiB 级；全仓唯一的「1 GiB/张量」在 <code>notes/14_long_context.md §207</code>，讲的是长上下文训练的<strong>激活</strong>（128K×4096×2 B），既不是分数矩阵，也不属前置篇（1A = <code>notes/01</code>–<code>06</code>，除 <code>notes/06</code> §3 的 KV Cache 18 GiB 外不给 GiB 数值）。比较单位前按这两个真实出处对齐。梯度这一项有两种口径：与参数同为 fp16 时是 2 字节（上式用的就是它，合计 16）；若按 fp32 记成 4 字节，则得 18 字节/参数（7B ≈ 126 GB），这是「参数仍 fp16、只把梯度存成 fp32」这一半混合精度情形，不是全 fp32 训练。真正不做混合精度（全 fp32）是 4（参数）+ 4（梯度）+ 8（两矩）= 16 字节/参数，7B ≈ 112 GB——和混合精度同量级，不是更高。关键是那 4 字节 fp32 主权重只在「参数存 fp16」时才需要另存；全 fp32 时参数本身就是 fp32，再算一份主权重等于把参数重复计了一次（那才是 20 字节 / 140 GB 的来源，是错的）。三个口径别混：112 GB（16 B/参数）既是通行混合精度口径，也是全 fp32 口径——两者恰好同为 16 B，但构成不同（混合精度 2+2+12，全 fp32 4+4+8，后者的 8 里没有主权重）；126 GB（18 B/参数）只是「梯度 fp32、参数 fp16」的中间情形；140 GB（20 B/参数）不是任何真实口径，它是把 fp32 参数重复计了一次。</p>
+<p><strong>Checkpoint（训练状态存档，≠ 重算）</strong> = 把参数、优化器状态、学习率/数据顺序等训练状态定期落盘，用于故障后断点续训与模型存档，成本在<strong>存储容量与写入带宽</strong>上；它和上面「重算 / activation recomputation」（业界也叫 gradient checkpointing：省显存、费算力、<strong>不占存储</strong>）是两件事，别混——§4、§8、§9 的 M2-2 里写的 Checkpoint 都指前者。</p>
 <h2 id="2">2. 两个坐标系<a class="headerlink" href="#2" title="Permanent link">&para;</a></h2>
 <p>学习 AI Infra 最容易犯的错，是把「招聘目录」当成「学习顺序」。这里必须分开：</p>
 <table>
@@ -2134,7 +2147,8 @@ M2-3 §7.0 已给出最小前置，可以先学推理核心，再补 M2-4。
 </table>
 <p>岗位地图回答「<strong>为什么学</strong>」，学习地图回答「<strong>怎么学</strong>」。两者叠起来，才是完整的模块二。</p>
 <h2 id="3">3. 技术栈分层<a class="headerlink" href="#3" title="Permanent link">&para;</a></h2>
-<p>从下往上，每一层都在回答不同的问题：</p>
+<p>从下往上，每一层都在回答不同的问题：
+（<strong>本表自上而下读 = 从栈底到栈顶</strong>：第一行「硬件」是栈的最底部，最后一行「产品与解决方案」才是栈顶。所以下文「越往下，越接近物理极限」指的是栈的方向，落在表格里是越靠上的行，别把表格行序当成栈的上下。）</p>
 <table>
 <thead>
 <tr>
@@ -2160,7 +2174,7 @@ M2-3 §7.0 已给出最小前置，可以先学推理核心，再补 M2-4。
 <tr>
 <td>算子与编译</td>
 <td>把模型映射到硬件指令</td>
-<td>怎么把 GEMM/Attention/MoE 写到接近物理极限？</td>
+<td>怎么把 GEMM（矩阵乘，Transformer 里绝大部分 FLOP 都落在这类算子上）/Attention/MoE 写到接近物理极限？</td>
 <td>算子/编译</td>
 </tr>
 <tr>
@@ -2184,8 +2198,10 @@ M2-3 §7.0 已给出最小前置，可以先学推理核心，再补 M2-4。
 </tbody>
 </table>
 <blockquote>
-<p>集群调度跨「系统软件 / 平台运维」两层；表中按 <code>reference/ai-infra/job-map.md</code> 的口径放在平台与运维。
+<p>集群调度跨「系统软件 / 平台运维」两层；表中按 <code>reference/ai-infra/job-map.md</code> 的口径放在平台与运维。</p>
+<p><strong>集群调度只按一个结论记</strong>：§3 表里它跟「平台与运维」那一行（这是分类口径，源自 <code>job-map.md</code>），学习主层是 M2-4（§4 族 4）；M2-5 只承接纯平台/运维那部分——不要因为表行先把它归到 M2-5。
 10 个岗位族是<strong>本样本的分类</strong>，不是全行业 taxonomy；芯片/服务器/IDC、解决方案/产品未纳入 107 份 JD。</p>
+<p><strong>§3 的 6 层技术栈与 §8 的 7 层学习路径不是同一套分层</strong>，别横着对齐：前者按技术栈切，后者按学习依赖切（多出的 M2-0 是元层）。对应关系——硬件→M2-1（体系结构直觉，本样本无 JD）；算子与编译→M2-1；框架与引擎→M2-2 / M2-3（Agent/RL、端侧加速落 M2-6）；系统软件里的网络、存储、OS 驱动、虚拟化→M2-4（驱动细节回 M2-1）；平台与运维→M2-5（集群调度横跨 M2-4/M2-5）；产品与解决方案→本次无对应层。所以本节「算子/编译 → 框架/引擎 → 平台/运维 这三层」读成 M2-1 → M2-2/M2-3 → M2-4/M2-5（其中集群调度按 §4 以 M2-4 为主层，纯平台/运维落 M2-5）。</p>
 </blockquote>
 <p><strong>越往下，越接近物理极限；越往上，越接近用户和业务。</strong> AI Infra 的核心岗位集中在「算子/编译 → 框架/引擎 → 平台/运维」这三层。</p>
 <h2 id="4-10-35">4. 10 个岗位族 × 35 个子方向<a class="headerlink" href="#4-10-35" title="Permanent link">&para;</a></h2>
@@ -2304,7 +2320,7 @@ M2-3 §7.0 已给出最小前置，可以先学推理核心，再补 M2-4。
 <tr>
 <td>硬件与体系结构</td>
 <td>GPU/NPU、显存层次、互联、roofline</td>
-<td>判断瓶颈在计算、访存还是通信</td>
+<td>判断瓶颈在计算、访存还是通信（roofline：算术强度 = 每搬 1 Byte 做多少 FLOP，拿它对比机器峰值，看卡在算力还是带宽）</td>
 </tr>
 <tr>
 <td>编程与工程</td>
@@ -2367,6 +2383,7 @@ M2-3 §7.0 已给出最小前置，可以先学推理核心，再补 M2-4。
 </tbody>
 </table>
 <blockquote>
+<p>年限按左闭右开读：0–1 / 2–5 / 5–8 / 8 年以上 = 满 2 年未满 5 年算中级，满 5 年即进资深，正好 5 年只命中一行（资深）；但 0–1 与 2–5 之间空出 [1,2)：满 1 年未满 2 年表里没有对应行——这条兜底是讲义自定的读表口径，<code>job-map.md</code> 的「4 个级别」只给 0–1 / 2–5 / 5–8 / 8+ 四行，并没有 [1,2) 的归属规则：按「校招 / 实习」读，已有独立交付子系统证据的并入中级。</p>
 <p>面试时，「你做过什么」不如「你改变了哪个指标、怎么验证的」。<strong>可复现的性能/稳定性数据</strong>是硬通货。</p>
 </blockquote>
 <h2 id="7-6">7. 6 组岗位边界<a class="headerlink" href="#7-6" title="Permanent link">&para;</a></h2>
@@ -2475,21 +2492,28 @@ M2-3 §7.0 已给出最小前置，可以先学推理核心，再补 M2-4。
 </table>
 <h3 id="81">8.1 两条推荐路线<a class="headerlink" href="#81" title="Permanent link">&para;</a></h3>
 <p><strong>推理线（先走）</strong>：M2-0 → M2-1 → M2-3 → M2-4 → M2-5</p>
-<p><strong>训练线（随后）</strong>：M2-0 → M2-1 → M2-4 → M2-2 → M2-5</p>
-<p><strong>前沿/端侧</strong>：在 M2-2/M2-3 之后接 M2-6。</p>
+<p><strong>训练线（随后）</strong>：M2-0 → M2-1 → M2-4 → M2-2 → M2-3 → M2-5（M2-3 是进入 M2-5 的实线前置，训练侧只取最小前置面）</p>
 <blockquote>
-<p>为什么 M2-3 可以排在 M2-4 前：M2-3 §7 只用到「AllReduce / AllToAll / TP / PP / stage /
-micro-batch / bubble / NVLink / RDMA」的最小前置，正文已给出一句话定义；完整的分布式底座留到 M2-4。
-推理线不要求学完 M2-4；训练线把 M2-4 放在 M2-2 前。
-<strong>若已走完推理线（含 M2-4），训练线从 M2-2 继续；否则先补 M2-4。</strong>
+<p>训练线把 M2-3 排在 M2-2 之后不是图上的边（图中 L2 与 L3 只是 L1 的两个兄弟，没有 L2--&gt;L3）：理由是 M2-3 的 KV Cache / Batching 要借 M2-2 的显存账本与并行切分当尺子，学起来省力；概念上二者互不为前置，先学 M2-3 不违反 DAG。这里的「硬约束」只就 M2-2 / M2-3 / M2-5 三者谁先而言：三者之间唯一的硬约束是 L3--&gt;L5（M2-3 先于 M2-5）；全图实线远不止这一条（L1--&gt;L2、L1--&gt;L3、L1--&gt;L4、L4--&gt;L2、L4--&gt;L5、L2--&gt;L6、L3--&gt;L6 都是实线前置，其中 L4--&gt;L5 正是 §0 用来论证「M2-4 不能跳过」的那条边），所以本句不是对全图 DAG 的断言，M2-4 与 M2-5 的先后仍按 §0 的实线读。</p>
+</blockquote>
+<p><strong>前沿/端侧</strong>：在 M2-2 与 M2-3 都完成之后接 M2-6（<code>L2 --&gt; L6</code>、<code>L3 --&gt; L6</code> 都是实线前置，不是二选一；只走完推理线的人进 M2-6 前要补 M2-2）。
+ M2-6 与 M2-5 无先后依赖：M2-5 不是 M2-6 的前置（只有 <code>L2 --&gt; L6</code>、<code>L3 --&gt; L6</code> 是实线前置），训练线把 M2-5 排在最后只是层顺序，不代表要等 M2-5 学完才接 M2-6。</p>
+<blockquote>
+<p>为什么 M2-3 可以排在 M2-4 前：M2-3 §7.0 只用到「AllReduce / AllToAll / TP / PP / stage /
+micro-batch / bubble / NVLink / RDMA」的最小前置，正文已给出一句话定义；完整的分布式底座留到 M2-4。</p>
+<p><strong>「最小前置面」的口径</strong>（§8.1 / §10 阶段 3 / §15 三处同义）：指训练线上 M2-3 只为满足 <code>L3 --&gt; L5</code> 这条实线前置所需的最小 must 子集，不是 §9 M2-3 整行 must——KV Cache、Batching、PagedAttention、TTFT/TPOT 的概念与代价要会（能估容量与延迟），量化只需知道它会改 KV Cache 字节数与精度；引擎源码、投机解码、PD 分离不要求（目标族画像把 M2-3 列为面试必备时按画像，优先级见 §9）。§0 里「M2-3 §7.0 已给出最小前置」说的是 M2-3 自己的前置词表（AllReduce / TP / PP 等），与本词不同义。</p>
+<p>这 10 个词的最小含义（够用来判断排序；all-gather 的一句话定义见 §1）：<strong>AllReduce</strong> = 各卡数据求和后广播回所有卡；<strong>AllToAll</strong> = 每卡把不同分片发给不同卡（MoE 换 expert）；<strong>TP</strong> = 张量并行，把一层内的矩阵切到多卡；<strong>PP</strong> = 流水并行，不同层段放不同卡；<strong>stage</strong> = PP 里的一段层；<strong>micro-batch</strong> = 把 batch 再切小以填流水；<strong>bubble</strong> = 流水线首尾空转；<strong>NVLink</strong> = 机内 GPU 间高速互联；<strong>all-gather</strong> = 各卡把自己那一片发出来、拼成完整张量（ZeRO-3/FSDP 前向补参数）；<strong>RDMA</strong> = 跨机内存直读网络（走 RoCE/IB）。M2-3 只需要知道「通信要发生、大概多贵」，不需要会调。
+推理线的 M2-4 只要求学到「集合通信类型 + 拓扑常识」这一层（存储、K8s 调度细节可留到训练线），但<strong>不能跳过</strong>——所以路线里 M2-4 是必学、只是深度可浅；训练线把 M2-4 放在 M2-2 前。</p>
+<p><strong>M2-4 must 的第四项 GPU 虚拟化怎么算</strong>：它不在两条路线的深度清单里（推理线是「集合通信 + 拓扑常识」，训练线回补的是存储 + K8s 调度）——按 §9 的优先级裁决：目标族画像（集群/异构算力族）把它列为面试必备的，就学；只按路线深度走的，M2-4 到此为止、不必补；只有「把 M2-4 学到底」的人才按本表 must 补齐。
+<strong>若已走完推理线（含 M2-4），训练线从 M2-2 继续，并在 M2-2 学完之后、训练线收尾之前回补 M2-4 的存储与 K8s 调度（训练线的 M2-4 深度包含这两块，推理线按浅深度跳过了）——这是把 M2-4 补到训练线深度；M2-5 不重学（§9 没有给推理线的 M2-5 降深度，推理线的 M2-5 就是本表 must 那一档，已学完）。所以走完推理线的人，训练线收在 M2-2（外加 M2-4 存储/K8s 回补）；M2-5 只是「只走训练线」那条路的终点（见 §10）。否则先补 M2-4。</strong>
 DAG 是概念依赖，不是唯一的课时顺序。</p>
 </blockquote>
 <p><img alt="AI Infra 全景：7 层学习路径 × 10 岗位族 × 7 维能力" src="../../diagrams/20g_ai_infra_map.landscape.png" /></p>
 <p>图里把三件事叠在同一张坐标系里：</p>
 <ul>
-<li><strong>左列</strong>是 7 个学习层（M2-0 到 M2-6），也是本模块的学习顺序；</li>
+<li><strong>左列</strong>是 7 个学习层（M2-0 到 M2-6），但<strong>不是</strong>本模块的学习顺序（顺序见本节两条路线，两条都跳层；以 §8.1 为唯一真源）；</li>
 <li><strong>中列</strong>是 10 个岗位族分别落在哪一层（有些族跨两层，例如端侧跨 M2-3/M2-6）；</li>
-<li><strong>右列</strong>是每层的 <strong>must</strong> 深度基线；should/nice 见下面的 §9，具体族以画像为准；</li>
+<li><strong>右列</strong>是每层 must 的<strong>示例</strong>，不是完整清单（图面字数有限：M2-2 未列 Checkpoint，M2-3 未列量化与 TTFT/TPOT，M2-4 未列 GPU 虚拟化）；完整 must 以 §9 表为准，should/nice 也见 §9，具体族以画像为准；</li>
 <li><strong>底部</strong>是 7 维能力：不要七项平均用力，先按目标岗位选 2–3 个主维度。</li>
 </ul>
 <blockquote>
@@ -2498,10 +2522,16 @@ DAG 是概念依赖，不是唯一的课时顺序。</p>
 </blockquote>
 <h2 id="9">9. 深度标尺<a class="headerlink" href="#9" title="Permanent link">&para;</a></h2>
 <blockquote>
-<p>下表是<strong>层基线</strong>。具体目标岗位族的深度以其画像 <code>must_have</code> 为准（见 <code>reference/ai-infra/profiles.md</code>）；
-两者冲突时，以目标族画像为准。例如 PTX/CUTLASS 源码对算子族是 must，对其他族只是了解。</p>
+<p>下表是<strong>层基线</strong>。具体目标岗位族的深度以其画像的「面试必备」为准（见 <code>reference/ai-infra/profiles.md</code>）；
+两者冲突时，以目标族画像为准。例如：算子族画像把 CUTLASS / Triton / PTX 列为「面试必备」（本表 M2-1 行的 nice 只对非算子族成立）；网络族画像把「RDMA / RoCE / InfiniBand」列为必备（本表把「RDMA 调优」放 should 只对非网络族成立）。
+<strong>表内术语一句话</strong>（只覆盖本篇判断深度必须用到的术语（下表没有加粗标记，已定义哪些以本段与下段的清单为准）；上面两段已给的 12 个词之外，must/should/nice 里其余的词——量化、Batching、访存层次、CUDA 执行模型、GPU 虚拟化、沙箱隔离、端侧约束、容量模型、拓扑设计、平台抽象、计量计费、故障复盘——在各自层（M2-1/M2-3/M2-4/M2-5/M2-6）的正文里讲，本篇不重复定义；已给的词里 投机解码（should）、轨迹回放（should）、混沌工程 / AIOps（nice）属加分/了解档，定义它们只为让本表可读，不代表升格为 must）：<strong>FlashAttention</strong> = 一种 attention 算子/算法（分块 + 不落 T×T 矩阵，省 HBM 读写与显存），属<strong>算子/算法</strong>；其公开实现是 Dao-AILab 的 flash-attn（pip 包，属<strong>代码库</strong>）——说原理时指算法，说安装调用时指 flash-attn 这个库；<strong>CUTLASS</strong> = NVIDIA 的 C++ 模板库（手写 GEMM/attention kernel 的骨架，属<strong>代码库</strong>）；<strong>Triton</strong> = Python 级 GPU kernel DSL（不用写 CUDA C 也能出 kernel，属<strong>工具链</strong>）；<strong>PTX</strong> = NVIDIA GPU 的中间汇编（CUDA 编译链里的一层，属<strong>指令层</strong>）；<strong>投机解码（speculative decoding）</strong> = 小模型先草拟 k 个 token、大模型一次并行验证，采样分布不变而 decode 步数减少，属<strong>推理算法</strong>；<strong>K8s 调度</strong> = Kubernetes 把 Pod 分配到节点（GPU 资源请求、亲和/抢占、拓扑感知），属<strong>集群调度组件</strong>；<strong>混沌工程</strong> = 主动注入故障（杀进程、断网、坏盘）验证自愈，<strong>AIOps</strong> = 用 ML 做告警收敛/根因定位/容量预测，两者都属<strong>平台运维</strong>。</p>
+<p><strong>M2-2 / M2-6 行的四个词</strong>（接上一条，补齐表内 should/nice 与 must）：<strong>rollout</strong> = 用当前策略实际跑一批推理、把采到的轨迹当训练数据，是 RL 训练里最像推理、也最贵的一步，属<strong>强化学习/后训练</strong>；M2-2 should 里的「RL rollout」指训练系统要为这段采样提供高吞吐推理与权重同步（不是再讲一遍 RL 算法）；<strong>轨迹回放（trajectory replay）</strong> = 把 rollout 采到的轨迹（一条「prompt → 多个动作/token → reward」的记录）重新喂回训练或评测，做复现、离线对齐与调试，属<strong>数据/训练组件</strong>；<strong>异构适配</strong> = 让同一套系统在 GPU/NPU/不同代际芯片上都能跑（算子、精度、通信各按目标硬件改写或降级），属<strong>工程适配</strong>；<strong>co-design（软硬件协同设计）</strong> = 模型/算法结构与硬件特性一起设计（例如按指令集或互联能力定模型形状与并行切法），属<strong>方法论</strong>。</p>
 </blockquote>
 <p>同一层，不同岗位族的深度要求不同：</p>
+<blockquote>
+<p><strong>三条规则的优先级</strong>：目标族画像 &gt; 路线深度（§8.1）&gt; 本表 must。同时命中时按此顺序裁决——画像列为「面试必备」的一律要学；画像没列的，按 §8.1 给该路线的深度执行；两处都没提到的，才按本表 must 全学——但「§8.1 给该路线标了某层的深度」就算已经提到这一层：此时该层整行 must 一律按路线深度清单执行，清单外的 must 项不补（例：推理线给 M2-4 的深度是「集合通信类型 + 拓扑常识」，则 M2-4 其余 must——K8s 调度、分布式存储、GPU 虚拟化——都不按本表 must 学，除非目标族画像把它们列为面试必备）。</p>
+<p><strong>路线深度优先于本表 must</strong>：§8.1 为某条路线标注的深度覆盖本表对应行的 must。例如推理线的 M2-4 只要求「集合通信类型 + 拓扑常识」，K8s 调度、分布式存储细节可留到训练线（分两种：只走训练线的人 M2-4 本来就在 M2-2 之前学完，没有「回补」这回事；走完推理线再转训练线的人，才在 M2-2 之后回补，见 §8.1）——只走推理线的人按此浅深度执行，不必按本表 must 学这两项，排期也按浅深度算；本表 must 是该层学到底时的完整基线，只对走完整深度的岗位族成立。</p>
+</blockquote>
 <table>
 <thead>
 <tr>
@@ -2516,7 +2546,7 @@ DAG 是概念依赖，不是唯一的课时顺序。</p>
 <td>M2-1</td>
 <td>访存层次、Roofline、CUDA 执行模型、FlashAttention 思路</td>
 <td>写 Triton/CUDA 算子；编译器 pipeline（算子族必学）</td>
-<td>芯片指令集、PTX、CUTLASS 源码（算子族必学）</td>
+<td>芯片指令集、PTX；CUTLASS/Triton 源码（算子族画像把 CUTLASS / Triton / PTX 列为「面试必备」，本行的 nice 只适用于其他族）</td>
 </tr>
 <tr>
 <td>M2-2</td>
@@ -2551,76 +2581,82 @@ DAG 是概念依赖，不是唯一的课时顺序。</p>
 </tbody>
 </table>
 <h2 id="10">10. 两条学习主线<a class="headerlink" href="#10" title="Permanent link">&para;</a></h2>
-<p>模型侧（大模型基础）和 Infra 侧是同一座栈的两个视角，推荐<strong>配对学习</strong>：</p>
+<p>模型侧（大模型基础）和 Infra 侧是同一座栈的两个视角，推荐<strong>配对学习</strong>（本表只管「模型侧 ↔ Infra」的配对，不定义层顺序，顺序以 §8.1 为唯一真源）：</p>
+<blockquote>
+<p><strong>回补落点</strong>：§0 要求「读到 M2-3 时再回补 <code>notes/04</code>–<code>05</code>」，下面两张表的阶段 2 就是那个落点——推理线进入阶段 2（模型侧 = <code>notes/10_decoding.md</code> §3）之前要补完 <code>notes/04</code>–<code>05</code>；训练线同理，在阶段 3 进 M2-3 之前补。本表按阶段只列该阶段新读的读物，<code>notes/04</code>–<code>05</code> 属「进阶段 2 前的补课」，所以不在单元格里重复列，但排期时必须占时间。</p>
+</blockquote>
 <h3 id="_1">推理线（先走这条）<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
 <th>阶段</th>
-<th>模型侧（1C）</th>
+<th>模型侧（1A 起步 → 1C/1D）</th>
 <th>Infra 侧（M2）</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>1</td>
-<td>KV Cache 概念（<code>notes/06 §3–5</code>）；解码/采样待 1C 补</td>
-<td>M2-1 单机与算子（含量化直觉 <code>§8</code>）</td>
+<td>KV Cache 概念（<code>notes/06 §3–5</code>）；§1 贪心与 beam、§2 采样（<code>notes/10_decoding.md</code>）</td>
+<td>M2-1 单机与算子（含量化直觉 <code>notes/21_single_node_ops.md §8</code>）</td>
 </tr>
 <tr>
 <td>2</td>
-<td>解码策略、结构化输出（1C 待补）</td>
+<td>解码策略、结构化输出（同一篇 <code>notes/10_decoding.md</code>，本轮只读 §3 约束解码（含 3.3 结构化输出的工程做法）；阶段 1 只读 §1 贪心与 beam、§2 采样——两阶段按小标题切、不重叠：阶段 1 读到 §2 采样（含温度）为止，阶段 2 从 §3 起）</td>
 <td><strong>M2-3 推理系统</strong></td>
 </tr>
 <tr>
 <td>3</td>
-<td>多模态基础、长上下文模型侧（1C 待补）</td>
+<td>多模态基础（<code>notes/12_multimodal.md</code>，1C）、长上下文（<code>notes/14_long_context.md</code>，1D）</td>
 <td>M2-4 分布式底座</td>
 </tr>
 <tr>
 <td>4</td>
-<td>RAG / Agent 的推理链路（1C 待补）</td>
+<td>RAG / Agent 的推理链路（<code>notes/11_applications.md</code>）</td>
 <td>M2-5 平台与稳定性</td>
 </tr>
 </tbody>
 </table>
-<h3 id="_2">训练线（推理线之后或并行）<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h3>
+<h3 id="m2-4-81">训练线（随后；时间充裕可并行，但先完成 M2-4——以 §8.1 为准）<a class="headerlink" href="#m2-4-81" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
 <th>阶段</th>
-<th>模型侧（1B）</th>
+<th>模型侧（1B 为主；阶段 3 引 1C/1D）</th>
 <th>Infra 侧（M2）</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>1</td>
-<td>预训练目标、数据、Scaling Law（1B 待补）</td>
+<td>预训练目标、数据、Scaling Law（<code>notes/07_pretraining.md</code>）</td>
 <td>M2-4 网络/存储/集群</td>
 </tr>
 <tr>
 <td>2</td>
-<td>SFT、RLHF/DPO、评测（1B 待补）</td>
+<td>SFT、RLHF/DPO（<code>notes/08_alignment.md</code>）、评测（<code>notes/09_evaluation.md</code>）</td>
 <td><strong>M2-2 训练系统</strong></td>
 </tr>
 <tr>
 <td>3</td>
-<td>RL/Agent RL（1B/1C 待补）</td>
-<td>M2-6 Agent/RL Infra</td>
+<td>RL/Agent RL（<code>notes/13_reasoning.md</code>、<code>notes/16_agent_rl.md</code>）</td>
+<td>M2-3 推理系统（<code>L3 --&gt; L5</code> 是实线前置，训练侧只取最小前置面）→ M2-5 平台与稳定性（只走训练线的人的终点；已走完推理线的人 M2-5 已按标准深度学过，不重学，见 §8.1 与 §15）；M2-6 不在训练线上，见 §8.1「前沿/端侧」</td>
 </tr>
 </tbody>
 </table>
 <blockquote>
-<p>1B/1C 尚未归档；学到对应阶段时先补讲义，或先用现有 <code>notes/06 §3–5</code>、<code>notes/21 §8</code> 的章节。
+<p>模型侧讲义均已归档（括号内即对应路径），不必自行补写。层级归属（据仓库 README）：1B = <code>notes/07</code>–<code>09</code>，1C = <code>notes/10</code>–<code>13</code>，1D = <code>notes/14</code>–<code>19</code>；所以 <code>notes/14</code>（长上下文）与 <code>notes/16</code>（Agent RL）都属 1D，<code>notes/15</code> 也在 1D 区间内。
+注：训练线表从 M2-4 起排，是假定 M2-1 已完成（§8.1 训练线以 M2-1 为第一跳；§15 只给 M2-1 的入口，不复述路线）；若还没走 M2-1，先补 M2-1 再进本表阶段 1。
 顺序不是铁律。原则只有一条：<strong>先知道模型在干什么，再看系统怎么让它跑。</strong></p>
 </blockquote>
 <h2 id="11">11. 怎么用岗位地图（不要背）<a class="headerlink" href="#11" title="Permanent link">&para;</a></h2>
 <ol>
 <li><strong>选目标</strong>：从 10 个族里选 1 个主方向 + 1 个次方向，不要 10 个都要。</li>
-<li><strong>读画像</strong>：看 <code>profiles.md</code> 里该族的 KPI、must_have、toolchain、interview，确定深度。</li>
+<li><strong>读画像</strong>：看 <code>profiles.md</code> 里该族的「核心 KPI / 面试必备 / 技术栈 / 面试考察」，确定深度。</li>
 <li><strong>用题探底</strong>：优先从 <code>QA-BANK.md</code> 抽 3–5 道<strong>可判分</strong>题；<code>interview-questions.md</code> 是方向清单，
-   开放式题先补答题骨架再用于 Probe。</li>
+   开放式题先补答题骨架再用于 Probe。
+（<strong>Probe = 抽题自测</strong>：从仓库根目录的 <code>QA-BANK.md</code> 取可判分题，答完对答案判分；<code>interview-questions.md</code> 只是方向清单，不能直接当题用。）
+ <strong>本节需配合仓库使用，不单独成立</strong>：<code>profiles.md</code>（<code>reference/ai-infra/profiles.md</code>）、<code>QA-BANK.md</code>（仓库根目录）、<code>jd_index.json</code>（<code>reference/ai-infra/jd_index.json</code>）都在本讲义仓里（见 §14），本地 checkout 就有、不必另 clone；只有「回原文核对 JD」才需要 clone 远端仓 <code>ai-infra-jd</code>；暂时拿不到仓库时，第 2 步先按 §9 表的 must 行定深度、第 3 步用 §12 那 6 道题自测——但「画像 &gt; 路线深度 &gt; 本表 must」里画像那一级的优先级无法替代。</li>
 <li><strong>按层学</strong>：回到学习地图，按依赖顺序补，不要从岗位族标题直接开学。</li>
 <li><strong>留证据</strong>：每学完一层，产出一个可验证的东西（benchmark、profile、mini 实现、排障记录）。</li>
 </ol>
@@ -2628,7 +2664,7 @@ DAG 是概念依赖，不是唯一的课时顺序。</p>
 <ol>
 <li><strong>AI Infra 和算法工程师的区别？</strong> → 算法对效果上限负责，Infra 对吞吐/时延/成本/稳定性负责。</li>
 <li><strong>AI Infra 有哪些方向？</strong> → 训练、推理、算子/编译、集群/网络/存储、平台/SRE、Agent/RL、端侧。</li>
-<li><strong>你怎么判断一个系统是计算瓶颈还是访存瓶颈？</strong> → Roofline：算术强度对比机器峰值，结合 profiler 的 SM/内存吞吐。</li>
+<li><strong>你怎么判断一个系统是计算瓶颈还是访存瓶颈？</strong> → Roofline：算术强度对比机器峰值，再结合 profiler（性能分析工具，如 Nsight Compute）里的 SM（GPU 的计算单元）利用率与内存吞吐（显存带宽占用率）。</li>
 <li><strong>训练和推理的系统差异？</strong> → 训练整句并行、算力密集、要反向；推理自回归、decode 访存密集、要 KV Cache 与调度。</li>
 <li><strong>为什么说「JD 关键词不等于能力」？</strong> → 关键词只说明被提到，不说明硬性要求或使用深度；要看原文和上下文。</li>
 <li><strong>你如何为一个新方向做技术选型？</strong> → 先定 KPI 和约束，再列候选方案，做小规模 benchmark，最后看可维护性与成本。</li>
@@ -2642,17 +2678,27 @@ DAG 是概念依赖，不是唯一的课时顺序。</p>
 <li><strong>用单点数字当结论</strong>：某个 benchmark 快 2 倍，不代表生产吞吐也快 2 倍。</li>
 <li><strong>只学一个方向</strong>：AI Infra 的故障往往跨层，训练问题可能出在网络或存储。</li>
 <li><strong>把 0 JD 子方向当成不重要</strong>：样本里 6 个子方向 0 个直接 JD，可能是跨族技能或本次样本没覆盖。</li>
-<li><strong>把画像里的 <code>x/y</code> 当成硬性要求</strong>：它是「JD 是否提及」的关键词统计，不是 must 强度。</li>
+<li>
+<p><strong>把画像里的 <code>x/y</code> 当成硬性要求</strong>：它是「JD 是否提及」的关键词统计，不是 must 强度。</p>
+</li>
+<li>
+<p><strong><code>x/y</code> 怎么读</strong>：分子 x = 该族 JD 中提到这个关键词的份数，分母 y = 该族入选 JD 总数（同一族内分母相同，跨族不能直接比大小）。例：网络族「RDMA 6/6」= 该族 6 份 JD 全部提到；算子族「CUTLASS 5/9」= 9 份里 5 份提到。所以 6/6 与 5/9 比的是「族内覆盖率」，不是难度。</p>
+</li>
 <li><strong>把「长上下文一定 KV 先爆」当无条件结论</strong>：4K/低并发时权重仍是大头，要看交叉点。</li>
 </ul>
 <h2 id="14">14. 相关参考<a class="headerlink" href="#14" title="Permanent link">&para;</a></h2>
 <ul>
-<li><code>20g_ai_infra_map</code> —— 7 层 × 10 岗位族 × 7 维能力全景（横竖双版）</li>
+<li><code>20g_ai_infra_map</code> —— 7 层 × 10 岗位族 × 7 维能力全景（横版）</li>
 <li><code>reference/ai-infra/job-map.md</code> —— 10 族 / 35 子方向 / 7 维 / 级别 / 边界</li>
-<li><code>reference/ai-infra/profiles.md</code> —— 10 份能力画像（KPI、must_have、技术栈、面试题）</li>
-<li><code>reference/ai-infra/interview-questions.md</code> —— 50 道面试方向题（可判分 Probe 以 <code>QA-BANK.md</code> 为主）</li>
+<li><code>reference/ai-infra/profiles.md</code> —— 10 份能力画像（核心 KPI、面试必备、技术栈、面试考察）</li>
+<li>
+<p><code>reference/ai-infra/interview-questions.md</code> —— 50 道面试方向题（可判分 Probe 以 <code>QA-BANK.md</code> 为主）</p>
+</li>
+<li>
+<p><code>QA-BANK.md</code>（仓库根目录）—— 可判分题库，Probe 抽题用；开放式题需先补答题骨架</p>
+</li>
 <li><code>reference/ai-infra/jd_index.json</code> —— 107 条 JD 轻量索引（不含原文）</li>
-<li>源仓库：<code>../ai-infra-jd</code>（本地）/ https://github.com/Xingkai98/ai-infra-jd</li>
+<li>源仓库（远端）：https://github.com/Xingkai98/ai-infra-jd —— 本地无 checkout，回原文核对 JD 请先 clone 该仓</li>
 </ul>
 <blockquote>
 <p><strong>证据口径</strong>：参考层的 <code>x/y</code> 计数来自上游 <code>ai-infra-jd</code> 的关键词统计，口径是「JD 是否提及」，
@@ -2662,8 +2708,10 @@ DAG 是概念依赖，不是唯一的课时顺序。</p>
 <h2 id="15">15. 下一步<a class="headerlink" href="#15" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>M2-1 单机与算子</strong>：先建立 GPU/访存/Roofline/Kernel 的底层直觉。</li>
-<li><strong>推理线</strong>：M2-3 推理系统 → M2-4 分布式底座 → M2-5。</li>
-<li><strong>训练线</strong>：若已走完推理线（含 M2-4），从 M2-2 继续；否则先补 M2-4。</li>
+<li><strong>推理线</strong>：层顺序见 §8.1（M2-1 之后 M2-3 → M2-4 → M2-5），此处只给入口、不复制顺序。</li>
+<li><strong>训练线</strong>：若已走完推理线（含 M2-4），从 M2-2 继续，M2-2 学完后回补 M2-4 的存储与 K8s 调度（推理线只到「集合通信类型 + 拓扑常识」，这里补到训练线深度，不重学 M2-5）；否则先补 M2-4。
+ <strong>收尾位置</strong>：走完推理线的人，训练线到 M2-2（外加 M2-4 存储/K8s 回补）即结束，M2-5 不重学；只走训练线的人以 M2-5 为终点——§10 阶段 3 的「训练线终点」只在这个语境下成立。
+训练线完整顺序见 §8.1（M2-3 是 <code>L3 --&gt; L5</code> 实线前置，只取最小前置面）；M2-6 不在训练线上，按 §8.1「前沿/端侧」在 M2-2 与 M2-3 都完成后另接。</li>
 <li>本层是元层，路线以 §8.1 为准，不设动手清单。</li>
 </ul>
 

@@ -2163,20 +2163,30 @@
 - §1–§4:先看 <code>notes/12_multimodal.md §1–§3</code>(VLM 概览/tokenization/融合)。
 - §5 扩散:先看 <code>notes/12_multimodal.md §4–§5</code>(DDPM/LDM/DiT 概览);本篇给公式与数值链。
 - §6 音频:先看 <code>notes/12_multimodal.md §6</code>;§7 评测:先看 <code>notes/12_multimodal.md §7</code> 与 <code>notes/09_evaluation.md</code>。</p>
+<p><strong>术语速查</strong>:InfoNCE = 用 softmax+交叉熵实现的对比损失;<code>[CLS]</code> = ViT 额外加的可学习全局 token(计入 token 数,256→257);NaViT = Native Resolution ViT,按原生分辨率打包变长 patch;VAD = 语音活动检测;RNN-T = 带预测网络的流式端到端 ASR;vocoder = 声码器(mel→波形);ANLS = 平均归一化 Levenshtein 相似度(文档 VQA 指标)。</p>
 <p><strong>建议路径(2 次 × 45 分钟)</strong>
 - 第 1 次(必学):§1 VLM 训练 + §2 视觉 tokenizer + §3 融合 + §4 指令微调/现代变体(55a–55c)。
 - 第 2 次(必学):§5 扩散数值链 + §6 视频/音频 + §7 评测与安全(55d/55e)。</p>
 </blockquote>
 <h2 id="0">0. 依赖图(学习顺序)<a class="headerlink" href="#0" title="Permanent link">&para;</a></h2>
 <pre class="mermaid"><code>graph TD
-  A["图像/视频/音频&lt;br/&gt;连续信号"] --&gt; B["视觉/音频 tokenizer&lt;br/&gt;patch / VQ / mel / codec"]
-  B --&gt; C["编码器&lt;br/&gt;ViT / audio encoder"]
-  C --&gt; D["对齐/融合&lt;br/&gt;projector / Q-Former / cross-attn"]
+  A["图像/视频/音频&lt;br/&gt;连续信号"] --&gt; B["视觉/音频 tokenizer&lt;br/&gt;patch / VQ / mel / codec&lt;br/&gt;(顺序:patch 切块=ViT 第一层;VQ 先 encoder 得 z 再量化;mel=前端特征)"]
+  B --&gt;|"不是两段流水线:patch 路线的「切块」就是 C(ViT)的第一层;VQ 路线先经 C 的 encoder 得 z 再回 B 量化;mel 是 C 的输入前端特征"| C["编码器&lt;br/&gt;ViT / audio encoder"]
+  C --&gt; D["对齐/融合&lt;br/&gt;projector / Q-Former / cross-attn&lt;br/&gt;融合位置随实现:projector 在 LLM 前 / early fusion 在 LLM 输入处拼接 / Flamingo 在 LLM 每层内"]
   E["文本 token"] --&gt; D
-  D --&gt; F["LLM 生成&lt;br/&gt;VQA/描述/对话"]
+  A --&gt; L1["对比学习&lt;br/&gt;CLIP / SigLIP&lt;br/&gt;§1.1 先学,产出图像编码器"]
+  E --&gt; L1
+  L1 --&gt;|"编码器复用:CLIP 训出的 ViT 就是 §4 里 LLaVA-1/1.5 拿来当 patch 编码器的那个图像编码器(CLIP 只出现在 §1.1 与 §4;§2 讲的是 patch/VQ 的 token 化,没有 CLIP)"| C
+  L1 --&gt;|"图文特征可直接融合"| D
+  L1 --&gt; K
+  D --&gt; L2["统一 token 生成&lt;br/&gt;Chameleon / Janus"]
+  L2 --&gt; F
+  L2 --&gt; I
+  D --&gt;|"融合后进 LLM:projector 拼接的 token、cross-attn 输出都直接供解码"| F["LLM 生成&lt;br/&gt;VQA/描述/对话"]
   G["噪声 + 条件"] --&gt; H["扩散去噪&lt;br/&gt;DDPM / CFG / LDM / DiT"]
   H --&gt; I["图像/视频生成"]
-  B --&gt; J["ASR / TTS"]
+  B --&gt; C2["audio encoder / decoder&lt;br/&gt;ASR:mel→encoder;TTS:token→decoder"]
+  C2 --&gt; J["ASR / TTS"]
   F --&gt; K["评测与安全"]
   I --&gt; K
   J --&gt; K</code></pre>
@@ -2184,6 +2194,8 @@
 <p><strong>与 12 的分工</strong>:12 是“多模态全景”:每块给直觉、代表性数字和一个数值例。
 19 只补深水区:VLM 训练目标与 projector/Q-Former 的取舍、VQ 量化与 token 预算、
 扩散的公式/CFG/LDM/DiT 计算链、音频管线与指标。12 已讲的定义不重复推导。</p>
+<p><strong>读图顺序</strong>:L1(§1.1 对比学习)先于 B/C(§2 patch/VQ)—— CLIP 的 ViT 就是 §4 里 LLaVA-1 直接拿来当 patch 编码器的那个编码器,不是只通向评测的旁支。
+<strong>但正文不走图上的编号顺序</strong>:§1.2 已一次性走完 B→C→D→F(图像→ViT→patch <span class="arithmatex">\([N,d_v]\)</span>→projector→<span class="arithmatex">\([N,d_{model}]\)</span>→拼文本→LLM),§1.3 的 projector/Q-Former 也排在 §2 之前;图按概念依赖画(A→B→C→D),不等于章节编号。<span class="arithmatex">\(N\)</span> 的 256/576/2304 与 <span class="arithmatex">\([N,d_v]\to[N,d_{model}]\)</span> 的算法要到 §2.1–§2.2 才展开,先读 §1.3 时按量级理解、回头再补即可。</p>
 </blockquote>
 <h2 id="1-vlm-vs">1. VLM 训练:对比对齐 vs 生成式指令微调<a class="headerlink" href="#1-vlm-vs" title="Permanent link">&para;</a></h2>
 <h3 id="11-clip">1.1 对比学习(CLIP 类)<a class="headerlink" href="#11-clip" title="Permanent link">&para;</a></h3>
@@ -2234,7 +2246,7 @@
 <tr>
 <td>监督</td>
 <td>图文对(正/负)</td>
-<td>回答文本(教师强制)</td>
+<td>回答文本(教师强制:每步喂真值的前一个 token、整句并行算 next-token loss;再靠 mask 只对 assistant token 计入)</td>
 </tr>
 <tr>
 <td>强项</td>
@@ -2252,16 +2264,20 @@
 <ul>
 <li><strong>线性层</strong>:最便宜,LLaVA-1 用;把 <code>d_v</code> 投到 <code>d_model</code>。</li>
 <li><strong>2 层 MLP</strong>:LLaVA-1.5 用;非线性更强,参数量仍小。</li>
-<li><strong>Q-Former / Perceiver Resampler</strong>:用 <code>K</code> 个可学 query 从 <code>N</code> 个视觉特征里抽取,输出 <code>K</code> 个 token(<code>K &lt;&lt; N</code>);省上下文,但可能丢细节。</li>
-<li><strong>动态分辨率</strong>:Qwen2-VL 类把大图切块,保留更多 patch;代价是 token 数可变、批处理复杂。</li>
+<li><strong>Q-Former / Perceiver Resampler</strong>:用 <code>K</code> 个可学 query 从 <code>N</code> 个视觉特征里抽取,输出 <code>K</code> 个 token(<code>K &lt;&lt; N</code>);省上下文,但可能丢细节。<blockquote>
+<p><strong>两者不是一回事(§3 表里会分开挂,别当成同一套机制)</strong>:Q-Former(BLIP-2)压出的 <span class="arithmatex">\(K\)</span> 个 token 直接拼进 LLM 输入序列 → 融合方式上归 early fusion;Perceiver Resampler(Flamingo)压出的定长视觉特征不进文本序列,而是作为 gated cross-attn 的 K/V 被文本 query 读 → 归 cross-attention。<strong>gated cross-attn</strong> = 在 LLM 每层插一层「文本作 Q、视觉特征作 K/V」的 cross-attention,输出经一个门控标量加回残差:<span class="arithmatex">\(x\leftarrow x+\tanh(\alpha)\cdot\mathrm{cross\text{-}attn}(x,V)\)</span>,其中 <span class="arithmatex">\(\alpha\)</span> 初始化为 0;于是训练开始时这一层等于恒等映射、不破坏预训练 LLM,再逐步学出门控值。</p>
+</blockquote>
+</li>
+<li><strong>动态分辨率</strong>:Qwen2-VL 不切固定 tile:按原生分辨率切 14×14 patch、把相邻 2×2 合并成一个 token,得到变长 token 数(靠 token packing 组批:把同批多条样本的变长 patch 序列首尾相接拼成一条长序列一次算完,靠 attention mask(块对角 / 按样本切段)与按样本重置的位置编码保证各段只见自己、不跨样本串味,同时省掉 padding 浪费;NaViT 就是这条路线的代表);代价是 token 数可变、批处理复杂。</li>
 </ul>
 <blockquote>
-<p>面试口径:projector 决定“视觉特征能不能被 LLM 读”;Q-Former 决定“用多少 token 读”。token 数 = 成本,细节 = 能力,二者要按任务权衡。</p>
+<p>「大图切块/tile(anyres)」的代表是 LLaVA-NeXT(AnyRes:切成多个子图 + 一张全局缩略图,各子图各过一次 ViT)与 InternVL 的动态切块,<strong>不是</strong> Qwen-VL v1。Qwen-VL v1 正好相反:原文写 input images are resized to a specific resolution,视觉编码器输入从 <span class="arithmatex">\(224\times224\)</span> 提到 <span class="arithmatex">\(448\times448\)</span>,训练和推理都是单一固定尺寸、单次过 ViT,没有 tile/anyres 分支。Qwen2-VL 取代的是这种 conventional predetermined-resolution(改成 naive dynamic resolution:14×14 patch + 相邻 2×2 合并、token 数变长),不是 tiling。</p>
+<p>面试口径:projector(含 Q-Former 这类 query 压缩器)决定“视觉特征能不能被 LLM 读”;选哪种 projector —— 逐 token 投影(线性/MLP)还是 query 压缩(Q-Former)—— 决定“用多少 token 读”。Q-Former 是 projector 的一种,不是并列的另一类。token 数 = 成本,细节 = 能力,二者要按任务权衡。</p>
 </blockquote>
 <h2 id="2-tokenizerpatch-vs-vq">2. 视觉 tokenizer:patch vs VQ<a class="headerlink" href="#2-tokenizerpatch-vs-vq" title="Permanent link">&para;</a></h2>
 <h3 id="21-patch-token">2.1 Patch token(连续)<a class="headerlink" href="#21-patch-token" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>图像 H×W, patch P×P → 网格 (H/P) × (W/P) 个 patch
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>每个 patch: P×P×3 个像素 → 线性投影到 d_model
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>每个 patch: P×P×3 个像素 → 线性投影到 ViT 宽度 d_v(= §1.2 的 patch 向量 [N,d_v];这是 ViT 宽度,不是 LLM 宽度 d_model —— 要经 §1.3 的 projector 才投成 [N,d_model])
 </code></pre></div>
 <p>数值:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>224/14 = 16 → 16×16 = 256;加 [CLS] = 257
@@ -2269,20 +2285,29 @@
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>672/14 = 48 → 48×48 = 2304
 </code></pre></div>
 <p><strong>分辨率翻倍 → token 数 ×4</strong>;视频再乘帧数:</p>
+<blockquote>
+<p>口径:上面只有 224 那行加了 <a href="256→257">CLS</a>;576 与 2304 都是不含 [CLS] 的 patch 数。LLaVA 系不加 [CLS],两种口径不要混算(按 257 的口径算 336 会误得 577)。</p>
+</blockquote>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>16 帧 × 576 = 9216 个视觉 token
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>32 帧 → 18432
 </code></pre></div>
 <h3 id="22-vq-token">2.2 VQ token(离散)<a class="headerlink" href="#22-vq-token" title="Permanent link">&para;</a></h3>
-<p>VQ-VAE/VQGAN 把连续特征 <code>z</code> 量化到码本 <code>{c_k}</code>:</p>
+<p>VQ-VAE/VQGAN 把连续特征 <code>z</code> 量化到码本 <code>{c_k}</code>(<span class="arithmatex">\(z\)</span> 由前置 encoder 产生:图像 → 卷积/ViT encoder → 每个空间位置一个 <span class="arithmatex">\(d\)</span> 维向量;顺序是先 encoder 得 <span class="arithmatex">\(z\)</span>、再量化,与 patch 路线同理,不是「先 tokenize 再编码」两段流水线):</p>
+<blockquote>
+<p><strong>VAE 一句话(全文首次出现处)</strong>:VAE = 变分自编码器,encoder 把图像压成低维<strong>连续</strong> latent、decoder 从 latent 重建图像,训练目标是重建损失 + KL 正则,所以是连续 latent 的有损压缩;VQ-VAE 就是把这个连续 latent 换成码本里的离散码字 —— 重建损失照旧,只是中间多一步量化。§5.4 用 LDM 时会再给正式定义与 <span class="arithmatex">\(f=8\)</span> 的具体尺寸。</p>
+</blockquote>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>k* = argmin_k ||z - c_k||²
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>z_hat = c_{k*}
 </code></pre></div>
 <p><img alt="视觉 tokenization:patch 连续 token vs VQ 最近邻量化" src="../../diagrams/55b_visual_tokenizer.landscape.png" /></p>
+<blockquote>
+<p><strong>图 55b 口径(以正文为准,图待重出)</strong>:红框里写「最近邻 = c1 → 码字索引 1」「量化误差 ||z-c1||²=0.05」,与本节数值和验收口径冲突,一律按正文读:该码字是 <strong>c0</strong>([0,1],即图上标的那个 c1),索引 k*=0;图上那个 c2 = 正文的 c1([1,0],距离 1.45)。0.05 是<strong>平方 L2 距离</strong>,量化误差是 √0.05≈0.224。图需在源里改标号(c1→c0、索引 1→0),并把 0.05 标成「平方距离 d²」、量化误差另写 √0.05≈0.224。</p>
+</blockquote>
 <p><strong>数值</strong>:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>z = [0.2, 0.9]
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>c1 = [0, 1] → ||z-c1||² = 0.2² + (-0.1)² = 0.05
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>c2 = [1, 0] → ||z-c2||² = (-0.8)² + 0.9² = 1.45
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>→ 选 c1,码字索引 1;重建 z_hat=[0,1];量化误差 0.05
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>c0 = [0, 1] → ||z-c0||² = 0.2² + (-0.1)² = 0.05
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>c1 = [1, 0] → ||z-c1||² = (-0.8)² + 0.9² = 1.45
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>→ 选 c0,码字索引 k*=0(口径:码本 0-based 编号 c0→0、c1→1,c0 是列出的第 1 个码字,故索引为 0);重建 z_hat=[0,1];平方 L2 距离 0.05(这是距离的平方,量化误差=√0.05≈0.224)
 </code></pre></div>
 <p>VQ 的损失通常包含:重建损失 + 码本损失 + commitment loss。码本大小/维度决定信息损失;离散 token 可像文本一样自回归生成。</p>
 <p><strong>codebook collapse(码本坍缩)</strong>:训练中编码器可能只反复使用少数码字,其余码字变成“死码”,有效码本变小、重建变差。常用缓解:</p>
@@ -2290,7 +2315,10 @@
 <li><strong>EMA 更新码本</strong>:用编码器输出的指数滑动平均更新码字,而不是只靠码本损失的梯度;</li>
 <li><strong>commitment loss</strong>:<code>β·||z - sg[c]||²</code>,让编码器输出靠近所选码字(<code>sg</code> 为 stop-gradient);</li>
 <li><strong>死码重启/重初始化</strong>:长时间不被选中的码字用随机样本或当前 batch 的编码重置;也可用 k-means 初始化、码本归一化、温度/噪声。</li>
-<li>监控:每码字使用率、perplexity、死码比例;不要只看重建 loss。</li>
+<li>监控:每码字使用率、perplexity、死码比例;不要只看重建 loss。<blockquote>
+<p><strong>这两个词先定义</strong>:k-means 初始化 = 先对所有 encoder 输出 <span class="arithmatex">\(z\)</span> 跑 k-means 聚成 <span class="arithmatex">\(K\)</span> 类(<span class="arithmatex">\(K\)</span>=码本大小),把 <span class="arithmatex">\(K\)</span> 个聚类中心直接当码字初值 —— 拿「数据实际分布的中心」当初值,比随机初值更不容易开局就让一堆码字离数据太远、直接成死码。码本 perplexity = 用码字使用率 <span class="arithmatex">\(p_k\)</span>(第 <span class="arithmatex">\(k\)</span> 个码字被选中的频率,<span class="arithmatex">\(\sum_k p_k=1\)</span>)算 <span class="arithmatex">\(\exp(-\sum_k p_k\log p_k)\)</span>,含义是「有效码字数」:<span class="arithmatex">\(K\)</span> 个码字均匀使用 → <span class="arithmatex">\(=K\)</span>;只用 1 个 → <span class="arithmatex">\(=1\)</span>。它与语言模型的 perplexity 是同一个熵公式,只是这里的分布是码字使用率、不是下一个 token 的概率。</p>
+</blockquote>
+</li>
 </ul>
 <blockquote>
 <p>注意:VQ 的“离散化”本身有损;collapse 是优化/使用率问题,和量化误差不是同一件事。</p>
@@ -2320,14 +2348,17 @@
 <td>额外 cross-attn 层,训练复杂</td>
 </tr>
 <tr>
-<td>Resampler</td>
-<td>少量 query 抽取视觉特征</td>
-<td>Q-Former/Perceiver</td>
-<td>压缩但可能丢细节</td>
+<td>Resampler(压缩器,不是独立的第三类融合)</td>
+<td>少量 query 抽取视觉特征;接法看具体模型 —— 压完拼进 LLM 序列 → 归 Early fusion 那行,只输出定长特征当 cross-attn 的 K/V → 归 Cross-attention 那行</td>
+<td>Q-Former(BLIP-2:压完仍拼进序列,归 Early fusion);Perceiver Resampler 不归这一格 —— Flamingo 里它输出定长视觉特征、只当 gated cross-attn 的 K/V,应读作上面 Cross-attention 那行</td>
+<td>只改 token 数;压缩但可能丢细节</td>
 </tr>
 </tbody>
 </table>
 <p><img alt="跨模态融合:early fusion 的拼接 vs cross-attention 的文本 Q 看视觉 K/V" src="../../diagrams/55c_cross_modal_fusion.landscape.png" /></p>
+<blockquote>
+<p><strong>与 12 的口径差异(修正 <code>notes/12_multimodal.md</code> §3)</strong>:前置篇 §3 的同一张表把「Resampler(Q-Former/Perceiver)」统一写成「压完仍是拼进序列,融合方式上归 early fusion」——那是过宽表述。本篇按代表模型的实际接线拆开:Q-Former(BLIP-2)输出确实拼进 LLM 序列(归 Early fusion 那行);Perceiver Resampler 在 Flamingo 里不拼进文本序列,只输出定长视觉特征当 gated cross-attn 的 K/V(归 Cross-attention 那行)。复习 Perceiver 时以本篇口径为准,12 §3 那一格按此修正。</p>
+</blockquote>
 <p><strong>形状与数值</strong>:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>Early fusion:
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>  视觉 [N,d] + 文本 [M,d] → concat [N+M,d] → self-attn
@@ -2341,23 +2372,29 @@
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>K = [[1,0],[0,1],[1,1]]
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>Q·K^T = [[2,1,3],[0,2,2]]
 <a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>scores[0][0] = 2×1 + 1×0 = 2
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a># 注:本小例只演示形状与矩阵乘法,scores 未除 1/√d_k、也未接 softmax;真要算权重需按前置口径先缩放再 softmax
 </code></pre></div>
 <p><strong>因果 mask 细节</strong>:early fusion 中文本通常能看全部视觉 token;视觉 token 之间是否互看取决于实现。训练/推理必须一致。</p>
 <h2 id="4-vlm">4. VLM 指令微调与现代变体<a class="headerlink" href="#4-vlm" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>LLaVA</strong>:CLIP ViT-L/14-336 → 576 token;2 层 MLP projector;两阶段训练。</li>
-<li><strong>Qwen2-VL</strong>:动态分辨率/NaViT,大图切块;适合文档/小字,但 token 数可变。</li>
+<li><strong>LLaVA-1</strong>:CLIP ViT-L/14-224 → 16×16=256 token;单层线性 projector;两阶段训练。</li>
+<li><strong>LLaVA-1.5</strong>:CLIP ViT-L/14-336 → 24×24=576 token;2 层 MLP projector;两阶段训练。</li>
+<li><strong>Qwen2-VL</strong>:NaViT 式原生动态分辨率(14×14 patch 后 2×2 merge,变长 token),不切固定 tile;适合文档/小字,但 token 数可变。</li>
 <li><strong>Chameleon</strong>:从预训练起就把离散视觉 token 与文本 token 放同一 Transformer;统一理解/生成,训练要求高。</li>
 <li><strong>Janus</strong>:理解用连续视觉特征、生成用离散 token,两条路径解耦,减少任务冲突。</li>
 </ul>
 <p><strong>指令数据</strong>:VQA、描述、对话、OCR、图表、代码/截图;要覆盖“拒答/不确定性/安全”。数据质量比堆量更重要。</p>
 <h2 id="5-ddpm-cfg-ldmdit">5. 扩散深化:DDPM → CFG → LDM/DiT<a class="headerlink" href="#5-ddpm-cfg-ldmdit" title="Permanent link">&para;</a></h2>
 <h3 id="51-t">5.1 前向:一步跳到任意 t<a class="headerlink" href="#51-t" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p><strong>闭式怎么来的(补推导,对应下面代码块)</strong>:①每步 <span class="arithmatex">\(q(x_t\mid x_{t-1})\)</span> 是高斯,而高斯乘高斯仍是高斯,故 <span class="arithmatex">\(x_t\)</span> 对 <span class="arithmatex">\(x_0\)</span> 的条件分布仍是高斯,只需定均值与方差;②把一步重参数化成 <span class="arithmatex">\(x_t=\sqrt{\alpha_t}\,x_{t-1}+\sqrt{\beta_t}\,\epsilon_t\)</span>,<span class="arithmatex">\(\epsilon_t\sim\mathcal{N}(0,I)\)</span>,<span class="arithmatex">\(\alpha_t=1-\beta_t\)</span>;③迭代代入得 <span class="arithmatex">\(x_t=\sqrt{\textstyle\prod_{s\le t}\alpha_s}\,x_0+\sqrt{1-\textstyle\prod_{s\le t}\alpha_s}\,\bar\epsilon\)</span>,其中 <span class="arithmatex">\(\prod_{s\le t}\alpha_s=\bar\alpha_t\)</span>,且独立标准正态的加权和仍是标准正态(方差相加、系数归一),故并成单个 <span class="arithmatex">\(\epsilon\)</span>;④系数只能是 <span class="arithmatex">\(\sqrt{\bar\alpha_t}\)</span> 与 <span class="arithmatex">\(\sqrt{1-\bar\alpha_t}\)</span>:两者平方和为 1,正好保持总方差不变——每步注入 <span class="arithmatex">\(\beta_t\)</span> 的新噪声、同时按 <span class="arithmatex">\(\alpha_t\)</span> 衰减旧信号,是同一件事的两面。§5.2 的 <span class="arithmatex">\(\hat x_0\)</span> 就是这式的代数逆,所以反解才「正好」是它的逆。</p>
+</blockquote>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>q(x_t | x_{t-1}) = N( sqrt(1-β_t) x_{t-1}, β_t I )
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>α_t = 1-β_t,  alpha_bar_t = Π_{s=1}^t α_s
 <a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>x_t = sqrt(alpha_bar_t) x_0 + sqrt(1-alpha_bar_t) ε,  ε~N(0,I)
 </code></pre></div>
-<p>数值:<code>x_0=1.0, β=0.02, alpha_bar=0.98, ε=0.5</code></p>
+<p>数值(t=1 的手算例;真实 DDPM schedule 是 β_1=1e-4、β_T=0.02;本例为便于手算改用假设的 β_1^demo=0.02,它与 schedule 里的 0.02(那是 β_T)无关,别把 β_T 的 0.02 记成“第一步的 β”):<code>x_0=1.0, t=1, β_1^demo=0.02, alpha_bar_1=1-β_1^demo=0.98, ε=0.5</code></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>x_1 = sqrt(0.98)×1.0 + sqrt(0.02)×0.5
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>    = 0.98995 + 0.14142×0.5
 <a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>    = 1.06066
@@ -2366,10 +2403,13 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>L = E[ ||ε - ε_θ(x_t,t)||² ]
 <a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>x_0_hat = (x_t - sqrt(1-alpha_bar_t)·ε_hat) / sqrt(alpha_bar_t)
 </code></pre></div>
-<p>用 <code>ε_hat=0.5</code>:</p>
+<p>用 <code>ε_hat=0.5</code>(这里恰好取真噪声 ε,所以是前向闭式的代数反解,才精确得到 1.0000;真实采样 ε_hat≠ε,x_0_hat 只是估计,不要推广成“反向一步就能精确还原 x_0”):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>x_0_hat = (1.06066 - 0.14142×0.5) / 0.98995 = 1.0000
 </code></pre></div>
-<p>完整采样一步(DDPM):</p>
+<p>完整采样一步(DDPM;σ_t 为反向方差:DDPM 原文取方差 σ_t²=β_t(即标准差 √β_t);严格的后验标准差是 √β̃<em t-1>t = √(β_t(1-alpha_bar</em>)/(1-alpha_bar_t)),两者实测效果相当;但 <span class="arithmatex">\(t=1\)</span> 时 <span class="arithmatex">\(\sigma_1=0\)</span> 只在后验方差 <span class="arithmatex">\(\tilde\beta_t\)</span> 口径下成立(<span class="arithmatex">\(\bar\alpha_0=1\Rightarrow\tilde\beta_1=\beta_1(1-\bar\alpha_0)/(1-\bar\alpha_1)=0\)</span>,是公式推论,不是额外规定),按 <span class="arithmatex">\(\beta_t\)</span> 口径则 <span class="arithmatex">\(\sigma_1=\sqrt{\beta_1}\)</span>(真实 schedule 下 <span class="arithmatex">\(\sqrt{10^{-4}}=0.01\)</span>;§5.1 的 <span class="arithmatex">\(\beta_1^{\text{demo}}=0.02\)</span> 只为手算方便,照它算才得 <span class="arithmatex">\(\sqrt{0.02}\approx0.141\)</span>,别把 0.141 当真值带走),并不为 0 —— 复算前先定口径,而且定了之后<strong>整列 <span class="arithmatex">\(\sigma_t\)</span> 跟着换</strong>:选 <span class="arithmatex">\(\beta_t\)</span> 就一路用 <span class="arithmatex">\(\sqrt{\beta_t}\)</span>(真实 schedule 下 <span class="arithmatex">\(\sigma_1=0.01\)</span>),并另按「最后一步不加噪」的人工规定把 <span class="arithmatex">\(t=1\)</span> 的噪声项置零;选后验 <span class="arithmatex">\(\tilde\beta_t\)</span> 就一路用 <span class="arithmatex">\(\sqrt{\tilde\beta_t}\)</span>,<span class="arithmatex">\(t=1\)</span> 自然为 0、不需要这条人工规定):</p>
+<blockquote>
+<p><strong>采样一步的公式怎么来(补后验的定义与推导)</strong>:①反向每一步也取高斯 <span class="arithmatex">\(q(x_{t-1}\mid x_t,x_0)=\mathcal{N}(\tilde\mu_t,\tilde\beta_t I)\)</span> —— 这就是上面说的「严格后验」,它的合法性来自前向是马尔可夫高斯链:把 <span class="arithmatex">\(x_0\)</span> 条件进来后,<span class="arithmatex">\(q(x_{t-1}\mid x_t,x_0)\)</span> 等于 <span class="arithmatex">\(q(x_{t-1}\mid x_0)\cdot q(x_t\mid x_{t-1},x_0)\)</span> 归一化,两个高斯相乘仍是高斯。②配方得 <span class="arithmatex">\(\tilde\beta_t=\beta_t\frac{1-\bar\alpha_{t-1}}{1-\bar\alpha_t}\)</span>,<span class="arithmatex">\(\tilde\mu_t=\frac{\sqrt{\bar\alpha_{t-1}}\beta_t}{1-\bar\alpha_t}x_0+\frac{\sqrt{\alpha_t}(1-\bar\alpha_{t-1})}{1-\bar\alpha_t}x_t\)</span>(都由 §5.1 的 <span class="arithmatex">\(q(x_t\mid x_0)\)</span>、<span class="arithmatex">\(q(x_{t-1}\mid x_0)\)</span> 代数消元得到,不加新假设)。③采样时 <span class="arithmatex">\(x_0\)</span> 未知,把 §5.2 的 <span class="arithmatex">\(\hat x_0=(x_t-\sqrt{1-\bar\alpha_t}\epsilon_\theta)/\sqrt{\bar\alpha_t}\)</span> 代进 <span class="arithmatex">\(\tilde\mu_t\)</span> 整理,才得到下面的公式:<span class="arithmatex">\(x_{t-1}=\frac{1}{\sqrt{\alpha_t}}\big(x_t-\frac{\beta_t}{\sqrt{1-\bar\alpha_t}}\epsilon_\theta(x_t,t)\big)+\sigma_t z\)</span> —— 系数 <span class="arithmatex">\(\beta_t/\sqrt{1-\bar\alpha_t}\)</span> 不是凭空得到的,是「用 <span class="arithmatex">\(\epsilon_\theta\)</span> 替掉 <span class="arithmatex">\(x_0\)</span>」后的合并结果。④<span class="arithmatex">\(\sigma_t\)</span> 的来源就是后验标准差 <span class="arithmatex">\(\sqrt{\tilde\beta_t}\)</span>;DDPM 原文另取简化口径 <span class="arithmatex">\(\sigma_t^2=\beta_t\)</span>(两者实测相当)。出处:Ho et al. 2020《Denoising Diffusion Probabilistic Models》§3.2 与 Algorithm 2。</p>
+</blockquote>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>x_{t-1} = (1/sqrt(α_t)) (x_t - (β_t/sqrt(1-alpha_bar_t)) ε_θ(x_t,t)) + σ_t z
 </code></pre></div>
 <p><img alt="扩散:前向/反向数值链、CFG、LDM 的 latent 尺寸与 DiT token 数" src="../../diagrams/55d_diffusion.landscape.png" /></p>
@@ -2383,15 +2423,21 @@
 <p><code>s=1</code> 无引导;<code>s&gt;1</code> 更贴条件但可能过饱和/多样性下降;每步两次前向(有条件+无条件)。negative prompt 把 <code>eps_uncond</code> 换成 <code>eps_neg</code>。</p>
 <h3 id="54-latent-diffusion-dit">5.4 Latent Diffusion 与 DiT<a class="headerlink" href="#54-latent-diffusion-dit" title="Permanent link">&para;</a></h3>
 <p><strong>LDM</strong>:在 VAE latent 上扩散,而不是像素空间。</p>
+<blockquote>
+<p><strong>VAE 是什么</strong>(§2.2 已一句话带过,这里给正式定义):VAE = 预训练的自编码器(autoencoder),encoder 把图像压成低维连续 latent、decoder 从 latent 重建图像,训练目标是重建 + KL 正则(Stable Diffusion 的 <span class="arithmatex">\(f=8\)</span> VAE 还要加 patch 对抗损失、KL 权重压到极小:只靠重建+KL 训出的 decoder 偏糊,锐度主要来自对抗目标,不是重建损失的自然结果),所以是有损压缩、且不参与扩散训练。Stable Diffusion 用的 <span class="arithmatex">\(f=8\)</span> VAE 把 <span class="arithmatex">\(H\times W\times3\)</span> 压成 <span class="arithmatex">\((H/8)\times(W/8)\times4\)</span>:空间边长各缩 8 倍(即 8× 下采样),通道取 4 是工程折中(通道多能多留细节,但扩散更贵)。于是 <span class="arithmatex">\(512\times512\times3=786{,}432\)</span> 个值 → <span class="arithmatex">\(64\times64\times4=16{,}384\)</span> 个值(<span class="arithmatex">\(8^2=64\)</span> 倍空间缩减、通道 <span class="arithmatex">\(3\to4\)</span>,净 <span class="arithmatex">\(\div48\)</span>)。为什么必须离开像素空间:扩散骨干的算力随空间尺寸平方增长,<span class="arithmatex">\(64\times64\)</span> 上的 self-attn 比 <span class="arithmatex">\(512\times512\)</span> 像素便宜两个数量级以上,而 VAE 已把感知上重要的信息留下;代价是细节靠 decoder 补、能力上限受 VAE 重建质量约束(所以常见坑里那条「VAE 是有损压缩」)。§0 依赖图里 <span class="arithmatex">\(G\to H\)</span> 之间省略了 VAE encoder/decoder 这一环(图上直接写「噪声+条件 → 扩散去噪」),扩散实际发生在 latent 上,不是漏了一节。</p>
+</blockquote>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>512×512×3 = 786,432 个值
 <a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>→ VAE encoder → 64×64×4 = 16,384 个值(下采样 8×,约 ÷48)
 <a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>在 latent 上做扩散;文本条件通过 cross-attention 注入
 <a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>→ VAE decoder → 图像
 </code></pre></div>
 <p><strong>DiT</strong>:用 Transformer 替换 U-Net。</p>
+<blockquote>
+<p><strong>U-Net 是什么</strong>(被替换的东西):扩散模型(DDPM、Stable Diffusion 1.x/2.x)默认的去噪骨干是 U-Net——卷积编解码器:下采样若干层(通道翻倍、空间减半)提取多尺度特征,再上采样回原分辨率,并用跳连把下采样同层的特征直接接到对应上采样层以保住高频细节;各分辨率块里再插 self-attn/cross-attn。代价是感受野受卷积核与层数限制、结构靠手工设计、scaling 不如 Transformer 顺。DiT 的动机就是把这块换成 Transformer(纯 attention 全局感受野、加宽加深即 scaling、工程栈与 LLM 共用),所以「DiT 相对 LDM 改了什么」= <strong>只换去噪骨干</strong>,latent 扩散那套(VAE + <span class="arithmatex">\(64\times64\times4\)</span> latent + 条件注入)全保留。顺便定义:<strong>SiLU</strong> = Sigmoid Linear Unit,<span class="arithmatex">\(x\cdot\mathrm{sigmoid}(x)\)</span>,ReLU 的平滑版,下面 adaLN 的 MLP 就是拿它当激活函数。</p>
+</blockquote>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>latent 64×64×4, patch 2×2 → 32×32 = 1024 个 token
 <a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>每个 token:2×2×4 = 16 维 → 线性投影到 d_model
-<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>条件:adaLN-Zero 注入时间步/类别
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>条件:adaLN-Zero 注入时间步/类别(adaLN:把每层 LayerNorm 的 scale γ / shift β 改由一个带 SiLU 的 MLP 从条件向量回归;Zero:生成 γ/β/α 的 MLP 最后一层零初始化 → 初始 γ=β=α=0;调制式为 x·(1+γ)+β,故通过因子 1+γ=1、加性项 β=0(不调制),门控 α=0 把残差分支输出压成 0,每个 block 从恒等映射起步,训练中再放开)
 </code></pre></div>
 <p><strong>能回答</strong>:扩散为什么预测噪声、CFG 怎么放大条件、LDM/DiT 为什么省算力。
 <strong>不能回答</strong>:具体采样器/步数的质量;不同 schedule/模型差异很大,要实验。</p>
@@ -2406,15 +2452,25 @@
 <a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>F=16 → 9216 token;F=32 → 18432
 </code></pre></div>
 <h3 id="62-asr">6.2 ASR<a class="headerlink" href="#62-asr" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p><strong>log-mel 是什么(补定义)</strong>:波形是 16kHz 的一维采样点序列;前端先按 25ms 窗(<span class="arithmatex">\(16000\times0.025=400\)</span> 点)做 STFT 得到每帧频谱,再用一组 mel 三角滤波器把频带压成约 80 个通道(mel 刻度低频细、高频粗,贴近人耳分辨率;large-v3 用 128),每通道出一个能量值——这就是「80 通道」;最后取 log 压缩动态范围(能量比变成可加、数值更稳),得到 log-mel。窗长 25ms 决定频率分辨率,移 10ms 决定帧率(1 秒 100 帧),两者必须成对给出,换任一个帧数公式都变。所以下面算出的 239,840 个值 = 2998 帧 × 80 通道,是一张「时间×频率」二维特征图,不是原始采样点;§6.3 TTS 的「mel 频谱 → vocoder」用的是同一种前端表示。</p>
+</blockquote>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>波形 16kHz → log-mel(80 通道,25ms 窗/10ms 移)→ encoder → 文本
 </code></pre></div>
-<p>30 秒、10ms hop → 3000 帧;<code>80×3000=240,000</code> 个值。Whisper 用 30s 窗口;large-v3 用 128 mel。指标 WER/CER。</p>
+<p>30 秒=480,000 点,25ms 窗=400 点、10ms 移=160 点 → 1+⌊(480000−400)/160⌋=2998 帧,<code>80×2998=239,840</code> 个值;3000 帧只有 Whisper 做 center padding(首尾各补 n_fft/2=200 点,16kHz 下 12.5ms)得 3001 帧、再丢掉最后一帧后才成立。Whisper 用 30s 窗口;large-v3 用 128 mel。指标 WER/CER。</p>
+<blockquote>
+<p><strong>图 55e 口径</strong>:图上写「30s / 10ms hop = 3000 帧;80 mel × 3000 = 240k 值」是无前提的取整/补帧口径;严格算按本段 2998 帧、239,840 值,差在 Whisper 的 center padding(3001 帧丢最后一帧才得 3000)。按图复算得到 240k 属预期,本节统一以 2998 / 239,840 为准。</p>
+</blockquote>
 <p><strong>幻觉</strong>:静音/噪声/音乐上可能“编”文本;用 VAD/静音过滤/无语音概率,不要盲信输出。流式优先 RNN-T/分块 attention。</p>
 <h3 id="63-tts">6.3 TTS<a class="headerlink" href="#63-tts" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>文本 → 音素/对齐 → mel 频谱 → vocoder → 波形
 <a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>或:文本 → 离散 codec token → 解码器 → 波形(codec LM)
 </code></pre></div>
 <p>经典 vocoder:HiFi-GAN;端到端:VITS;现代:flow matching/diffusion(F5-TTS、CosyVoice)。指标 MOS、说话人相似度、可懂度 WER。</p>
+<blockquote>
+<p><strong>这几个指标怎么读</strong>:MOS(Mean Opinion Score)= 主观平均意见分,让若干听测者按 1–5 分(1 极差、5 极好)给语音打分再取平均,量纲 1–5、越大越好;样本少、不同实验之间不可直接比(人群/语料不同)。说话人相似度 = 合成语音与目标说话人嵌入的余弦相似度(用说话人验证模型提取,越高越像),客观但只测「像不像这个人」、不测自然度。可懂度 WER = 用 ASR 转写合成语音再与原文本比对得到的词错误率,越低越好,与 §6.2 的 WER 同口径。方向别弄反:WER、FID 越低越好;MOS、说话人相似度、CLIPScore 越高越好。</p>
+<p><strong>补:codec / codec token / codec LM / flow matching</strong> —— neural audio codec(EnCodec、SoundStream、RVQ 类)是一个学出来的「波形→离散码」编码器:先把音频压到低帧率 latent,再用多级码本逐层量化残差(RVQ),得到若干层离散 token;查码本用的正是 §2.2 那套最近邻量化,所以它和 VQ 是同一套机制,只是多码本、多码率。codec token 即这些离散码;codec LM 把它们当「文本 token」做自回归/并行预测,再由 codec decoder 还原波形 —— 这正是 TTS 能复用语言模型套路的原因。flow matching 是<strong>训练目标</strong>,学一个速度场、用 ODE 把噪声连续搬到数据,与 diffusion 同族,不是采样器。</p>
+</blockquote>
 <p><img alt="音频管线:ASR 波形→mel→文本;TTS 文本→mel/codec→波形" src="../../diagrams/55e_audio_pipeline.landscape.png" /></p>
 <h2 id="7">7. 评测与安全<a class="headerlink" href="#7" title="Permanent link">&para;</a></h2>
 <table>
@@ -2458,8 +2514,13 @@
 </tr>
 <tr>
 <td>生成</td>
-<td>FID、CLIPScore、人类偏好</td>
-<td>FID 依赖特征提取器</td>
+<td>FID(分布距离)、CLIPScore(图文对齐,不是生成质量)、人类偏好</td>
+<td>FID 依赖特征提取器;CLIPScore 与 FID 测的不是一件事</td>
+</tr>
+<tr>
+<td>&gt; <strong>表里四个词先定义</strong>:BLEU = n-gram <strong>精确率</strong>(生成句的 1–4 gram 有多少出现在参考译文里,再乘简短惩罚),常按 0–100 报、越高越好,与人类偏好只弱相关;CIDEr = n-gram 按 TF-IDF 加权后与多份参考描述算余弦「共识」,越高越好(COCO Caption 主指标);FID = 真实图与生成图各过<strong>同一个</strong> ImageNet 预训练 Inception-v3 的 pool3 特征,两组特征拟合成高斯后取 Fréchet 距离 <span class="arithmatex">\(\mathrm{FID}=\lVert\mu_r-\mu_g\rVert^2+\mathrm{Tr}\big(\Sigma_r+\Sigma_g-2(\Sigma_r\Sigma_g)^{1/2}\big)\)</span>,<strong>越低越好</strong>,换特征提取器数值就不可比;grounding = 让回答里每个断言落到图上具体证据(框/坐标/引用),用可核查的定位压幻觉,与 §5.3 的 guidance 不是一回事。</td>
+<td></td>
+<td></td>
 </tr>
 </tbody>
 </table>
@@ -2474,15 +2535,15 @@
 <h2 id="8">8. 面试要点<a class="headerlink" href="#8" title="Permanent link">&para;</a></h2>
 <ol>
 <li><strong>对比式 vs 生成式 VLM?</strong> → 对比学图文匹配(CLIP);生成学看图回答(LLaVA),loss 是 next-token。</li>
-<li><strong>projector 与 Q-Former 的区别?</strong> → 线性/MLP 逐 token 投影;Q-Former 用少量 query 压缩,省 token 但可能丢细节。</li>
-<li><strong>图像 patch 数怎么算?</strong> → <code>(H/P)×(W/P)</code>;336/14=24²=576;224/14=16²=256(+CLS)。</li>
-<li><strong>VQ 怎么量化?</strong> → 最近邻码字;<code>k*=argmin||z-c_k||²</code>;数值 z=[0.2,0.9]→c1,误差 0.05。</li>
+<li><strong>两类 projector 的区别(逐 token 投影 vs query 压缩)?</strong> → 线性/MLP 一个视觉 token 换一个输入 token、不省长度;Q-Former 用少量 query 压缩,省 token 但可能丢细节。</li>
+<li><strong>图像 patch 数怎么算?</strong> → <code>(H/P)×(W/P)</code>;336/14=24²=576、224/14=16²=256(均不含 [CLS];224 加 [CLS] 才是 257)。</li>
+<li><strong>VQ 怎么量化?</strong> → 最近邻码字;<code>k*=argmin||z-c_k||²</code>;数值 z=[0.2,0.9]→c0(k*=0),平方距离 0.05,量化误差 √0.05≈0.224。</li>
 <li><strong>early fusion vs cross-attn?</strong> → 拼接统一 self-attn vs 文本 Q 看视觉 K/V;scores 形状 [M,N]。</li>
-<li><strong>DDPM 前向/反向?</strong> → 闭式加噪;预测噪声;<code>x0_hat</code> 反推。</li>
+<li><strong>DDPM 前向/反向?</strong> → 闭式加噪;预测噪声;<code>x0_hat</code> 由 ε_hat 反推(只是估计,非精确还原)。</li>
 <li><strong>CFG 公式与代价?</strong> → <code>eps_uncond+s(eps_cond-eps_uncond)</code>;每步两次前向;s 过大过饱和。</li>
 <li><strong>LDM 为什么省?</strong> → 在 64×64×4 latent 上扩散,而不是 512×512×3 像素。</li>
 <li><strong>DiT 的 token 数?</strong> → 64×64 latent、patch 2×2 → 32²=1024 token,每 token 16 维。</li>
-<li><strong>视频/音频 token 怎么估?</strong> → <code>F×N</code>;30s/10ms=3000 帧,80×3000=240k mel 值。</li>
+<li><strong>视频/音频 token 怎么估?</strong> → <code>F×N</code>;30s 按 25ms 窗/10ms 移=2998 帧(Whisper 首尾各补 n_fft/2=200 点得 3001 帧、丢最后一帧后 3000),80×2998≈240k mel 值。</li>
 <li><strong>ASR 幻觉怎么防?</strong> → VAD/静音过滤/无语音概率;流式用 RNN-T/分块 attention。</li>
 <li><strong>多模态评测的坑?</strong> → 帧采样、OCR、指标与人类偏好不一致、幻觉/偏见/注入。</li>
 </ol>
@@ -2499,15 +2560,15 @@
 <h2 id="_2">动手清单<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <ol>
 <li><strong>patch/token 计算器</strong>:输入 H、W、P、帧数,输出 token 数;验收:224/14=256(+CLS)、336/14=576、16 帧=9216。</li>
-<li><strong>VQ 复算</strong>:给定 z 和两个码字,手算 L2 距离、索引、量化误差;验收:与 §2.2 数值一致。</li>
+<li><strong>VQ 复算</strong>:给定 z 和两个码字,手算 L2 距离、索引、量化误差;验收:与 §2.2 数值一致(索引按 0-based 输出,c0→k*=0;量化误差填 √0.05≈0.224,不填 0.05)。</li>
 <li><strong>DDPM 复算</strong>:用 §5 的数字复算 <code>x_1</code>、<code>x_0_hat</code>、CFG;验收:1.06066 / 1.0000 / 2.45。</li>
 <li><strong>LDM/DiT 账本</strong>:给定像素尺寸和 VAE 下采样,算 latent 值数与 DiT token 数;验收:512²×3→16,384;64² patch2→1024。</li>
 </ol>
 <h2 id="_3">相关图<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p><code>55a_vlm_training</code> · <code>55b_visual_tokenizer</code> · <code>55c_cross_modal_fusion</code>
-· <code>55d_diffusion</code> · <code>55e_audio_pipeline</code>(均在 <code>diagrams/</code>,横竖双版本)</p>
+· <code>55d_diffusion</code> · <code>55e_audio_pipeline</code>(均在 <code>diagrams/</code>,均为横版 <code>*.landscape.png</code>,当前无竖版)</p>
 <h2 id="_4">下一步<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>Phase 2 完成。下一步按 <code>docs/advanced-roadmap.md §5</code> 选定主/次方向,进入 Phase 3 模块三:按目标岗位/研究问题做 3–5 篇方向深入。</p>
+<p>Phase 2 完成。下一步按目标岗位 JD 与本层 §8 面试要点选定主/次方向,进入 Phase 3 模块三:按目标岗位/研究问题做 3–5 篇方向深入。</p>
 
 
 

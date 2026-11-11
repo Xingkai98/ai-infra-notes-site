@@ -2677,12 +2677,16 @@
 <code>notes/21_single_node_ops.md §8</code>（量化）。</p>
 <p><strong>建议路径（每次 45 分钟）</strong>：① §1–5（指标 / 两阶段 / KV / batching / PagedAttention）；
 ② §6–9（引擎 / 并行 / 量化 / 投机解码）；③ §10–13（长上下文 / 在线服务 / 排障 / 容量）。</p>
-<p><strong>深度标注</strong>：§1–6、§8、§11–13 为必学；§7.2 PD 分离、§9 投机解码、§10 长上下文为加分；
+<p><strong>深度标注</strong>：§1–6、§7.1、§8、§11–13 为必学；§9 投机解码、§10 长上下文为加分（§7.2 PD 分离只有「动机 + 分开扩缩容」算加分；它那段 KV 传输账本是必学——§12 的「网络」行与面试要点第 9 条都要用）；
 §7.1 的 TP/PP 是必学，EP 为了解；<strong>§7.0 是前置</strong>，没学 M2-4 也能读。</p>
+<p>依赖图上的箭头只表示<strong>概念引用</strong>（「讲到 J/L 时会用到 I、G」），不是必学门槛：按「加分」跳过 §9 投机解码或 §10 长上下文都不影响主线（§7.2 不算可跳过：只有动机和分开扩缩容那半页是加分，KV 传输账本是 §12 与面试要点第 9 条的前置）（图里 <code>F/G/H/I→L→J</code> 只是概念引用：跳过 §10 后读 J 只少了「前缀缓存 / KV 驱逐 / 长上下文成本」这层铺垫，J 的网关、弹性、多租户、SLO 不依赖它），只是 J（在线服务）和 L（长上下文）里与之相关的段落会少一层铺垫，回头补即可。</p>
 </blockquote>
 <h2 id="0">0. 依赖图（学习顺序）<a class="headerlink" href="#0" title="Permanent link">&para;</a></h2>
 <pre class="mermaid"><code>graph TD
   A["自回归生成"] --&gt; B["prefill / decode 两阶段"]
+
+  M["§1 指标&lt;br/&gt;TTFT / TPOT / Goodput / P99（先统一语言）"] --&gt; A
+  M --&gt; B
   B --&gt; C["KV Cache&lt;br/&gt;显存账本"]
   C --&gt; D["Batching 与调度&lt;br/&gt;static vs continuous"]
   D --&gt; E["PagedAttention&lt;br/&gt;分页与共享"]
@@ -2694,8 +2698,18 @@
   G --&gt; J
   H --&gt; J
   I --&gt; J
+
+  L["长上下文推理 §10（含 §10.5 多模态/语音/视频）&lt;br/&gt;前缀缓存 / KV 量化 / 驱逐 / 稀疏注意力"]
+  F --&gt; L
+  G --&gt; L
+  H --&gt; L
+  I --&gt; L
+  L --&gt; J
   J --&gt; K["排障与容量&lt;br/&gt;TTFT / TPOT / P99 / 成本"]</code></pre>
 <h2 id="1">1. 推理指标：先统一语言<a class="headerlink" href="#1" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p><strong>SLO（Service Level Objective，服务等级目标）</strong>：对服务质量指标给出的目标值，通常是一组约束而不是一条，例如 <code>TTFT P99 &lt; 500 ms</code>、<code>TPOT P99 &lt; 50 ms</code>、可用性 &gt; 99.9%（完整示例见 §11.3）。后文的 Goodput、容量规划、弹性伸缩都以这组约束为准。</p>
+</blockquote>
 <table>
 <thead>
 <tr>
@@ -2788,8 +2802,8 @@
 </tr>
 <tr>
 <td>优化手段</td>
-<td>算子融合、TP、chunked prefill</td>
-<td>batching、量化、KV 压缩、投机解码</td>
+<td>算子融合（见下注）、TP（§7.1）、chunked prefill（§4.3）</td>
+<td>batching（§4.2）、量化（§8）、KV 压缩（§8.2 / §10）、投机解码（§9）</td>
 </tr>
 </tbody>
 </table>
@@ -2799,22 +2813,36 @@
 <li>decode 像「每步只写一个字」，每步都要把模型权重和 KV Cache 从 HBM 读一遍，算力大量闲置；</li>
 <li>所以 decode 的核心是<strong>提高 batch、减少每步搬运</strong>，而不是堆 FLOPs。</li>
 </ul>
+<blockquote>
+<p><strong>表里这两个词先给定义</strong>：<strong>算子融合</strong>（operator fusion）把相邻小算子（LayerNorm+线性层、bias+激活）合成一个 kernel，省的是 kernel 启动与中间张量的 HBM 往返，属实现层优化、不改模型结构；<strong>GEMM</strong> 就是矩阵乘，prefill 一次并行算 T 个位置，主体是 QKV 投影 / MLP 的几个大 GEMM，这也是它被归为 compute-bound 的原因。二者与 §4.3 的 chunked prefill 不在同一层：前者管「一个 kernel 算什么、访存几次」，后者管「请求怎么排进 GPU」，可以叠加。</p>
+</blockquote>
 <p><img alt="prefill vs decode 的 roofline 位置" src="../../diagrams/20l_pd_roofline.landscape.png" /></p>
-<p>用算术强度把直觉量化（A100：FP16 峰值 312 TFLOPS、HBM 1.55 TB/s、ridge≈201 FLOP/byte）：</p>
+<blockquote>
+<p>图 20l 只画了「短序列、KV 可忽略」这条近似线；70B/4K 的严格读数（含它与 §3.4「104 条」的区别）见下面 bullet 之后的「严格式」一段。</p>
+<p><strong><code>KV_seq</code> 的定义</strong>（本节首次出现，账本在 §3）：一条序列<strong>整段 KV 的字节数</strong>，不是每 token 字节、也不是 token 数——把 §3.1 的公式去掉 batch 维就是 <code>KV_seq = 2 × T × L × H_kv × d_head × bytes</code>；70B GQA-8、T=4K、FP16 时 <code>KV_seq≈1.34 GB</code>（≈1.25 GiB，账见 §3.2）。具体读数（104、52、69）由后面「严格式」一段一次算清。
+<strong>主线一句话</strong>：KV 可忽略的短序列下 <code>AI≈B</code>、<code>B≈201</code> 追平 ridge（1.55 TB/s 口径）；长序列的边界见下一段。</p>
+</blockquote>
+<p>用算术强度把直觉量化（A100 40GB SXM：FP16 峰值 312 TFLOPS、HBM 1.55 TB/s、ridge≈201 FLOP/byte）：</p>
 <ul>
 <li><strong>prefill</strong>：一次并行算 <code>T</code> 个位置，<code>FLOPs≈2NT</code>，<code>Bytes≈2N+激活+KV</code>（权重为主），
   所以 <code>AI≈2NT/(2N+激活+KV)≈T</code>；<code>T=2048</code> 时 <code>AI≈2048 ≫ 201</code>，<strong>compute-bound</strong>；</li>
 <li><strong>decode</strong>：每步只算 1 个 token，<code>FLOPs≈2N</code>，<code>Bytes≈2N+KV</code>，<code>AI≈1</code>，
-  <strong>memory-bound</strong>；batch=<code>B</code> 时权重被 B 个 token 摊薄，<code>AI≈B</code>，<code>B≈201</code> 时追平 ridge。</li>
+  <strong>memory-bound</strong>；batch=<code>B</code> 时权重被 B 个 token 摊薄，<code>AI≈B</code>，<code>B≈201</code> 时追平 ridge。
+（ridge 随带宽口径变，这里先给对应关系：<code>312/1.55≈201</code> 对应 A100 40GB SXM 的 1.55 TB/s；<code>312/2.04≈153</code> 对应 80GB 的 2.04 TB/s；<code>312/2.0≈156</code> 是按 2.0 TB/s 粗算——三个数各对应一个带宽，都对，差别只在 SKU 与取整；<strong>153/156 只是另两个带宽 SKU 的读数、不是本节门槛</strong>，下文「追平 ridge」默认指 201 这一档，另两个数不再重复出现。）</li>
 </ul>
 <blockquote>
+<p>这一步用了「短 <code>T</code>、KV 可忽略」的前提：严格式是 <code>AI = 2NB/(2N + B·KV_seq)</code>，只有 <code>B·KV_seq ≪ 2N</code> 才化简成 <code>AI≈B</code>。70B、4K 时 <code>2N=140 GB</code>、单条 KV≈1.34 GB，渐近上界只有 <code>2N/KV_seq ≈ 104</code>——<strong>无论 batch 多大都追不平 ridge=201</strong>；按严格式 B=104 时 <code>AI≈52</code>。
+同一式代 <code>B=201</code> 得 <code>AI≈68.7</code>——前面 <code>KV_seq</code> 注释里 69 这个读数就是它（不是那个渐近上界 104）。所以「<code>B≈201</code> 追平」只在 KV 可忽略的短序列下成立，长序列请用 §3.4 的 104 条口径（<strong>两个 104 别混</strong>：这里的 ≈104 是算术强度的渐近上界、量纲 FLOP/byte「每读一字节能算几次」，§3.4 的「104 条」是并发序列数、量纲「条」；数值相同只因都来自 <code>140/1.34</code>，且这个上界只跟字节比有关、与带宽口径无关）。</p>
+<p><strong>140 GB 凭什么跟 40 GB 卡比</strong>：<code>AI≈B</code> 用的是「每卡权重字节 ÷ 每卡带宽」——TP 把权重和 KV 都按卡切（每卡权重 ≈ <code>2N/t</code>，带宽仍是单卡带宽），<code>B</code> 也按每卡算，所以 <strong>AI 与 TP 度数 <code>t</code> 无关</strong>；140 GB 只说明「必须多卡」（容量问题，见 §3.4），不进这行 AI 的分子。</p>
 <p>这里 <code>N</code> 是<strong>模型参数量</strong>，<code>B</code> 是 batch，<code>T</code> 是序列长度。注意 <code>N</code> 在 prefill 的
 <code>2NT/2N</code> 里抵消了，所以 7B 和 70B 的<strong>AI 位置几乎相同</strong>；差别在绝对 FLOPs（70B 是 7B 的 10×）
 和权重/KV 的绝对字节数。decode 同理：<code>AI≈B</code> 与模型大小无关，但 70B 的每步延迟更高，
 因为它要搬的权重更多。</p>
+<p>注意两个 <code>2N</code> 里的 <code>2</code> <strong>含义不同</strong>：<code>FLOPs≈2NT</code> 的 2 是「每参数每 token 约 2 FLOPs（一次乘 + 一次加）」；<code>Bytes≈2N</code> 的 2 是「FP16/BF16 每参数 2 字节」——这就是 §3.3「权重 ≈ 参数量 × 2 字节」（70B ≈ 140 GB）的出处。两者能约掉只是因为数值上都是 2：<code>2NT/2N≈T</code> 读作「每读一遍权重（2N 字节）能并行算 NT 次乘加（一次乘加 = 2 FLOPs，正好 2NT FLOPs），所以 AI 约等于 T」。</p>
 <p>口径：这是理论峰值与理想 AI；实测要乘上 kernel 效率，还要加通信/调度开销。
 结论不变：prefill 优化算力利用（TTFT），decode 优化 batch/带宽/量化（TPOT）。</p>
 <p>这也是 PD 分离（prefill/decode disaggregation）的动机：两种负载对硬件和并行的需求不同，混在一起会互相拖累。</p>
+<p><strong>回看上面的表</strong>：TP、量化、KV 压缩、投机解码在 §2 就已经当已知手段下结论了，定义分别在 §7.1、§8、§9；依赖图上 <code>B→G</code>、<code>C→H</code>、<code>D→I</code> 只表示「§2 会引用到它们」，不表示「学到 §2 时还用不上或可以跳过」——按加分跳过 §9 仍读得懂 §2 的结论，只是不知道那两格背后的机制。</p>
 </blockquote>
 <h2 id="3-kv-cache">3. KV Cache 显存账本<a class="headerlink" href="#3-kv-cache" title="Permanent link">&para;</a></h2>
 <h3 id="31">3.1 公式<a class="headerlink" href="#31" title="Permanent link">&para;</a></h3>
@@ -2826,7 +2854,12 @@
 <li><code>T</code>：序列长度（含历史）；</li>
 <li><code>L</code>：层数；</li>
 <li><code>H_kv</code>：K/V 头数（MHA 时等于注意力头数，GQA/MQA 时更少）；</li>
-<li><code>d_head</code>：每个头的维度；</li>
+<li>
+<p><code>d_head</code>：每个头的维度；</p>
+</li>
+<li>
+<p><strong>前提</strong>：前导的 <code>2</code> 来自「K、V 各一份」（见上面的符号说明），不是维度系数；上式另外默认 <code>d_k = d_v = d_head</code>，那只是为了让 <code>2·d_head</code> 能合并成一项；若 <code>d_v≠d_k</code>，要把前导的 <code>2·d_head</code> 整体换成 <code>(d_k+d_v)</code>，不能只替换 <code>d_head</code>（见 <code>notes/06_inference.md §3</code>）。下表三个例子都满足 <code>d_k=d_v=128</code>，所以没暴露这条限制。</p>
+</li>
 <li><code>bytes_per_element</code>：FP16/BF16 = 2，FP8/INT8 = 1。</li>
 </ul>
 <h3 id="32-fp16">3.2 三个具体例子（FP16）<a class="headerlink" href="#32-fp16" title="Permanent link">&para;</a></h3>
@@ -2873,7 +2906,7 @@
 </tbody>
 </table>
 <blockquote>
-<p>注意 <code>H_kv</code>：GQA 把 K/V 头数从 64 降到 8，KV Cache 直接降到 1/8。这就是 GQA 在推理侧的核心价值。</p>
+<p>注意 <code>H_kv</code>：以 LLaMA-2 70B 为例（64 个 query 头，MHA 下等价的 KV 头数也是 64），GQA-8 把 K/V 头数从 64 降到 8，KV Cache 随之降到 1/8。只省容量并不会自动更快——GQA 在推理侧的核心价值是<strong>每步要读的 KV 变少</strong>（带宽），decode 本来就是带宽受限口径。</p>
 <p>batch 32、4K、70B GQA：<code>1.25 GiB × 32 = 40 GiB</code>——还没算模型权重，就已经很可观。</p>
 <p><strong>单位口径</strong>：上表按 <code>1024^3</code> 算 GiB；换算十进制 GB 要乘 <code>1.0737</code>。
 例：LLaMA-2 70B GQA 4K 的 <code>1.25 GiB ≈ 1.34 GB</code>；GPT-3 175B 的 <code>18.0 GiB ≈ 19.3 GB</code>。</p>
@@ -2907,7 +2940,7 @@
 </ul>
 <blockquote>
 <p>这解释了为什么长上下文服务要同时做 <strong>GQA + KV 量化 + PagedAttention + PD 分离</strong>：
-它们分别从“每 token 更小”“每字节更少”“少浪费”“分开扩容”四个方向压 KV 成本。</p>
+它们分别从“每 token 更小”（GQA，见 §3.2）“每字节更少”（KV 量化，见 §8.2）“少浪费”（PagedAttention，见 §5）“分开扩容”（PD 分离，见 §7.2）四个方向压 KV 成本——后三个本节还没展开，这里先当结论用，读到对应节再回看。</p>
 </blockquote>
 <h2 id="4-batching">4. Batching 与调度<a class="headerlink" href="#4-batching" title="Permanent link">&para;</a></h2>
 <h3 id="41-batching">4.1 静态 Batching 的问题<a class="headerlink" href="#41-batching" title="Permanent link">&para;</a></h3>
@@ -2925,13 +2958,16 @@
 <li>vLLM、TensorRT-LLM、SGLang 等引擎的核心能力。</li>
 </ul>
 <p><img alt="static vs continuous batching 时间线" src="../../diagrams/20o_batching.landscape.png" /></p>
-<p>图里用 2 个槽位、5 个请求做玩具调度（请求格式为 <code>P+D</code>）：</p>
+<p>图里用 2 个槽位、5 个请求做玩具调度，<strong>每个请求按不可分的总长度计</strong>（<code>P</code> 与 <code>D</code> 不分开建模，槽位占用也不分 prefill/decode 阶段；prefill 与 decode 混跑见 §4.3）：</p>
+<p>5 个请求的总长度（不再拆 <code>P</code>/<code>D</code>）：A=8、B=4、C=3、D=6、E=3，总工作量 <code>8+4+3+6+3=24</code> 槽位步。static 总时长 17 步 × 2 槽位 = 34 槽位步 → <code>24/34≈70.6%</code>；continuous 总时长 14 步 × 2 槽位 = 28 槽位步 → <code>24/28≈85.7%</code>。两条都能手算复核。</p>
 <ul>
 <li><strong>static</strong>：第一轮 <code>[A,B]</code> 要等最长请求 A 跑完 8 步；B 在第 4 步就完成，槽位空转到第 8 步。
   第二轮 <code>[C,D]</code> 又等 D 到第 14 步；第三轮 E 到第 17 步。槽位利用率 <code>24/34≈70.6%</code>。</li>
-<li><strong>continuous</strong>：B 完成立刻让 C 进入，A 完成立刻接 D，总时间 14 步，利用率 <code>24/28≈85.7%</code>。</li>
+<li><strong>continuous</strong>：B 完成立刻让 C 进入（B 占着槽位 0 跑到 t=4，C 接着用同一槽位跑到 t=7）；C 在 t=7 结束，空出的槽位给 <strong>E</strong>（7→10）——这是让 E 越过队首 D 的<strong>非 FIFO 指派</strong>，图 20o 画的正是这一条；A 在 t=8 结束接 D（8→14）。总时间 14 步，利用率 <code>24/28≈85.7%</code>。</li>
 </ul>
 <blockquote>
+<p>手算对照：若严格按 FCFS（t=7 的空槽给队首 D，7→13；E 等 A 空出的槽位，8→11），总时长是 13 步、利用率 <code>24/26≈92.3%</code>。也就是说 continuous 的利用率取决于指派策略：14 步/85.7% 对应「E 插队」，13 步/92.3% 对应 FIFO——两条时间线都能手算复现，但别把 85.7% 当成 continuous batching 的固定数字（它明显低估了这一档）。</p>
+<p><strong>对外该引哪个数</strong>：真实引擎按到达顺序派槽位（FIFO），所以「continuous vs static」报 13 步 / <code>24/26≈92.3%</code>（对 70.6%）；14 步 / 85.7% 是本节刻意让 E 越过队首 D 的非 FIFO 变体，图 20o 画的正是这一条，只用来演示「指派策略会改变利用率」，拿它和 70.6% 比会把收益讲小。</p>
 <p>注意：这里的“利用率”是玩具口径（占用槽位步数 / 总槽位步数），真实引擎还要算
 prefill 混跑、抢占、KV 换入换出。<strong>吞吐提升不等于单请求延迟下降</strong>：排队时单请求可能更慢。</p>
 </blockquote>
@@ -2939,7 +2975,7 @@ prefill 混跑、抢占、KV 换入换出。<strong>吞吐提升不等于单请�
 <ul>
 <li>调度、KV Cache 管理更复杂；</li>
 <li>单请求延迟可能变长（尤其在排队时）；</li>
-<li>需要处理 preemption、抢占、KV 换入换出。</li>
+<li>需要处理 preemption、抢占、KV 换入换出（把某请求的 KV 腾到 CPU 内存或更低层存储、需要时再换回；机制见 §5 分页与块共享；§4.3 的 Preemption 只有一行策略名、没展开机制）。</li>
 </ul>
 <h3 id="43">4.3 调度策略<a class="headerlink" href="#43" title="Permanent link">&para;</a></h3>
 <table>
@@ -2960,7 +2996,7 @@ prefill 混跑、抢占、KV 换入换出。<strong>吞吐提升不等于单请�
 </tr>
 <tr>
 <td>Chunked prefill</td>
-<td>把长 prompt 的 prefill 切成块，和 decode 混跑，降低 TTFT 抖动</td>
+<td>把长 prompt 的 prefill 切成块，和 decode 混跑，减少长 prompt 的队头阻塞、降低 TPOT 抖动</td>
 </tr>
 <tr>
 <td>Preemption</td>
@@ -2995,22 +3031,30 @@ prefill 混跑、抢占、KV 换入换出。<strong>吞吐提升不等于单请�
 </code></pre></div>
 <ul>
 <li>每个请求维护一张 <strong>block table</strong>；</li>
-<li>只有最后一个 block 可能有内部碎片（≤ block size）；</li>
+<li>只有最后一个 block 可能有内部碎片（≤ <code>block_size-1</code>=15 token：块一旦分配就至少写入 1 个 token）；</li>
 <li>显存按需增长，外部碎片大幅减少；</li>
 <li><strong>前缀共享</strong>：相同 prompt 前缀的请求可以共享物理 block（copy-on-write）；</li>
-<li><strong>Beam search / 并行采样</strong>：分支共享已生成的 KV，写时复制。</li>
+<li><strong>Beam search / 并行采样</strong>：分支共享已生成的 KV，写时复制。
+看图先定住触发条件：<strong>COW 只在「这一步要写的块仍被别人共享」时触发</strong>。append-only 解码只写末块，装满的块永不被写——所以图 20n 红框把 COW 画在装满的共享块 <code>L0</code>/<code>P7</code> 上（箭头 <code>P7→P3</code>）是按错条件画的示意；正确触发是<strong>共享的半满末块被写</strong>，块号与复制量一律按本节账本读数。</li>
 </ul>
-<p><img alt="PagedAttention：逻辑块、block table、物理块与 COW" src="../../diagrams/20n_paged_attn.landscape.png" /></p>
+<p><img alt="PagedAttention：逻辑块、block table、物理块与 COW（注意：红框的触发条件、块号与复制量有误，读数以本节账本为准，见下方图注更正）" src="../../diagrams/20n_paged_attn.landscape.png" /></p>
+<blockquote>
+<p><strong>图注更正（红框的块号与复制量按本段读，机制不变）</strong>：红框要表达的是「写共享块触发 COW」，但标签标错了——触发点画在<strong>装满</strong>的共享块 <code>L0</code>/<code>P7</code> 上、一次复制 16 token；append-only 解码只写末块，装满的块永不被写，所以这种情形不存在。正确读法是「<strong>共享的半满末块</strong>被写、只复制它已写的 4 个 token」：<code>ref(P11)</code> 2→1、<code>ref(P9)=1</code>。红框自带的那组读数（<code>L0</code>/<code>P7</code> 整块 16 token、<code>P3</code>）<strong>整组作废、不要拿去换算</strong>——<code>P3</code> 在账本里根本不存在（A 的第三块是 <code>P9</code>），照红框换算出来的是另一组数；块号与复制量一律以下面账本 <code>[P7,P2,P11]→[P7,P2,P9]</code>、复制 4 token 为准，该图待按正确触发条件（写共享的半满末块）重绘。</p>
+</blockquote>
 <p>图里的具体账本（block=16 token）：</p>
+<blockquote>
+<p>先定义 <code>ref</code>：<code>ref(b)</code> 是物理块 <code>b</code> 的<strong>引用计数</strong>，即有几个请求的 block table 指向它（fork 时每块 +1，COW 或释放时 -1）。<code>ref=1</code> = 私有块，随便写；<code>ref&gt;1</code> = 被共享，写它必须先复制。下面账本里的 <code>ref</code> 都按这个含义读。</p>
+</blockquote>
 <ul>
 <li>请求 A 长度 52 → <code>ceil(52/16)=4</code> 个逻辑块，容量 64，内部碎片 12；</li>
 <li>请求 B 长度 36 → 3 个逻辑块，容量 48，内部碎片 12；</li>
-<li>A 的 block table <code>[P7,P2,P9,P5]</code>，B 的 <code>[P7,P2,P11]</code>：前两块共享，第三块私有；</li>
-<li><code>ref(P7)=ref(P2)=2</code>；B 要写 P7 时触发 <strong>copy-on-write</strong>：分配 P3、复制 16 个 token、
-  <code>ref(P7)</code> 从 2 降到 1。图里画的是 <strong>COW 前</strong>状态，COW 后 B 的 block table 变成 <code>[P3,P2,P11]</code>；</li>
+<li>A 的 block table <code>[P7,P2,P9,P5]</code>，B 的 <code>[P7,P2,P11]</code>（这是两者都停止增长时的<strong>最终态</strong>；A 不是独立长起来的，见下面第 4 个「-」条（<code>ref(P7)=ref(P2)=2</code> 那条））：前两块共享，第三块私有；</li>
+<li><code>ref(P7)=ref(P2)=2</code>（A、B 最终只共享前 <strong>32</strong> 个 token 的前缀：<code>P7</code>、<code>P2</code> 都装满 16、<code>ref=2</code>；<code>P11</code> 是 B 的末块，只装了 4 个 token 且 <code>ref=1</code>，A 的末块 <code>P5</code> 同理私有——36 token 的共享只存在于 A 写第 37 个 token 之前的中间态）；A 的前 36 个 token 与 B 共享同一段前缀（相当于 A 从 B fork 出来），所以写第 37 个 token 时 A 的末块正是共享的半满块 <code>P11</code>（这是中间态 <code>[P7,P2,P11]</code>，三块 <code>ref</code> 都是 2），写它就触发 <strong>copy-on-write</strong>：分配 <code>P9</code>、把 <code>P11</code> 已写的 4 个 token 复制过去、<code>ref(P11)</code> 从 2 降到 1，A 的 block table 变成 <code>[P7,P2,P9]</code>（<code>P9</code> 从此 <code>ref=1</code>；A 再长到 52 token 才补上私有的 <code>P5</code>）；图 20n 红框的读数一律作废，以本账本为准（触发点、块号与复制量的正确读法见上方图注更正，即紧接图 20n 那段）」。</li>
 <li>逻辑块总数 7，物理块只用了 5 个（共享省下 2 块）。</li>
 </ul>
 <blockquote>
+<p>上面那串块号按<strong>时间顺序</strong>只有三态，不要横向比对：<code>[P7,P2,P11]</code>（A 从 B <strong>fork</strong> 出来时 B 已长到 36 token，<code>P11</code> 是共享的半满末块、三块 <code>ref</code> 都是 2；若 fork 发生在 32 token，<code>P7</code>/<code>P2</code> 已装满，A 写第 33 个 token 时 <code>need&gt;len(blocks)</code> 只会 <code>_take()</code> 一个新块、根本不碰共享块，COW 永远不会触发）→ 写第 37 个 token 触发 COW，换成 <code>[P7,P2,P9]</code> → 长到 52 token 补私有块，成 <code>[P7,P2,P9,P5]</code>。<strong>fork</strong> = 把父序列的 block table 整份复制给子序列，块号共享、每块 <code>ref</code> 加 1，不复制 KV 数据（实现见文末 <code>fork()</code>；COW 就发生在 fork 之后第一次写共享末块）。</p>
+<p>COW 的触发条件只有一条：<strong>这一步要写的块还被别人共享</strong>。append-only 解码只写末块，所以装满的 <code>P7</code>/<code>P2</code> 永远不会被写，也就不会触发 COW（图 20n 红框按上文图注更正读：写的是共享的<strong>半满末块</strong> <code>P11</code>、复制 4 token，不是装满的 <code>L0</code>/<code>P7</code> 整块 16 token；块号与 <code>ref</code> 可对照本账本逐项验算）；上例若换成 B 先追加，COW 就发生在 B 的末块上。这与动手清单 <code>append_token</code> 里「末块被共享才 COW」是同一个条件。</p>
 <p>碎片只出现在每个请求的<strong>最后一个块</strong>，上限是 <code>block_size-1=15</code> token；
 外部碎片基本消失，因为物理块不需要连续。</p>
 <p>PagedAttention 不是「让计算更快」，而是<strong>让 KV Cache 的显存管理更高效</strong>：更高并发、更少浪费、支持共享。它是 vLLM 的核心创新之一。</p>
@@ -3044,13 +3088,13 @@ prefill 混跑、抢占、KV 换入换出。<strong>吞吐提升不等于单请�
 </tr>
 <tr>
 <td><strong>SGLang</strong></td>
-<td>RadixAttention 前缀缓存 + 前端 DSL</td>
+<td>RadixAttention 前缀缓存（前缀树复用共享前缀的 KV，见 §10）+ 前端 DSL（用 Python 直接写「生成/选择/并行」控制流，调度由运行时生成，不必手写 scheduler）</td>
 <td>生态较新</td>
 <td>多轮/Agent、大量共享前缀</td>
 </tr>
 <tr>
 <td><strong>TensorRT-LLM</strong></td>
-<td>图编译 + NVIDIA 插件 + in-flight batching</td>
+<td>图编译 + NVIDIA 插件 + in-flight batching（= §4.2 的 continuous batching，TensorRT-LLM 的叫法）</td>
 <td>编译/适配成本高、硬件绑定</td>
 <td>稳定模型 + NVIDIA、追求极致性能</td>
 </tr>
@@ -3064,6 +3108,7 @@ prefill 混跑、抢占、KV 换入换出。<strong>吞吐提升不等于单请�
 <ul>
 <li><strong>AllReduce</strong>：所有卡把梯度/激活求和，结果广播给所有卡；</li>
 <li><strong>AllToAll</strong>：每张卡向其他卡发送不同的数据切片；MoE 的 EP 用它做 token 路由；</li>
+<li><strong>ReduceScatter / AllGather</strong>：AllReduce 的两半，§7.1 的 TP 账本要用。<strong>ReduceScatter</strong> 把每卡的 <code>[B,T,d_model]</code> 切成 <code>N</code> 份、每份 <code>S/N</code>，第 <code>i</code> 份发给卡 <code>i</code> 去归约，结果每卡只留 <code>1/N</code> 的完整和；<strong>AllGather</strong> 再把这 <code>N</code> 份拼回完整张量。ring 实现下每张卡要发 <code>N-1</code> 份、每份 <code>S/N</code>，合计 <code>(N-1)/N·S</code>；一次 AllReduce = 两阶段相加 ≈ <code>2(N-1)/N·S</code>，<code>N</code> 大时收敛到 <code>2S</code>（§7.1 的「每层 4S = 2 次 AllReduce × 2S」就是这么来的）。</li>
 <li><strong>TP（张量并行）</strong>：层内切分，每层后通常要 AllReduce；</li>
 <li><strong>PP（流水线并行）</strong>：按层切 <strong>stage</strong>（一段连续的层），<strong>micro-batch</strong>（切成小批）流水；
   <strong>bubble</strong> 是流水线空转；</li>
@@ -3096,8 +3141,8 @@ prefill 混跑、抢占、KV 换入换出。<strong>吞吐提升不等于单请�
 <td>超大 MoE 推理；代价是通信与负载均衡</td>
 </tr>
 <tr>
-<td><strong>多实例复制</strong></td>
-<td>每个 GPU/节点跑完整模型</td>
+<td><strong>DP（数据并行；推理侧就是 §11.1 的「推理服务（多实例）」，不做梯度同步）</strong></td>
+<td>每个 GPU/节点跑完整模型，各吃一部分请求</td>
 <td>吞吐扩展、弹性</td>
 </tr>
 <tr>
@@ -3111,7 +3156,7 @@ prefill 混跑、抢占、KV 换入换出。<strong>吞吐提升不等于单请�
 <p><strong>TP/PP 通信账本（记住数量级）</strong>：</p>
 <ul>
 <li><strong>TP（推理，只看前向）</strong>：每个 Transformer 层前向有 2 次 AllReduce（attention 输出投影后、
-  FFN 下投影后），每次张量 <code>[B, T, d_model]</code>；ring all-reduce 每卡通信量约 <code>2S</code>，
+  FFN 下投影后），每次张量 <code>[B, T, d_model]</code>；ring all-reduce 每卡通信量约 <code>2S</code>（推导：<code>N</code> 卡 ring 分两阶段——先 reduce-scatter（每卡只留 1/N 的归约结果，走 <code>(N-1)/N·S</code>）、再 all-gather（把各卡的 1/N 拼回完整张量，走 <code>(N-1)/N·S</code>）——合计 <code>2(N-1)/N·S</code>，<code>N</code> 大时收敛到 <code>2S</code>；这是<strong>一次</strong> AllReduce 的每卡量，<code>4S</code> 来自上一句的「每层 2 次 AllReduce × 2S」，不是 ring 公式直接产出），
   所以每层前向约 <code>4S</code>。<code>S = B·T·d_model·bytes</code>。训练还要反向，再加 <code>4S</code>，合计约 <code>8S</code>。</li>
 <li><strong>PP</strong>：在 stage 边界传 <code>[B, T, d_model]</code> 激活，每个 micro-batch 一次 send/recv；
   通信量不大，但<strong>延迟</strong>和 <strong>bubble</strong> 是主要成本。bubble 比例约
@@ -3132,12 +3177,13 @@ prefill 混跑、抢占、KV 换入换出。<strong>吞吐提升不等于单请�
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>KV = 1.25 GiB ≈ 1.34 GB
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>25 GB/s（RDMA 200Gb/s）  → 1.34 / 25  ≈ 53.7 ms
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>50 GB/s（IB 400Gb/s）    → 1.34 / 50  ≈ 26.8 ms
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>100 GB/s（NVLink/高速 RDMA）→ 1.34 / 100 ≈ 13.4 ms
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>300 GB/s（A100 NVLink 单向有效）→ 1.34 / 300 ≈ 4.5 ms（比 400Gb/s IB 快约 6×）
 </code></pre></div>
 <blockquote>
 <p>传输时间是<strong>新增成本</strong>。长 prompt 的 prefill 可能几百 ms，KV 传输几十 ms 仍划算；
 但小模型/低并发时，传输和调度开销可能吃掉收益。<strong>不要默认 PD 分离更快，要用带宽账本验证。</strong>
-另外，KV 传输带宽是单向有效带宽，和网卡标称的双向带宽不是一回事。</p>
+另外，KV 传输带宽是单向有效带宽，和网卡标称的双向带宽不是一回事。
+图 20p 账本第 3 行 <code>100 GB/s(NVLink/高速 RDMA): 13.4 ms</code> 是作废读数（PNG 未按 300 GB/s 重绘），不要拿它算：<code>快约 6×</code> 只在 300 GB/s 口径下成立（50→300），一律以上面文本账本 <code>300 GB/s → 4.5 ms</code> 为准。</p>
 </blockquote>
 <h2 id="8">8. 量化<a class="headerlink" href="#8" title="Permanent link">&para;</a></h2>
 <h3 id="81">8.1 常见方案<a class="headerlink" href="#81" title="Permanent link">&para;</a></h3>
@@ -3172,6 +3218,11 @@ prefill 混跑、抢占、KV 换入换出。<strong>吞吐提升不等于单请�
 </tr>
 </tbody>
 </table>
+<blockquote>
+<p>记号读法：<strong>W</strong>=weight（权重）、<strong>A</strong>=activation（激活），后面的数字是位宽。<code>W4A16</code> = 权重 INT4、激活 FP16（即只量化权重）；<code>W8A8</code> = 权重与激活都 INT8；<code>FP8</code> = 权重与激活都用 FP8（E4M3）。<code>amax</code> = 某个量化粒度内的<strong>绝对值最大值</strong>，scale 通常取 <code>amax / 该位宽可表示的最大值</code>；per-head / per-block 就是每个 head / 每个 block 各算一个 amax。</p>
+<p><strong>粒度从粗到细一条线</strong>：<strong>per-tensor</strong>（整个张量一个 amax，元数据最省、最不准）→ <strong>per-channel</strong>（每个输出通道/每列权重一个）→ <strong>per-group</strong>（每 G 个元素一组，常见 G=64/128）→ <strong>per-block</strong>（每个 block 一个，KV 分页里就是一个物理 block 的 16~128 个元素）→ <strong>per-head</strong>（每个 KV head 一个，KV Cache 专用）。§8.3 第 3 步的「per-channel / per-group」就是权重侧这两档：越细越准，kernel 与元数据越贵。</p>
+<p><strong>PTQ 与校准集</strong>：<strong>PTQ</strong>（post-training quantization，训练后量化）= 不做反向传播、只靠样本统计量定 scale 的量化，AWQ / GPTQ / SmoothQuant 都属于 PTQ（QAT 是它的反面：训练中模拟量化）；<strong>校准集</strong>（calibration set）= 那批只跑前向、用来统计 <code>amax</code> 与通道敏感度的样本，通常几百条、不需要标签、但要覆盖长尾输入——它不进梯度却决定 scale，所以 §8.2 的「校准集不具代表性会掉点」与 §8.3 第 2 步说的是同一件事。</p>
+</blockquote>
 <h3 id="82">8.2 精度问题<a class="headerlink" href="#82" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>outlier</strong>：少数极大值拉大 scale，导致整体精度下降；</li>
@@ -3252,7 +3303,7 @@ per-channel / per-block）越细，精度越好，但元数据和 kernel 复杂�
 <ul>
 <li>位置 1：<code>p=0.7, q=0.5</code>，比值 <code>1.4</code> → 接受；</li>
 <li>位置 2：<code>p=0.4, q=0.6</code>，比值 <code>0.667</code> → 以 0.667 概率接受（本例接受）；</li>
-<li>位置 3：<code>p=[0.2,0.8]</code>、<code>q=[0.5,0.5]</code>，X 的比值 <code>0.4</code>、Y 的比值 <code>1.6</code> → X 被拒绝；</li>
+<li>位置 3：draft 在这个位置采到的是 X；判定只对被采到的这一个 token 做一次——<code>p[X]=0.2</code>、<code>q[X]=0.5</code>，比值 <code>0.2/0.5=0.4</code> → 以 <code>1-0.4=0.6</code> 的概率拒绝（本例拒绝）。Y 的比值 <code>1.6</code> 不参与判定，Y 不是 draft 采出来的那个 token；</li>
 <li>拒绝后从 <code>max(0,p-q)=[0,0.3]</code> 归一化得到 <code>[0,1]</code>，重采样输出 Y；</li>
 <li>本轮输出 <code>t1,t2,Y</code> 共 3 个 token。</li>
 </ul>
@@ -3285,7 +3336,7 @@ per-channel / per-block）越细，精度越好，但元数据和 kernel 复杂�
 <ul>
 <li><strong>Medusa</strong>：多个解码头并行预测未来 token；不需要独立 draft 模型，但要训练额外头，代价是显存和训练成本。</li>
 <li><strong>EAGLE</strong>：在特征层做 draft，复用目标模型特征；接受率通常更高，实现更复杂。</li>
-<li><strong>Lookahead decoding</strong>：Jacobi 迭代 + 前瞻/验证分支；n-gram pool 来自迭代轨迹，不是从 prompt 检索。</li>
+<li><strong>Lookahead decoding</strong>：Jacobi 迭代（把未来若干位置当成未知量，先用上一轮结果并行猜一遍、再迭代修正的不动点式迭代）+ 前瞻/验证分支；n-gram pool 来自迭代轨迹，不是从 prompt 检索。</li>
 <li><strong>Prompt lookup / n-gram decoding</strong>：从输入/上下文里检索重复 n-gram 作为 draft；不需要额外模型，
   对复制/重复多的任务有效，泛化有限。</li>
 </ul>
@@ -3308,7 +3359,7 @@ per-channel / per-block）越细，精度越好，但元数据和 kernel 复杂�
 </tr>
 <tr>
 <td>Chunked prefill</td>
-<td>长 prompt 分块，降低 TTFT 抖动</td>
+<td>长 prompt 分块，减少队头阻塞、降低 TPOT 抖动（被切块请求自身 TTFT 可能变长）</td>
 <td>调度复杂</td>
 </tr>
 <tr>
@@ -3373,7 +3424,8 @@ per-channel / per-block）越细，精度越好，但元数据和 kernel 复杂�
 </tbody>
 </table>
 <blockquote>
-<p>VLM 的 LLM 部分仍有 KV Cache；扩散模型没有自回归 KV Cache，不要把 LLM 推理的优化直接套上去。</p>
+<p>VLM 的 LLM 部分仍有 KV Cache；扩散模型没有自回归 KV Cache，不要把 LLM 推理的优化直接套上去。
+表里两个扩散名词补一句（本节不展开扩散细节，够读表即可）：<strong>step 蒸馏</strong>指蒸馏「去噪<strong>步数</strong>」——教师几十步的采样轨迹压成学生 4~8 步走完，省的是<strong>算力与延迟</strong>，不是模型大小；<strong>并行采样</strong>指扩散没有自回归的逐 token 依赖，一步里整段 latent（以及多个候选/多个 batch）能一起算，省的是<strong>串行步数与端到端时延</strong>，代价是单步算力更密。</p>
 </blockquote>
 <h2 id="11-slo">11. 在线服务与 SLO<a class="headerlink" href="#11-slo" title="Permanent link">&para;</a></h2>
 <h3 id="111">11.1 服务分层<a class="headerlink" href="#111" title="Permanent link">&para;</a></h3>
@@ -3430,7 +3482,7 @@ per-channel / per-block）越细，精度越好，但元数据和 kernel 复杂�
 <tr>
 <td>Kernel/GPU</td>
 <td>单步变慢</td>
-<td>Nsight、GPU 利用率、时钟/温度</td>
+<td>nsys/ncu（= Nsight Systems / Nsight Compute：nsys 看时间线找空泡、ncu 看单 kernel）、GPU 利用率、时钟/温度</td>
 </tr>
 <tr>
 <td>网络</td>
@@ -3449,7 +3501,7 @@ per-channel / per-block）越细，精度越好，但元数据和 kernel 复杂�
 <li><strong>TTFT 高</strong>：prompt 太长、prefill 排队、chunked prefill 配置不当；</li>
 <li><strong>TPOT 高</strong>：batch 太大导致显存压力、KV 读带宽不足、preemption；</li>
 <li><strong>吞吐低</strong>：batch 不够、并行度不足、Kernel 未跑满；</li>
-<li><strong>P99 抖动</strong>：抢占、GC、网络抖动、热点请求。</li>
+<li><strong>P99 抖动</strong>：抢占、GC（如 Python/Go 的垃圾回收停顿，或显存块的周期性回收）、网络抖动、热点请求。</li>
 </ul>
 <h2 id="13">13. 容量与成本<a class="headerlink" href="#13" title="Permanent link">&para;</a></h2>
 <h3 id="131-littles-law">13.1 Little's Law 与容量<a class="headerlink" href="#131-littles-law" title="Permanent link">&para;</a></h3>
@@ -3457,8 +3509,7 @@ per-channel / per-block）越细，精度越好，但元数据和 kernel 复杂�
 </code></pre></div>
 <p><strong>注意</strong>：Little's Law 给的是<strong>平均并发</strong>，不能直接拿平均延迟去估 P99 容量。
 在 P99 SLO 下，要用 SLO 对应的尾延迟 + 安全系数。</p>
-<p>例：50 req/s × 平均 2s = 100 平均并发；若单实例在 P99 下只能扛 20 并发，
-则至少需要 5 个实例，再加 headroom。</p>
+<p>例（两边必须同一口径）：平均口径——50 req/s × 平均 2s = 100 平均并发，若单实例平均能扛 20 并发，则约需 5 个实例；这只是平均账，不能当 P99 容量。P99 口径要换尾延迟重算：设 P99 端到端延迟 6s、单实例在 P99 下可承载 20 并发，则所需并发 ≈ 50 × 6 = 300，实例数 ≈ 300 / 20 = 15，再加 headroom——同一份流量，平均口径 5 个、P99 口径 15 个，相差 3 倍（15/5），不能说成「差一个量级」；精确值要用排队模型（M/G/k）或实测曲线复核。</p>
 <h3 id="132-token">13.2 单位 token 成本<a class="headerlink" href="#132-token" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>每百万 token 成本 = GPU 小时成本 / (tokens/秒 × 3600) × 1,000,000
 </code></pre></div>
@@ -3565,7 +3616,7 @@ per-channel / per-block）越细，精度越好，但元数据和 kernel 复杂�
 <p>验收标准：</p>
 <ol>
 <li>能画出「batch/T → KV 显存」曲线，并解释 PagedAttention 在哪个环节减少了浪费；</li>
-<li>allocator 的 alloc/append/free/fork/COW 测试通过，能报出内部碎片率；</li>
+<li>allocator 的 alloc/append/free/fork/COW 测试通过，能报出内部碎片率——注意上面骨架的 COW 只换块号、<strong>不复制被改写块的 KV</strong>，这些断言证明的是「块号唯一 + <code>ref</code> 计数对」，不是 COW 语义；要真验 COW，先在 <code>blocks[-1] = self._take()</code> 之前把旧块已写的 token 拷进新块，再断言新块前 4 个 token 的 KV 与旧块一致；</li>
 <li>batching 模拟能给出 static vs continuous 的吞吐、平均延迟、P99 对比。</li>
 </ol>
 <h2 id="_3">相关图<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
@@ -3573,7 +3624,8 @@ per-channel / per-block）越细，精度越好，但元数据和 kernel 复杂�
 <ul>
 <li><code>20l_pd_roofline</code> — prefill vs decode 的 roofline 位置与算术强度；</li>
 <li><code>20m_kv_growth</code> — KV Cache 随序列/batch 的增长曲线与权重交叉点；</li>
-<li><code>20n_paged_attn</code> — 逻辑块 / block table / 物理块 / COW；</li>
+<li><code>20n_paged_attn</code> — 逻辑块 / block table / 物理块 / COW；
+  （红框把 COW 画在装满的块上、复制 16 token，与 append-only 机制和账本不符：该处读数作废，一律按 §5.2 账本 <code>[P7,P2,P11]→[P7,P2,P9]</code>、复制 4 token，待重绘）</li>
 <li><code>20o_batching</code> — static vs continuous batching 时间线；</li>
 <li><code>20p_pd_disagg</code> — PD 分离拓扑与 KV 传输账本；</li>
 <li><code>20q_spec_verify</code> — 投机解码 draft/verify 流程与接受/拒绝示例。</li>
