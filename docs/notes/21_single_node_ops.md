@@ -36,7 +36,8 @@ graph TD
   F --> I["Profiling<br/>定位并优化一个 Kernel 的瓶颈"]
   G --> I
   H --> I
-  E --> J["编译与工具链（旁支）<br/>MLIR/TVM/XLA/Triton/CUTLASS"]
+  C --> J["编译与工具链（旁支）<br/>图优化 §10.1（IR / pass / 算子融合 / 内存规划）+ 算子级 codegen §10.2<br/>MLIR/TVM/XLA/Triton/CUTLASS"]
+  E --> J
   J -.-> I
 ```
 
@@ -50,7 +51,8 @@ AI Infra 的所有上层系统，最终都要落到单卡上的 Kernel：
 - 训练系统的 MFU，取决于每个 Kernel 的实际吞吐；
 - 推理系统的吞吐和延迟，取决于 Attention/GEMM/访存效率；
 - 量化、投机解码、PagedAttention，最终都要有 Kernel 支持；
-- 集群层面的问题，也常表现为「单机 Kernel 没跑满」。
+- 集群层面的问题，也常表现为「单机 Kernel 没跑满」
+名词速查（后文反复用到）：**MFU** = Model FLOPs Utilization，实际达成的 FLOPs/s ÷ 峰值算力，衡量训练把卡用满了多少；**投机解码** = 小模型先草拟几个 token、大模型一次并行验证，用并行换掉大模型的串行步数；**PagedAttention** = 把 KV Cache 切成固定大小的 page 按需分配（类似虚拟内存分页），减少显存碎片和预留浪费。。
 
 **一句话：不理解单机，就无法判断瓶颈到底在计算、访存、通信还是调度。**
 
@@ -79,11 +81,11 @@ GPU 不是「更快的 CPU」，而是**为吞吐设计的并行处理器**：
 
 | 层级 | 延迟（数量级） | 带宽（数量级） | 特点 |
 |---|---|---|---|
-| 寄存器 | ~1 cycle | 极高 | 每线程私有，用多了会降低 occupancy |
-| Shared Memory | ~20–30 cycles | 每 SM 很高 | 软件管理，GEMM/Attention 的复用核心 |
-| L1 Cache | ~30 cycles | 高 | 与 Shared Memory 共享片上资源 |
-| L2 Cache | ~200 cycles | 数 TB/s | 全 GPU 共享 |
-| HBM | ~400–800 cycles | 1.5–3.5 TB/s | 容量大，但相对计算很慢 |
+| 寄存器 | ~1 cycle | 极高 | 每线程私有，用多了会降低 occupancy（occupancy = 一个 SM 上同时驻留的 warp 数 ÷ 最大 warp 数，详见 §3.1） |
+| Shared Memory | ~20–30 cycles | 约 0.2 TB/s（**每 SM** 口径；A100 108 SM 聚合 ≈ 10–20 TB/s，**全卡**口径） | 软件管理，GEMM/Attention 的复用核心 |
+| L1 Cache | ~30 cycles | 约 10–20 TB/s（**全卡聚合**，与 Shared 共用同一片上带宽；折到每 SM ≈ 0.2 TB/s） | 与 Shared Memory 共享片上资源 |
+| L2 Cache | ~200 cycles | 约 5–8 TB/s（**全卡聚合**；折到每 SM ≈ 0.05–0.07 TB/s） | 全 GPU 共享 |
+| HBM | ~400–800 cycles | 1.5–3.5 TB/s（**全卡**口径） | 容量大，但相对计算很慢 |
 | NVLink | — | 数百 GB/s 到 ~1 TB/s | 多卡通信 |
 | PCIe | — | 数十 GB/s | GPU-CPU / 跨节点常见瓶颈 |
 
@@ -98,6 +100,7 @@ GPU 不是「更快的 CPU」，而是**为吞吐设计的并行处理器**：
 - L2 约 `40–50 MB`（A100 40 MB、H100 50 MB），全 GPU 共享；
 - HBM 单卡 `40–80 GB`，带宽 `1.55–3.35 TB/s`（A100 40GB 1.55、A100 80GB 2.0、H100 SXM 3.35）；
 - NVLink 4 约 `900 GB/s 双向`（H100），PCIe 4 x16 约 `64 GB/s 双向`。
+> **带宽口径**：本表与 20h 图同一列里的数字不是同一个口径——Shared Memory / L1 的「~10–20 TB/s」、L2 的「~5–8 TB/s」、HBM 的「1.5–3.5 TB/s」都是**全卡聚合**；换算到单 SM，Shared 只有约 `0.2 TB/s`（`128 B/cycle × ~1.4 GHz ≈ 180 GB/s`）。拿「每 SM 很高」直接和 HBM 的 3.35 TB/s 比会差两个数量级，比较前先统一口径。
 
 > **单位口径**：厂商常用十进制 `GB/TB`（1 GB = 10^9 B），操作系统/`nvidia-smi` 常显示二进制 `GiB`
 > （1 GiB = 2^30 B = 1.0737 GB）。算显存账本时先统一单位，再比较“权重 vs KV”，
@@ -118,7 +121,7 @@ Grid
 - **occupancy** = 一个 SM 上同时驻留的 warp 数 / 最大值。occupancy 高，能更好地隐藏访存延迟；
 - 但 occupancy 不是越高越好：寄存器、Shared Memory 用得多，会限制驻留 warp 数。
 
-**occupancy 算例**：SM 有 64K 寄存器、100 KB Shared Memory（示例值，非真实上限）；block 256 线程、每线程 64 寄存器、
+**occupancy 算例**：SM 有 64K 寄存器、100 KB Shared Memory（口径：**64K 寄存器是 A100 真实值**——65536 个 32-bit 寄存器 = 256 KB/SM；**100 KB Shared 只是便于手算的示例值**，A100 真实可配到 164 KB/SM、H100 228 KB/SM。下面这个 37.5% 只在「Shared 恰好 100 KB」的假设下成立，§5.2 沿用同一组假设，两处可互相对照，但都不是「A100 上必然出现的 occupancy」）；block 256 线程、每线程 64 寄存器、
 每 block 32 KB Shared Memory →
 
 - 寄存器限制：`256 × 64 = 16K` 寄存器/block → `64K / 16K = 4` blocks；
@@ -176,6 +179,7 @@ vec_add<<<(n + 255) / 256, 256>>>(a, b, c, n);
 | GEMM | 高（随矩阵规模增长） | 大矩阵偏算力 | tiling、Tensor Core、流水 |
 | Attention（prefill） | 中等 | 大 T 偏算力，小 T 偏访存 | FlashAttention、分块 |
 | Attention（decode, batch=1） | 很低 | 带宽（权重 + KV） | batching、量化、KV 压缩 |
+> **GEMM 是什么（本节起高频使用）**：GEMM = General Matrix Multiply，通用矩阵乘，即 `C[M,N] = A[M,K] @ B[K,N]`（沿 K 维求和）。深度学习里绝大多数 FLOPs 都是 GEMM 或能化成 GEMM 的形式（全连接、卷积 im2col、Attention 的 `Q@Kᵀ` 与 `P@V`）；§0 依赖图的 E 节点、§4.3 的 4096³ 例子、§7 的 grouped GEMM 指的都是它。它「算术强度高」的原因：算 `2MNK` 次乘加只需读 `(MK+KN)` 个元素，K 越大每个字节被复用得越多。
 
 ### 4.3 一个可验算的 Roofline 例子
 
@@ -189,6 +193,7 @@ ridge point ≈ 312e12 / 1.55e12 ≈ 201 FLOP/byte
 
 - **4096³ FP16 GEMM**：FLOPs ≈ `2 × 4096³ ≈ 1.37e11`；搬运字节 ≈ `3 × 4096² × 2 ≈ 1.0e8`；
   AI ≈ **1365 FLOP/byte** ≫ 201 → **compute-bound**。
+> **乘数 3 的来历**：`3N²` = 读 A（`N²` 个元素）+ 读 B（`N²`）+ 写回 C（`N²`），各只从 HBM 搬一次，再乘 2 B/元素（FP16），所以是 `3 × 4096² × 2`；不是 `2N²`（漏了 C 写回）也不是 `4N²`（多算一遍）。这是「理想复用」下的**下界**。§5.2 会给出另两个口径：把 tile 复用也算成 HBM 的 `2N³/BM×2 ≈ 2.1e9 B`、完全不复用的朴素实现 `8192×4096²×2 ≈ 2.7e11 B`（比这里的 `1.0e8` 大 2700 倍）。roofline 只该用这里的 `3N²×2` 下界口径，三者关系在 §5.2 末尾统一说明。
 - **70B decode（batch=1）**：每 token 约 `2 × 70e9 = 1.4e11` FLOPs；要读 FP16 权重约 140 GB；
   AI ≈ **1 FLOP/byte** ≪ 201 → **memory-bound**。
 
@@ -210,6 +215,7 @@ ridge point ≈ 312e12 / 1.55e12 ≈ 201 FLOP/byte
 两者分居 ridge(`≈201`)两侧,所以一个 compute-bound、一个 memory-bound。
 
 > **decode 阶段是典型的 memory-bound**：每生成一个 token，要把模型权重和 KV Cache 从 HBM 读一遍，算力大量闲置。这就是为什么推理优化里 batching、量化、GQA 如此重要。
+> **prefill 是什么（和 decode 成对）**：推理分两段。**prefill** 把整段 prompt（长度 T）一次性并行送进模型，一遍前向就产出所有 prompt token 的 KV，计算量约 `2·T·P`（**这里的 P 是参数量**；与 §6.1 里表示 softmax 概率矩阵的 `P = softmax(S)` 重名，按上下文和量纲区分），T 大时是**算力**瓶颈、能喂满 Tensor Core；**decode** 再逐 token 自回归，每步只算 1 个新 token、却要读一遍权重 + KV，恒为**带宽**瓶颈。§4.2 那两行的差别就来自这里：同一个 Attention，prefill 的 T 是可并行的大矩阵，decode 的 T 恒为 1。§6 整节算的都是 prefill（FlashAttention 切的是 prompt 这一段）。
 
 ## 5. 访存优化与 GEMM
 
@@ -250,7 +256,7 @@ for (int k0 = 0; k0 < K; k0 += BK) {
 
 账本：`A_tile 128×16=2048` 元素 = `4 KiB`，`B_tile 16×128=2048` 元素 = `4 KiB`，
 Shared 合计 `(2048+2048)×2 B=8192 B=8 KiB`；`C_tile 128×128` 放寄存器/累加器，
-不占 Shared Memory。注意:20e 的 16K 是整块总预算;C_tile 的 16K 只是累加器,加上 A/B/临时寄存器后整块超过 16K,occupancy 会低于 4 blocks。
+不占 Shared Memory。注意:20e 的 16K 是每个 block 的寄存器用量(256 线程×64 寄存器/线程),SM 一级的预算才是 64K;C_tile 的 16K 只是累加器(128×128=16384 个,分给 256 线程就是每线程 64 个),加上 A/B fragment 与地址/临时寄存器后每线程约 88–96 个,每 block 就是 `256×~90 ≈ 23K` 寄存器,SM 的 64K 只放得下 **2 块**(16 warps,occupancy ≈ 25%);若像 CUTLASS（NVIDIA 的 CUDA C++ 模板库，工业级 GEMM/Attention 实现，选型对比见 §10.2）的 128×128 实现那样用到 ~168 寄存器/线程,每 block 要 `256×168 ≈ 43K`,只剩 **1 块**(8 warps,≈ 12.5%)。Shared 这条不紧(每 block 8 KiB,沿用 §3.1 的 100 KB 假设 `100/8=12` 块;换成 A100 真实的 164 KB 则 ≈ 20 块,仍是寄存器先到),取小者仍是寄存器。所以 §3.1 的 `64K/16K=4`(只把 C_tile 当寄存器、Shared 取 100 KB 示例值)在这里不适用,换算是「SM 寄存器总数 ÷(每线程寄存器 × block 线程数)」再取整。
 
 ![GEMM tiling：分块、K 循环与复用账本](../diagrams/20i_gemm_reuse.landscape.png)
 
@@ -270,6 +276,7 @@ Shared 合计 `(2048+2048)×2 B=8192 B=8 KiB`；`C_tile 128×128` 放寄存器/�
 > - **总读取减少倍数** `2BM·BN/(BM+BN)=128`，还额外乘了朴素实现每个输出读 A、B 两遍。
 >
 > 面试时说“平均每个输出从 2K 次读取降到 64 次，约 128×”最准确。
+> **两套账口径不同，不要拿 64 去代 ridge**：64 次/输出是「算法层面的加载次数」，数的是 A/B tile 在 Shared Memory / L1 / L2 里被复用的次数，并不等于 HBM 流量。喂给 roofline 的只能是 HBM 字节：理想下限是 §4.3 的 `3N²×2 ≈ 1.0e8 B`（A、B 各从 HBM 读一次、C 写回一次，合计 `3N²×2` 字节，AI≈1365）；tile 在 Shared Memory 内已经复用、只差「跨 block 的 L2 复用」这一层时的字节上界是 `2N³/BM×2 ≈ 2.1e9 B`（AI≈64，也就是把 64 次读全算成 HBM 的那个算法）；真正的「完全不复用」是「优化层次」第 1 层的朴素实现：每个输出读 `2K=8192` 次，`8192×4096²×2 B ≈ 2.7e11 B`（AI≈0.5），比这里大 128 倍。**三个 AI 该怎么读**：能直接喂 roofline 的只有 `1.0e8 B` 这个下界（AI≈1365）；`2.1e9 B`（AI≈64）和 `2.7e11 B`（AI≈0.5）都是把片上/寄存器里的复用也算进「搬运字节」的保守口径，按这两个口径算，AI 会掉到 ridge 201 以下、被判成 memory-bound——那是口径错，不是硬件事实。真实 4096³ FP16 的 HBM 流量在 `1.0e8`（理想下界）与 `2.1e9`（跨 block 不复用上界）之间、且更靠近下界（tile 内复用与 L2 跨 block 复用都在起作用），有效 AI 仍 ≫ 201；A100 上实测接近峰值算力，也从正面印证 compute-bound。所以 §4.3 的结论不变，但依据是「口径正确 + 实测」，不是「64 落在某个区间里」。**记法：§5.2 的 64 次衡量片上复用因子，roofline 只吃 HBM 字节。**
 
 优化层次：
 
@@ -278,7 +285,7 @@ Shared 合计 `(2048+2048)×2 B=8192 B=8 KiB`；`C_tile 128×128` 放寄存器/�
 3. Register blocking：每个线程算多个输出，进一步提高复用；
 4. 双缓冲 / 异步拷贝：搬下一块的同时算当前块；
 5. Tensor Core：用 `mma` 指令做矩阵乘加；
-6. CUTLASS / Triton：工业级模板或 DSL，自动处理很多细节。
+6. CUTLASS / Triton：工业级模板或 DSL，自动处理很多细节（CUTLASS = CUDA C++ 模板库；Triton = 用 Python 写 Kernel 的 DSL，语法见 §5.4、选型见 §10.2）。
 
 ### 5.3 为什么 Tensor Core 要求对齐
 
@@ -293,6 +300,7 @@ Tensor Core 一次处理一个矩阵块（如 16×16×16），要求：
 ### 5.4 Reduction 算子：LayerNorm / Softmax
 
 这两个算子的共同点：沿某一维做 reduction（均值/方差/最大值/求和），再逐元素变换。
+> **warp shuffle 是什么**：一个 warp 的 32 个线程逻辑上互不相通，但用 `__shfl_xor_sync` / `__shfl_down_sync` 这类 **warp-level 原语**，可以在一条指令内**直接交换寄存器里的值**——不写 Shared Memory，也不用 `__syncthreads()`。所以 reduction 分两级最省：先在 warp 内 shuffle 5 步（`32→16→8→4→2→1`，即 `log2(32)`）得到每个 warp 的部分和，再由每个 warp 把 **1** 个数写进 Shared Memory，最后让第一个 warp 读这 8 个数（256 线程 = 8 warps）做第二次 shuffle reduction。相比「256 个线程全写 Shared Memory 再同步汇总」，写共享内存的次数从 256 降到 8，也少一次全 block 的等待——这就是下面骨架里「两级 reduction（warp shuffle → shared memory）」省掉的开销。
 
 优化要点：
 
@@ -303,6 +311,7 @@ Tensor Core 一次处理一个矩阵块（如 16×16×16），要求：
   可能发生抵消，精度敏感时用两遍算法或 Welford。
 
 一个简化的 Triton softmax（一行一个 block）：
+> **先补一句 Triton 是什么**：Triton 是用 Python 写 GPU Kernel 的 DSL——带 `@triton.jit` 的函数在首次调用时被 JIT 编译成 CUDA/PTX（**PTX** = NVIDIA 的虚拟指令集，比最终机器码 SASS 高一层，完整定义在 §10.3；这里只是顺带提到，不属于本节前置），`BLOCK: tl.constexpr` 是编译期常量（用来定 tile 大小），`tl.load / tl.max / tl.sum` 分别对应向量化加载和块内 reduction。这里只要求看懂「一行一个 block：load → 减最大值 → exp/sum → store」的写法；工具链定位与选型见 §10.2（那节是加分项，跳过不影响本节，但别把这里的语法当成前置已学）。
 
 ```python
 @triton.jit
@@ -377,7 +386,7 @@ for each Q_block:
 - **计算量不变**（仍是 `O(T²d)`），变的是**访存**；
 - `m/l` 是 online softmax 的 running statistics，保证分块结果与完整 softmax 等价；
 - **峰值显存/激活占用**从 `O(T²)` 降到 `O(Td)`（不再物化 `T×T` 矩阵）；
-- **HBM 读写量**约 `Θ(T²d²/M)`（M 为 SRAM 容量；SRAM = 片上存储，含寄存器/Shared Memory），
+- **HBM 读写量**约 `Θ(T²d²/M)`（M 为 SRAM 容量，按**元素个数**计、不是字节，口径见下方注；SRAM = 片上存储，含寄存器/Shared Memory；注意 §5.2 的 `M` 是矩阵行数，这里只是重名），
   对 T 仍是**二次方**，只是常数项更小——
   **不要说成 O(Td) 流量**；
 - 例：T=8K、d=128 时，标准 attention 的 `T×T` 分数矩阵单头 FP16 就是
@@ -432,6 +441,7 @@ Kernel 层面的难点：
 3. **grouped GEMM**：每个专家一段 `X_e [n_e,d] @ W_e [d,d_out]`，`n_e` 分别为 `3/3/4/2`，
    一次 kernel 算完变长分组，避免 pad 到 `max_n` 或 4 次 launch；
 4. **scatter-add**：按原 token 聚合 `y_t = Σ w'_{t,e} · Y_e`。
+> **图是 drop 前（未截断）的状态**：②③ 的 `offset=[0,3,6,10,12]`、`n_e=3/3/4/2` 是 12 个 `(token,专家)` 对的**全量**排布，还没套 capacity factor。按下一段 capacity factor=1.0 的规则（每专家 `ceil(12/4)=3` 行）截断后，E2 那一段只保留 3 行，grouped GEMM 实际吃的是 `n_e=3/3/3/2`（共 11 行）；被 drop 的 1 个 token 不参与本次 GEMM，它的 `w'` 置 0（或走 bypass 残差），scatter-add 时不再累加回 `y_t`。图 ④ 的「溢出处理：drop(训练)或 bypass」就是这一步。
 
 **容量与负载均衡**：capacity factor 为 1.0 时，每专家容量 `ceil(T·k/E)=ceil(12/4)=3`；
 本例 E2 分到 4 个 token，超出 1 个，需要 **drop**（丢弃）或 **bypass**（绕过残差）。
@@ -439,7 +449,7 @@ Kernel 层面的难点：
 专家并行（EP）的 AllToAll 都是围绕这个问题。
 
 > **训练 vs 推理**：训练时可以用 capacity factor + token drop 来控制单卡显存和计算量，
-> 丢掉的 token 由 aux loss 惩罚；推理通常**不丢 token**（会影响输出质量），容量不足时
+> 而 aux loss 的输入是路由概率与各专家负载占比（如 `E×Σ f_i·P_i`），压的是路由不均衡、并不以被丢弃的 token 为对象，只是间接减少溢出与丢弃；推理通常**不丢 token**（会影响输出质量），容量不足时
 > 排队、改路由或扩专家。现代变体还有 **expert-choice**（专家选 token）、**shared expert**
 > （常驻共享专家）和 **aux-loss-free** 负载均衡（用 bias 调整路由，而不是加辅助损失）。
 
@@ -470,7 +480,7 @@ Kernel 层面的难点：
 ### 8.2 混合精度
 
 - 计算用 FP16/BF16，累加用 FP32；
-- FP16 需要 loss scaling 防止梯度下溢；BF16 范围大，通常不需要；
+- FP16 需要 loss scaling 防止梯度下溢：把 loss 乘一个常数 S 再反传，梯度同比放大 S 倍，优化器更新前再除回 S（unscale）；S 通常从 2^16 起试，遇到 inf/NaN 就减半，连续若干步稳定后可尝试加倍；BF16 范围大，通常不需要；
 - FP8 需要 per-tensor/per-block scaling，且对异常值敏感。
 
 ### 8.3 量化基本式
@@ -480,10 +490,11 @@ q = clamp(round(x / s) + z, q_min, q_max)
 x_hat = (q - z) * s
 ```
 
-- **per-tensor / per-channel / per-group**：粒度越细，精度越好，元数据越多；
+- **per-tensor / per-channel / per-group**：粒度 = scale（和 zero-point）的个数——per-tensor 整张张量 1 个 scale；per-channel 每个输出通道 1 个（权重沿输出通道维切，激活沿 token 维切）；per-group 每 G 个元素 1 个（如 G=128，沿 K 维连续切，W4 常用）。粒度越细，精度越好，元数据越多（多存 scale/zp，反量化时还多一次按组索引取值）；
 - **weight-only（W4A16）**：只量化权重，适合 decode 的访存瓶颈；
-- **W8A8 / FP8**：权重和激活都量化，需要校准；
+- **W8A8 / FP8**：权重和激活都量化，需要**校准**——拿几百条代表性数据跑一遍前向，统计每层激活的 min/max（或 99.9% 分位），据此定 scale/zp；权重是确定的，可直接算范围，激活随输入分布变，所以只有激活这一侧才需要「校准」；
 - **outlier**：少数极大值会拉大 scale，常用保留 outlier、混合精度、per-group 解决。
+> **z 是什么**：z 是 zero-point（零点），表示「实数 0 落在整数格点的哪个位置」，保证 x=0 能精确表示（q(0)=z、反量化回 0）。这是**非对称量化**：z≠0，用来把 [x_min,x_max] 对齐到 [q_min,q_max]。由 q_min=round(x_min/s)+z 反解：`z = round(q_min − x_min/s)`；**对称量化**（以 0 为中心，q∈[−127,127]）时 z=0，公式退化成 `q = clamp(round(x/s), −127, 127)`。本例：`x_min/s = −1.73/0.016118 = −107.33`，`z = round(−128 − (−107.33)) = round(−20.67) = −21`；代回验证 `x_max/s + z = 147.66 − 21 = 126.66 → 127`，正好铺满 [−128,127]。负号的直白含义就是「0 这个实数落在 −21 号格点上」，所以 q=−21 反量化回来≈0。
 
 ![量化逐步：scale / zero-point → q → 反量化](../diagrams/20b_quant.landscape.png)
 
@@ -503,6 +514,7 @@ x_hat = (q - z) * s
 | Nsight Compute | 单个 Kernel：occupancy、内存吞吐、计算吞吐、stall 原因 |
 | torch.profiler | Python/PyTorch 层：算子耗时、显存、调用栈 |
 | nvidia-smi / DCGM | 利用率、显存、温度、功耗、ECC |
+> **两个裸缩写**：**NCCL**（NVIDIA Collective Communications Library）= 跨 GPU 的集合通信库，`AllReduce / AllGather / ReduceScatter / AllToAll` 都由它实现，链路走 NVLink/PCIe/IB。时间线里 **NCCL 段长 = 卡在等通信、不是在算**（典型是梯度 AllReduce，或 MoE 专家并行的 AllToAll 没和计算重叠），看到长 NCCL 段要先查重叠与分桶，而不是调 Kernel。**DCGM**（Data Center GPU Manager）= 集群级 GPU 管理与监控（利用率、显存、温度、功耗、ECC、XID），`nvidia-smi` 是单机命令行的当前快照，DCGM 负责持续采集与告警（常配 `dcgm-exporter` + Prometheus）。
 
 ### 9.2 读 Profile 的顺序
 
