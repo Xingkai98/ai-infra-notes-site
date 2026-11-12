@@ -1293,7 +1293,7 @@
   <a href="#21" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2.1 六个基本原语
+        2.1 八个基本原语
       
     </span>
   </a>
@@ -1448,7 +1448,7 @@
   <a href="#51" class="md-nav__link">
     <span class="md-ellipsis">
       
-        5.1 四层存储
+        5.1 三层存储 + 跨层缓存
       
     </span>
   </a>
@@ -1532,6 +1532,17 @@
   
     <nav class="md-nav" aria-label="7. 调度与虚拟化：资源怎么分、怎么切">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#70-k8s" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.0 先备名词（K8s 最小词汇）
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#71-k8s-gpu" class="md-nav__link">
@@ -2033,7 +2044,7 @@
   <a href="#21" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2.1 六个基本原语
+        2.1 八个基本原语
       
     </span>
   </a>
@@ -2188,7 +2199,7 @@
   <a href="#51" class="md-nav__link">
     <span class="md-ellipsis">
       
-        5.1 四层存储
+        5.1 三层存储 + 跨层缓存
       
     </span>
   </a>
@@ -2272,6 +2283,17 @@
   
     <nav class="md-nav" aria-label="7. 调度与虚拟化：资源怎么分、怎么切">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#70-k8s" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.0 先备名词（K8s 最小词汇）
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#71-k8s-gpu" class="md-nav__link">
@@ -2473,26 +2495,29 @@
 <p><strong>前置（按节）</strong>：
 - §2–§4：<code>notes/21_single_node_ops.md §2–§4</code>（GPU 访存层次 / Roofline）——只需要知道“搬数据很贵”。
 - §5：无硬前置；会看 <code>ls</code>/<code>fio</code> 即可。
-- §6：<code>notes/20_ai_infra_map.md §8–§9</code>（7 层与深度标尺）；TP/PP/DP/EP 会在 §6 就地定义。
-- §7–§8：<code>notes/21_single_node_ops.md §9</code>（Profiling 思路）可选。</p>
+- §6：§2（集合通信原语，尤其 reduce-scatter / all-gather / all-to-all 的量级表）+ <code>notes/20_ai_infra_map.md §8–§9</code>（7 层与深度标尺）；TP/PP/DP/EP 会在 §6 就地定义。
+- §7–§8：<code>notes/21_single_node_ops.md §9</code>（Profiling 思路）可选。
+- §7–§8 还要一点 K8s 词汇：Pod / namespace / ResourceQuota / 准入 / kube-scheduler / API server / etcd / cordon-drain；没接触过 K8s 的先读 §7.0 的名词页（5 分钟）。</p>
 <p><strong>建议路径（每次 45 分钟）</strong>：
 ① §2–§4（集合通信 / 互联 / 拓扑）；② §5–§6（存储 / 并行通信账本）；
 ③ §7（调度与虚拟化）；④ §8（可靠性 / 排障）。</p>
-<p><strong>深度标注</strong>：§2–§4、§6–§7 为必学；§5、§8 为必学（至少会算账/会分层排查）；
+<p><strong>深度标注</strong>：§2–§8 全部为必学（§5 至少会算 Checkpoint 账本、§8 至少会分层排查）；
 RDMA 调优、拓扑设计、容量模型为加分；可编程交换、在网计算为了解。</p>
 </blockquote>
 <h2 id="0">0. 依赖图（学习顺序）<a class="headerlink" href="#0" title="Permanent link">&para;</a></h2>
 <pre class="mermaid"><code>graph TD
   A["单机 GPU / 访存 / Roofline&lt;br/&gt;(M2-1)"] --&gt; B["集合通信&lt;br/&gt;all-reduce / all-gather / all-to-all"]
   B --&gt; C["互联与拓扑&lt;br/&gt;NVLink / IB / RoCE / rail"]
-  C --&gt; D["并行通信账本&lt;br/&gt;DP / TP / PP / EP"]
-  D --&gt; E["存储与 Checkpoint&lt;br/&gt;吞吐 / IOPS / 元数据"]
-  E --&gt; F["调度与虚拟化&lt;br/&gt;K8s / gang / MIG"]
+  C -. 可选：只影响存储选型 .-&gt; E["存储与 Checkpoint&lt;br/&gt;吞吐 / IOPS / 元数据（无硬前置）"]
+  B --&gt; D["并行通信账本&lt;br/&gt;DP / TP / PP / EP"]
+  %% 存储(E) 不指向并行账本(D)：§6 只依赖 §2，E 可后读
+  D --&gt; F["调度与虚拟化&lt;br/&gt;K8s / gang / MIG"]
   F --&gt; G["可靠性&lt;br/&gt;ECC / XID / NCCL hang"]
   G --&gt; H["支撑 M2-2 训练系统&lt;br/&gt;与 M2-3 推理部署"]</code></pre>
 <blockquote>
 <p>根节点是“单机搬数据很贵”；每往上一层，问题从“一张卡”变成“一个域/一个集群”。
-汇点是：能判断一个分布式任务<strong>卡在通信、存储、调度还是硬件</strong>，并给出可验证的下一步。</p>
+汇点是：能判断一个分布式任务<strong>卡在通信、存储、调度还是硬件</strong>，并给出可验证的下一步。
+依赖图里 E（存储）与 D（并行账本）是两个并列分支：E 无硬前置、也不指向 D；D 只依赖 B（§2 集合通信），§6 正文不会用到 §5 的内容。</p>
 </blockquote>
 <p><strong>术语速查（后文第一次出现时也会解释）</strong>：</p>
 <table>
@@ -2510,6 +2535,10 @@ RDMA 调优、拓扑设计、容量模型为加分；可编程交换、在网计
 <tr>
 <td>chunk</td>
 <td>把一个大向量切成的等长分片；ring 算法按 chunk 传</td>
+</tr>
+<tr>
+<td>NCCL</td>
+<td>NVIDIA 的集合通信库：all-reduce/all-gather/all-to-all 在 GPU 上的事实标准实现，负责选链路与算法</td>
 </tr>
 <tr>
 <td><code>S</code></td>
@@ -2602,7 +2631,7 @@ RDMA 调优、拓扑设计、容量模型为加分；可编程交换、在网计
 <code>DCQCN</code> = RoCE 的拥塞控制算法；<code>bin-packing</code> = 把任务塞进已有空隙以提高利用率。</p>
 </blockquote>
 <h2 id="2">2. 集合通信：多卡协作的动词<a class="headerlink" href="#2" title="Permanent link">&para;</a></h2>
-<h3 id="21">2.1 六个基本原语<a class="headerlink" href="#21" title="Permanent link">&para;</a></h3>
+<h3 id="21">2.1 八个基本原语<a class="headerlink" href="#21" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -2622,13 +2651,13 @@ RDMA 调优、拓扑设计、容量模型为加分；可编程交换、在网计
 <tr>
 <td>Scatter</td>
 <td>root 把不同分片发给不同 rank</td>
-<td>root 的 <code>N×S/N</code> → 各 rank <code>S/N</code></td>
+<td>root 的 <code>S</code> → 各 rank <code>S/N</code></td>
 <td>分发数据</td>
 </tr>
 <tr>
 <td>Gather</td>
 <td>各 rank 的分片收给 root</td>
-<td>各 rank <code>S/N</code> → root <code>N×S/N</code></td>
+<td>各 rank <code>S/N</code> → root <code>S</code></td>
 <td>收集结果</td>
 </tr>
 <tr>
@@ -2664,7 +2693,7 @@ RDMA 调优、拓扑设计、容量模型为加分；可编程交换、在网计
 </tbody>
 </table>
 <blockquote>
-<p><code>S</code> 是每个 rank 上的数据量（字节）；<code>N</code> 是 rank 数。表中“输入/输出”是<strong>每个 rank 的视角</strong>。</p>
+<p><code>S</code> 的口径按行不同：Broadcast / Reduce / AllReduce 行里 <code>S</code> 是<strong>每 rank 持有的整份向量</strong>；Scatter / Gather / AllGather / ReduceScatter 行里 <code>S</code> 是<strong>总向量</strong>（每 rank 只拿 <code>S/N</code>，所以 root 侧是 <code>S</code>，不是 <code>N×S</code>）；AllToAll 行里 <code>S</code> 同样是<strong>总向量</strong>，但每个 rank 手里是整份 <code>S</code>（切成 <code>N</code> 份、每份 <code>S/N</code> 发给不同 rank，所以竖着写是 <code>N×S/N</code>）。<code>N</code> 是 rank 数，表中“输入/输出”是<strong>每个 rank 的视角</strong>；口径读错就差 <code>N</code> 倍。</p>
 </blockquote>
 <p><strong>一句话记法</strong>：AllReduce = ReduceScatter + AllGather。这也是 ring all-reduce 的两阶段。</p>
 <h3 id="22-ring-all-reduce">2.2 ring all-reduce：两阶段、通信量<a class="headerlink" href="#22-ring-all-reduce" title="Permanent link">&para;</a></h3>
@@ -2681,11 +2710,12 @@ RDMA 调优、拓扑设计、容量模型为加分；可编程交换、在网计
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>全网总流量       = 2 × S × (N-1)
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>总步数           = 2 × (N-1)
 </code></pre></div>
-<p>例：<code>N=8</code>、<code>S=1 GB</code> → 每 rank <strong>单向</strong>发送/接收 <code>2×1×7/8 = 1.75 GB</code>，全网 <code>14 GB</code>；
+<p>例：<code>N=8</code>、<code>S=1 GB</code> → 每 rank 发送 <code>1.75 GB</code>、接收 <code>1.75 GB</code>（两向各 <code>2×1×7/8</code>；过链路共 <code>3.5 GB</code>，但 <code>100 GB/s</code> 是<strong>单向</strong>链路带宽，按 <code>1.75 GB</code> 计），全网 <code>14 GB</code>；
 100 GB/s 下约 <code>17.5 ms</code>，300 GB/s 下约 <code>5.8 ms</code>。</p>
 <blockquote>
 <p><strong>大消息看带宽，小消息看延迟</strong>：ring 的带宽最优，但有 <code>2(N-1)</code> 步的延迟；
-tree 的延迟是 <code>O(log N)</code>，但大消息的带宽不如 ring。NCCL 会按拓扑和消息大小自动选。</p>
+tree 的延迟是 <code>O(log N)</code>，但大消息的带宽不如 ring。NCCL 会按拓扑和消息大小自动选。
+<strong>NCCL</strong>（NVIDIA Collective Communications Library）= NVIDIA 的集合通信库，all-reduce / all-gather / all-to-all 这些原语在 GPU 上的事实标准实现，负责按拓扑和消息大小选链路（NVLink / PCIe / IB / RoCE）与算法（Ring / Tree / CollNet）；PyTorch DDP/FSDP、Megatron 底下调的都是它，§2.5 的旋钮和 §8.3 的 hang 排查都指它。</p>
 </blockquote>
 <h3 id="23">2.3 其他原语的量级<a class="headerlink" href="#23" title="Permanent link">&para;</a></h3>
 <table>
@@ -2725,7 +2755,7 @@ tree 的延迟是 <code>O(log N)</code>，但大消息的带宽不如 ring。NCC
 </tbody>
 </table>
 <blockquote>
-<p>这些是“每 rank 发送量”的口径；全网总流量再乘 <code>N</code>。面试先说口径，否则数字会差 <code>N</code> 倍。</p>
+<p>本表 <code>S</code> 一律取<strong>总向量</strong>（不是 §2.2 的“每 rank 向量字节数”，也不是 <code>S/N</code>）；这些是“每 rank 发送量”的口径，全网总流量再乘 <code>N</code>。面试先说口径，否则数字会差 <code>N</code> 倍。</p>
 </blockquote>
 <h3 id="24-ring-vs-tree">2.4 ring vs tree<a class="headerlink" href="#24-ring-vs-tree" title="Permanent link">&para;</a></h3>
 <table>
@@ -2926,11 +2956,11 @@ IB/RoCE 的 400/200 Gb/s 则是<strong>单端口</strong>带宽。算“传一�
 <p>选型直觉：<strong>TP 要低延迟、高带宽 → 放 NVLink 域；PP/DP 可跨节点；EP 的 all-to-all
 要对齐 rail</strong>。拓扑不是“画得好看”，它直接决定集合通信走几条链路、会不会拥塞。</p>
 </blockquote>
-<p><strong>万卡拓扑算例</strong>：1024 卡 = 128 节点 × 8 卡，每节点 8 个 400 Gb/s 网卡（8 rail）。</p>
+<p><strong>千卡拓扑算例</strong>：1024 卡 = 128 节点 × 8 卡（万卡约 1250 个这样的节点，leaf/spine 数量和链路数要按 10× 推），每节点 8 个 400 Gb/s 网卡（8 rail）。</p>
 <ul>
 <li>全 bisection：每节点 8 条上行 = <code>128×8=1024</code> 条 400G 链路；leaf 层需要能同时承载
-  这 1024 条链路，spine 层再按收敛比配置。</li>
-<li><code>1:1</code> 收敛：spine 侧带宽 = leaf 侧带宽，最贵；<code>3:1</code> 收敛：上行只需 1/3 带宽，
+  这 1024 条链路；全 bisection 的定义就是 spine 侧上行 = leaf 侧下行（1:1、无收敛），所以这里只能配成 1:1（即“无收敛”）——一旦改成 3:1，它就不再是全 bisection，而是下面那条收敛拓扑。</li>
+<li><code>1:1</code>（即上面的无收敛 / 全 bisection）：spine 侧带宽 = leaf 侧带宽，最贵；<code>3:1</code> 收敛：上行只需 1/3 带宽，
   跨 spine 流量会排队，适合 PP/DP 为主、EP 不跨 rail 的负载。</li>
 <li>rail-optimized：每个节点的第 <code>r</code> 张网卡接第 <code>r</code> 台 leaf；同一 rail 的 all-to-all
   只过一层 leaf，跨 rail 才走 spine。EP 的 token 路由要尽量让同一专家组的流量落在同一 rail。</li>
@@ -2963,7 +2993,7 @@ NCCL kernel 是否与 GEMM 并发；如果 NCCL 前后有大段空隙，说明�
 </blockquote>
 <h2 id="5-checkpoint">5. 存储：数据与 Checkpoint 的底座<a class="headerlink" href="#5-checkpoint" title="Permanent link">&para;</a></h2>
 <p><img alt="存储层级与 Checkpoint IO" src="../../diagrams/24e_storage.landscape.png" /></p>
-<h3 id="51">5.1 四层存储<a class="headerlink" href="#51" title="Permanent link">&para;</a></h3>
+<h3 id="51">5.1 三层存储 + 跨层缓存<a class="headerlink" href="#51" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -3019,7 +3049,7 @@ NCCL kernel 是否与 GEMM 并发；如果 NCCL 前后有大段空隙，说明�
 <tr>
 <td>写放大</td>
 <td>3×</td>
-<td>8 数据 + 3 校验</td>
+<td>1.375×（11/8）</td>
 </tr>
 <tr>
 <td>重建</td>
@@ -3043,7 +3073,7 @@ Checkpoint 常见“热副本 + 冷 EC”：最近几个 Checkpoint 用副本保
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>权重 2 B + 梯度 2 B + master weights 4 B + Adam m 4 B + Adam v 4 B = 16 B
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>70B × 16 B = 1.12 TB / 次
 </code></pre></div>
-<p><code>1 TB/s</code> 聚合带宽下理论 <code>1.12 s</code>，但真实常慢 <code>10–100×</code>：元数据、小文件/小写入、客户端缓存、
+<p><code>1 TB/s</code> 聚合带宽下理论 <code>1.12 s</code>，但真实常慢 <code>10–100×</code>（同步写 + 所有 rank 打同一个文件 + 数千 rank 同时打元数据时接近 100×；改成每 rank 分片写、先落本地 NVMe 后通常回到 10× 量级，异步 Checkpoint 再把这段写盘藏到训练后面）：元数据、小文件/小写入、客户端缓存、
 straggler、同步屏障。优化：</p>
 <ul>
 <li><strong>分片写</strong>：每个 rank 写自己的 shard，避免所有 rank 写一个文件；</li>
@@ -3095,7 +3125,8 @@ Young-Daly 的近似最优间隔：</p>
 </blockquote>
 <h2 id="6-dp-tp-pp-ep">6. 并行通信账本：DP / TP / PP / EP<a class="headerlink" href="#6-dp-tp-pp-ep" title="Permanent link">&para;</a></h2>
 <p><img alt="并行通信账本" src="../../diagrams/24c_parallel_comm.landscape.png" /></p>
-<p>先定义：<code>S_act = B × T × d_model × bytes</code>（一个激活张量），<code>S_grad = 参数字节</code>。</p>
+<p>先定义：<code>S_act = B × T × d_model × bytes</code>（一个激活张量），<code>S_grad = 本 rank 实际要同步的梯度字节数</code>（全局参数字节先按 TP×PP 分片，70B 例子里就是 <code>140/64 ≈ 2.2 GB</code>，不是完整 140 GB）。</p>
+<p>口径先说清：这里的 <code>B</code> 是<strong>每个 rank 每个 micro-batch 的样本数</strong>（3D 例子里 <code>B=1</code> = 每 rank 每个 micro-batch 1 条），<code>T</code> 是序列长度，<code>S_act</code> 是这样一个张量的字节数。micro-batch 是流水线把 global batch 切小后的一个批次，<code>global batch = B_micro × m × DP</code>（§6.1 展开）。若把 <code>B</code> 读成 global batch，整张账本会差 <code>m×DP</code> 倍。</p>
 <table>
 <thead>
 <tr>
@@ -3109,13 +3140,13 @@ Young-Daly 的近似最优间隔：</p>
 <tr>
 <td><strong>DP</strong></td>
 <td>梯度 all-reduce；FSDP 用 reduce-scatter + all-gather</td>
-<td>all-reduce <code>2S_grad</code>；reduce-scatter <code>S_grad</code>(FSDP 总 <code>2S_grad</code>)</td>
+<td>all-reduce <code>2S_grad</code>；reduce-scatter <code>S_grad</code>；FSDP/ZeRO-3 总 <code>3S_grad</code>（前向 all-gather 参数 + 反向 all-gather 参数 + reduce-scatter 梯度 ≈ 1.5× DP）</td>
 <td>跨节点；可与反向重叠</td>
 </tr>
 <tr>
 <td><strong>TP</strong></td>
 <td>每层 2 次 all-reduce（前向）</td>
-<td>前向 <code>4 S_act</code> / 层；反向再加 <code>4 S_act</code></td>
+<td>前向 <code>4 S_act</code> / 层（<code>2×2S_act</code> 是 N→∞ 上界；TP=8 按 <code>2×1.75S_act≈3.5S_act</code>）；反向再加同样一份</td>
 <td>NVLink 域内，通常 ≤8</td>
 </tr>
 <tr>
@@ -3133,22 +3164,23 @@ Young-Daly 的近似最优间隔：</p>
 </tbody>
 </table>
 <blockquote>
-<p><strong>为什么 TP 放节点内</strong>：TP 每层都要 all-reduce，通信频繁且延迟敏感；跨节点会拖垮。
+<p><strong>为什么 TP 放节点内</strong>：TP 每层都要 all-reduce，通信频繁且延迟敏感；跨节点会拖垮。</p>
+<p><strong>“2 次”怎么来</strong>：一层里有两处激活要跨 TP rank 归约——attention 输出投影（<span class="arithmatex">\(W_O\)</span>）之后、FFN 输出投影（<span class="arithmatex">\(W_2\)</span>）之后；每处每次 all-reduce 每 rank 约 <code>2 S_act</code>，所以前向 <code>2×2 S_act = 4 S_act</code>/层，反向再各一次共 <code>4 S_act</code>。3D 例子里 10 层 × 4S ≈ 2.7 GB 就是这么乘出来的。
 <strong>为什么 PP/DP 可跨节点</strong>：PP 只在 stage 边界传激活，DP 每个 step 只同步一次梯度，
 通信/计算比更低。</p>
 </blockquote>
 <p><strong>一个 3D 例子</strong>：70B、<code>TP=8</code>、<code>PP=8</code>、<code>DP=8</code>、<code>B=1</code>、<code>T=4096</code>、<code>d_model=8192</code>、FP16：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>S_act = 1 × 4096 × 8192 × 2 B ≈ 67 MB
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>TP:PP=8 时每个 stage 10 层;前向 10×4S ≈ 2.7 GB / rank / step
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>DP:梯度先按 TP×PP 分片 → 140/64 ≈ 2.2 GB;all-reduce 每 rank 2S ≈ 4.4 GB / step
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>PP:每个 micro-batch 传 67 MB 激活;主要成本是 bubble
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>TP:PP=8 时每个 stage 10 层;前向 10×4S ≈ 2.7 GB / rank / step（2S_act/次 是 N→∞ 上界;TP=8 按 2×1.75S_act 校正 ≈ 2.35 GB）
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>DP:梯度先按 TP×PP 分片 → 140/64 ≈ 2.2 GB;all-reduce 每 rank 2S(N-1)/N = 1.75×2.2 ≈ 3.85 GB / step（2S 是 N→∞ 的上界，DP=8 时直接用 2S 会高估约 14%）
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>PP:每个 micro-batch 传 67 MB 激活(单向 1×S_act;表中 2 S_act 是前向激活+反向梯度两份);主要成本是 bubble
 </code></pre></div>
 <blockquote>
-<p>关键：<strong>先分片，再 all-reduce</strong>。3D 下 DP 的 <code>S_grad</code> 是“每 rank 分片后的梯度”，
+<p>关键：<strong>先分片，再 all-reduce</strong>。全节只有一种口径（与开头定义一致）：<code>S_grad</code> = 本 rank 分片后实际同步的梯度字节数，表中 DP 行也按此代入（<code>140/64 ≈ 2.2 GB</code>）——
 不是完整 140 GB；TP 只计算本 stage 的 10 层，不是 80 层。面试时这两步最容易多乘。</p>
 <p><strong>EP 口径</strong>：表里的 <code>S_act</code> 是 <strong>每 rank</strong> 本层输入的激活量；<code>k</code> 是 top-k。
-若你手里是 EP 组内全局 token 数 <code>G</code>，每 rank 的 all-to-all 量约
-<code>2·G·k/E·d_model·bytes</code>。两种写法只差“B 是全局还是每 rank”，面试时先声明口径，
+若你手里是 EP 组内的全局 token 数 <code>G</code>，且该 EP 组有 <code>E</code> 个 rank（<code>E</code> = 一个专家并行组内的 rank 数，<code>G</code> 是整个组一起处理的 token 数），则每 rank 的 all-to-all 量约
+<code>2·(G/E)·k·d_model·bytes</code>——<code>G/E</code> 就是每 rank 的 token 数，和表中 <code>2·k·S_act</code> <strong>完全等价</strong>：<code>S_act = B×T×d_model×bytes</code>，而 <code>B×T</code> 就是每 rank 的 token 数，<code>G/E</code> 代入即同一式；只有把 <code>B</code> 误读成全局 batch 才会多出 <code>E</code> 倍，面试时先声明 <code>B</code> 是每 rank 口径，
 否则会差 <code>E</code> 倍。</p>
 <p>这些是数量级，不是 benchmark。真实值还要乘协议效率、拓扑跳数、拥塞。
 面试时先写公式，再代数字；不要只报一个“很快/很慢”。</p>
@@ -3166,6 +3198,57 @@ Young-Daly 的近似最优间隔：</p>
 </ul>
 <h2 id="7">7. 调度与虚拟化：资源怎么分、怎么切<a class="headerlink" href="#7" title="Permanent link">&para;</a></h2>
 <p><img alt="集群调度与 GPU 虚拟化" src="../../diagrams/24f_scheduling.landscape.png" /></p>
+<h3 id="70-k8s">7.0 先备名词（K8s 最小词汇）<a class="headerlink" href="#70-k8s" title="Permanent link">&para;</a></h3>
+<p>§7.3–§8.2 直接用下面这些词，先看一眼，后面就不必停下来查：</p>
+<table>
+<thead>
+<tr>
+<th>名词</th>
+<th>是什么</th>
+<th>在本层对应什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pod</td>
+<td>K8s 最小调度单元，一个 Pod ≈ 一组共享网络/生命周期的容器；GPU 是 Pod 的资源</td>
+<td>一个 worker/一个 rank 通常就是一个 Pod</td>
+</tr>
+<tr>
+<td>namespace / ResourceQuota</td>
+<td>namespace 做逻辑隔离；ResourceQuota 限该空间可用的 GPU 数、并发任务数</td>
+<td>多租户配额（§7.3）</td>
+</tr>
+<tr>
+<td>准入（admission）</td>
+<td>对象写入 API server 前的校验/拦截环节；配额不足就在这里排队或拒绝</td>
+<td>配额不足时排队/拒绝（§7.3）</td>
+</tr>
+<tr>
+<td>kube-scheduler</td>
+<td>决策“这个 Pod 放到哪个节点”的组件，产出绑定（bind）动作</td>
+<td>决策延迟 / 绑定吞吐（§7.5）</td>
+</tr>
+<tr>
+<td>API server / etcd</td>
+<td>API server 是所有读写的唯一入口；etcd 是它背后的分布式 KV，存全部对象状态</td>
+<td>大规模集群的“状态存储”瓶颈（§7.5）</td>
+</tr>
+<tr>
+<td>Operator</td>
+<td>用自定义控制器把运维动作自动化的模式（声明期望状态，控制器去收敛）</td>
+<td>GPU Operator 装驱动/运行时/DCGM（§7.1）</td>
+</tr>
+<tr>
+<td>cordon / drain</td>
+<td>cordon 标记节点不再接新 Pod；drain 把节点上已有 Pod 驱逐出去</td>
+<td>隔离坏节点（§8.2）</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>一句话：Pod 是<strong>调度对象</strong>，scheduler 决定放哪台，API server/etcd 记状态，namespace/Quota 管配额，cordon/drain 管退出。</p>
+</blockquote>
 <h3 id="71-k8s-gpu">7.1 K8s 的 GPU 抽象<a class="headerlink" href="#71-k8s-gpu" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Device Plugin</strong>：把 <code>nvidia.com/gpu</code> 这类资源暴露给 K8s；</li>
@@ -3185,11 +3268,8 @@ Young-Daly 的近似最优间隔：</p>
 <h3 id="73">7.3 拓扑感知与碎片治理<a class="headerlink" href="#73" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>拓扑感知</strong>：把 TP 放进同一 NVLink 域，把 EP 对齐 rail，把 NUMA/网卡亲和性考虑进去。</li>
-<li><strong>碎片</strong>：大作业要 8 卡整机，但集群只剩零散 2 卡 → 利用率下降。
-  治理：整机预留、bin-packing、队列分级、可抢占的碎片作业。</li>
-<li><strong>碎片算例</strong>：1000 张卡、碎片率 20% ≈ 200 张卡无法组成整机；如果大作业都要 8 卡整机，
-  这部分卡就“看着空闲、实际不可用”。治理：整机预留、bin-packing、队列分级、允许小作业
-  填缝、坏节点及时 drain。</li>
+<li><strong>碎片</strong>：大作业要 8 卡整机，但集群只剩零散 2 卡 → 利用率下降；治理清单统一见 §7.5。</li>
+<li><strong>碎片算例</strong>：stranded 的定义、1000 卡 / 20% 的算例与完整治理清单统一放在 §7.5，本节不重复。</li>
 <li><strong>在离线混部</strong>：在线服务保 SLO，离线训练用剩余资源；需要资源隔离、优先级、
   动态配额和快速驱逐。混部不是“把空闲卡塞满”：在线 P99 一抖，离线任务就要让路。</li>
 </ul>
@@ -3244,7 +3324,7 @@ Young-Daly 的近似最优间隔：</p>
 </table>
 <h3 id="75">7.5 调度器性能、仿真与碎片算例<a class="headerlink" href="#75" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>调度延迟</strong>：队列里有 1 万个作业时，调度器要在一秒内做出决策；常见优化是增量调度、
+<li><strong>调度延迟</strong>：单次调度决策的延迟（P99）通常在毫秒到百毫秒量级；队列深度的代价体现在排空时间——积压 1 万个作业、按本节 120 jobs/s 的处理能力，排空就要约 83 s；常见优化是增量调度、
   只重算受影响节点、缓存拓扑/配额、批量绑定。</li>
 <li><strong>吞吐</strong>：调度次数/秒、Pod 绑定次数/秒、API server 压力；大规模集群里 etcd 和
   kube-scheduler 都可能成为瓶颈。</li>
@@ -3254,7 +3334,7 @@ Young-Daly 的近似最优间隔：</p>
   碎片率 = stranded GPU 数 / 总 GPU 数。
   例：32 卡集群，空闲是 <code>2+2+4</code> 三块，8 卡整机作业无法启动 → stranded = 8，
   碎片率 <code>8/32=25%</code>。若 1000 卡里 200 卡 stranded，就是 20% 碎片率。
-  治理：整机预留、bin-packing、队列分级、可抢占碎片作业。</li>
+  治理：整机预留、bin-packing、队列分级、允许小作业填缝、坏节点及时 drain、可抢占碎片作业。</li>
 </ul>
 <blockquote>
 <p>面试问“调度器瓶颈在哪”：先分<strong>决策延迟</strong>、<strong>绑定吞吐</strong>、<strong>状态存储</strong>、<strong>碎片</strong>四层，
@@ -3327,7 +3407,7 @@ Young-Daly 的近似最优间隔：</p>
 <li><strong>看拓扑/网卡</strong>：<code>nvidia-smi topo -m</code>、<code>ibstat</code>、<code>ibv_devinfo</code>、<code>ping</code>；</li>
 <li><strong>看进程</strong>：<code>py-spy dump</code>、<code>gdb</code>、<code>strace</code>，确认是等通信还是等锁；</li>
 <li><strong>缩小规模</strong>：<code>nccl-tests</code> 从 2 卡到 8 卡逐级复现；换节点/换网卡做二分；</li>
-<li><strong>超时</strong>：<code>NCCL_TIMEOUT</code>/<code>TORCH_NCCL_TIMEOUT</code> 只用于暴露问题，不要用它“解决” hang。</li>
+<li><strong>超时</strong>：超时由框架设：PyTorch 用 <code>init_process_group(timeout=)</code>、<code>TORCH_NCCL_HEARTBEAT_TIMEOUT_SEC</code>（NCCL 本身没有 <code>NCCL_TIMEOUT</code>/<code>TORCH_NCCL_TIMEOUT</code> 这类变量），只用于暴露问题，不要用它“解决” hang。</li>
 </ol>
 <blockquote>
 <p>分层定位：单机内 → NVLink/PCIe；跨机 → IB/RoCE/交换机；框架 → 进程组/collective 顺序；
@@ -3337,7 +3417,7 @@ Young-Daly 的近似最优间隔：</p>
 <ul>
 <li><strong>straggler</strong>：某张卡/某个 reader 慢，拖住整个同步 step；</li>
 <li><strong>silent data corruption</strong>：ECC 没报错但结果错，靠校验/对比/重复实验发现；</li>
-<li><strong>loss spike/NaN</strong>：可能是数据、精度、通信、优化器或框架 bug，按 M2-2 §9 排查；</li>
+<li><strong>loss spike/NaN</strong>：可能是数据、精度、通信、优化器或框架 bug；排查流程在 M2-2 §6.3「loss spike / NaN 排查」，五步是数据 → 精度 → 通信 → 优化器 → 框架（M2-2 §9 只是常见坑清单，没有步骤）；</li>
 <li><strong>弹性训练</strong>：节点故障后重新组网、恢复 Checkpoint；代价是复杂度和性能波动。</li>
 </ul>
 <h2 id="9">9. 面试要点<a class="headerlink" href="#9" title="Permanent link">&para;</a></h2>
@@ -3386,9 +3466,9 @@ Young-Daly 的近似最优间隔：</p>
 </blockquote>
 <ol>
 <li><strong>ring all-reduce 账本</strong>：写一个函数，输入 <code>N, S, BW</code>，输出每 rank 通信量、总流量、
-   理论时间；扫 <code>N=2..64</code>，画曲线并解释为什么大 <code>N</code> 下时间近似线性。</li>
+   理论时间；扫 <code>N=2..64</code>，画曲线并解释为什么大 <code>N</code> 下时间趋于饱和：每 rank 通信量 <code>2S(N-1)/N</code> 只从 <code>1.0S</code>(N=2) 涨到 <code>1.75S</code>(N=8)、<code>1.97S</code>(N=64)，全程不到 2 倍；随 <code>N</code> 线性增长的是全网总流量 <code>2S(N-1)</code>，不是时间。</li>
 <li><strong>nccl-tests</strong>：跑 <code>all_reduce_perf -b 8M -e 1G -f 2 -g &lt;GPU 数&gt;</code>，记录不同消息大小的
-   bus bandwidth；对比 <code>NCCL_ALGO=Ring</code> 与默认，解释差异。</li>
+   <code>algbw</code> 与 <code>busbw</code>：<code>algbw</code> = 消息字节 ÷ 时间（只按用户缓冲 <code>S</code> 计时，N=8 时约 57 GB/s，只有链路带宽的 4/7；与 §2.2 每 rank 单向带宽同口径的是后面的 <code>busbw</code>）；<code>busbw</code> = <code>algbw × 2(N-1)/N</code>（nccl-tests 按 ring 折算的链路带宽，<code>N</code> 越大越趋近 <code>2×algbw</code>）。对比 <code>NCCL_ALGO=Ring</code> 与默认，解释差异。</li>
 <li><strong>拓扑检查</strong>：<code>nvidia-smi topo -m</code>、<code>ibstat</code>、<code>ibv_devinfo</code>，画出本机/本集群的
    GPU–网卡–交换机路径；标出 TP/PP 应该放哪。</li>
 <li><strong>Checkpoint 账本</strong>：用 7B/70B 参数，算 FP16/Adam 的 Checkpoint 大小；
