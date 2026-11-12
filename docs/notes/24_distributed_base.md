@@ -15,14 +15,15 @@ figures: [24a_ring_allreduce, 24b_topology, 24c_parallel_comm, 24d_pipeline, 24e
 > **前置（按节）**：
 > - §2–§4：`notes/21_single_node_ops.md §2–§4`（GPU 访存层次 / Roofline）——只需要知道“搬数据很贵”。
 > - §5：无硬前置；会看 `ls`/`fio` 即可。
-> - §6：`notes/20_ai_infra_map.md §8–§9`（7 层与深度标尺）；TP/PP/DP/EP 会在 §6 就地定义。
+> - §6：§2（集合通信原语，尤其 reduce-scatter / all-gather / all-to-all 的量级表）+ `notes/20_ai_infra_map.md §8–§9`（7 层与深度标尺）；TP/PP/DP/EP 会在 §6 就地定义。
 > - §7–§8：`notes/21_single_node_ops.md §9`（Profiling 思路）可选。
+> - §7–§8 还要一点 K8s 词汇：Pod / namespace / ResourceQuota / 准入 / kube-scheduler / API server / etcd / cordon-drain；没接触过 K8s 的先读 §7.0 的名词页（5 分钟）。
 >
 > **建议路径（每次 45 分钟）**：
 > ① §2–§4（集合通信 / 互联 / 拓扑）；② §5–§6（存储 / 并行通信账本）；
 > ③ §7（调度与虚拟化）；④ §8（可靠性 / 排障）。
 >
-> **深度标注**：§2–§4、§6–§7 为必学；§5、§8 为必学（至少会算账/会分层排查）；
+> **深度标注**：§2–§8 全部为必学（§5 至少会算 Checkpoint 账本、§8 至少会分层排查）；
 > RDMA 调优、拓扑设计、容量模型为加分；可编程交换、在网计算为了解。
 
 ## 0. 依赖图（学习顺序）
@@ -31,15 +32,17 @@ figures: [24a_ring_allreduce, 24b_topology, 24c_parallel_comm, 24d_pipeline, 24e
 graph TD
   A["单机 GPU / 访存 / Roofline<br/>(M2-1)"] --> B["集合通信<br/>all-reduce / all-gather / all-to-all"]
   B --> C["互联与拓扑<br/>NVLink / IB / RoCE / rail"]
-  C --> D["并行通信账本<br/>DP / TP / PP / EP"]
-  D --> E["存储与 Checkpoint<br/>吞吐 / IOPS / 元数据"]
-  E --> F["调度与虚拟化<br/>K8s / gang / MIG"]
+  C -. 可选：只影响存储选型 .-> E["存储与 Checkpoint<br/>吞吐 / IOPS / 元数据（无硬前置）"]
+  B --> D["并行通信账本<br/>DP / TP / PP / EP"]
+  %% 存储(E) 不指向并行账本(D)：§6 只依赖 §2，E 可后读
+  D --> F["调度与虚拟化<br/>K8s / gang / MIG"]
   F --> G["可靠性<br/>ECC / XID / NCCL hang"]
   G --> H["支撑 M2-2 训练系统<br/>与 M2-3 推理部署"]
 ```
 
 > 根节点是“单机搬数据很贵”；每往上一层，问题从“一张卡”变成“一个域/一个集群”。
 > 汇点是：能判断一个分布式任务**卡在通信、存储、调度还是硬件**，并给出可验证的下一步。
+> 依赖图里 E（存储）与 D（并行账本）是两个并列分支：E 无硬前置、也不指向 D；D 只依赖 B（§2 集合通信），§6 正文不会用到 §5 的内容。
 
 **术语速查（后文第一次出现时也会解释）**：
 
@@ -47,6 +50,7 @@ graph TD
 |---|---|
 | rank | 一个参与通信的进程/GPU 编号；`N` 个 rank 组成通信组 |
 | chunk | 把一个大向量切成的等长分片；ring 算法按 chunk 传 |
+| NCCL | NVIDIA 的集合通信库：all-reduce/all-gather/all-to-all 在 GPU 上的事实标准实现，负责选链路与算法 |
 | `S` | 每个 rank 上的数据量（字节）；注意“每 rank”还是“全网” |
 | NVLink 域 | 通过 NVLink/NVSwitch 全互联的一组 GPU；域内带宽远高于跨节点 |
 | rail | 节点上一组网卡/端口的编号；同一 rail 通常接同一台 leaf 交换机 |
@@ -83,20 +87,20 @@ graph TD
 
 ## 2. 集合通信：多卡协作的动词
 
-### 2.1 六个基本原语
+### 2.1 八个基本原语
 
 | 原语 | 做什么 | 输入 → 输出 | 典型用途 |
 |---|---|---|---|
 | Broadcast | 一个 rank 的数据发给所有 rank | root 的 `S` → 所有 rank 的 `S` | 广播参数/配置 |
-| Scatter | root 把不同分片发给不同 rank | root 的 `N×S/N` → 各 rank `S/N` | 分发数据 |
-| Gather | 各 rank 的分片收给 root | 各 rank `S/N` → root `N×S/N` | 收集结果 |
+| Scatter | root 把不同分片发给不同 rank | root 的 `S` → 各 rank `S/N` | 分发数据 |
+| Gather | 各 rank 的分片收给 root | 各 rank `S/N` → root `S` | 收集结果 |
 | Reduce | 各 rank 的数据按 op 归约到 root | 各 rank `S` → root `S` | 汇总指标 |
 | AllReduce | 所有 rank 归约，结果给所有 rank | 各 rank `S` → 所有 rank `S` | 梯度同步 |
 | AllGather | 各 rank 的分片拼给所有 rank | 各 rank `S/N` → 所有 rank `S` | 收集分片参数 |
 | ReduceScatter | 归约后按分片散给各 rank | 各 rank `S` → 各 rank `S/N` | ZeRO/FSDP |
 | AllToAll | 每个 rank 给每个 rank 发不同分片 | 各 rank `N×S/N` → 各 rank `N×S/N` | MoE 路由、转置 |
 
-> `S` 是每个 rank 上的数据量（字节）；`N` 是 rank 数。表中“输入/输出”是**每个 rank 的视角**。
+> `S` 的口径按行不同：Broadcast / Reduce / AllReduce 行里 `S` 是**每 rank 持有的整份向量**；Scatter / Gather / AllGather / ReduceScatter 行里 `S` 是**总向量**（每 rank 只拿 `S/N`，所以 root 侧是 `S`，不是 `N×S`）；AllToAll 行里 `S` 同样是**总向量**，但每个 rank 手里是整份 `S`（切成 `N` 份、每份 `S/N` 发给不同 rank，所以竖着写是 `N×S/N`）。`N` 是 rank 数，表中“输入/输出”是**每个 rank 的视角**；口径读错就差 `N` 倍。
 
 **一句话记法**：AllReduce = ReduceScatter + AllGather。这也是 ring all-reduce 的两阶段。
 
@@ -119,11 +123,12 @@ graph TD
 总步数           = 2 × (N-1)
 ```
 
-例：`N=8`、`S=1 GB` → 每 rank **单向**发送/接收 `2×1×7/8 = 1.75 GB`，全网 `14 GB`；
+例：`N=8`、`S=1 GB` → 每 rank 发送 `1.75 GB`、接收 `1.75 GB`（两向各 `2×1×7/8`；过链路共 `3.5 GB`，但 `100 GB/s` 是**单向**链路带宽，按 `1.75 GB` 计），全网 `14 GB`；
 100 GB/s 下约 `17.5 ms`，300 GB/s 下约 `5.8 ms`。
 
 > **大消息看带宽，小消息看延迟**：ring 的带宽最优，但有 `2(N-1)` 步的延迟；
 > tree 的延迟是 `O(log N)`，但大消息的带宽不如 ring。NCCL 会按拓扑和消息大小自动选。
+> **NCCL**（NVIDIA Collective Communications Library）= NVIDIA 的集合通信库，all-reduce / all-gather / all-to-all 这些原语在 GPU 上的事实标准实现，负责按拓扑和消息大小选链路（NVLink / PCIe / IB / RoCE）与算法（Ring / Tree / CollNet）；PyTorch DDP/FSDP、Megatron 底下调的都是它，§2.5 的旋钮和 §8.3 的 hang 排查都指它。
 
 ### 2.3 其他原语的量级
 
@@ -135,7 +140,7 @@ graph TD
 | ReduceScatter | `S(N-1)/N` | 归约后只保留自己那份 |
 | AllToAll | `S(N-1)/N` | 每 rank 给其他每个 rank 发 `S/N`，共 `N-1` 份 |
 
-> 这些是“每 rank 发送量”的口径；全网总流量再乘 `N`。面试先说口径，否则数字会差 `N` 倍。
+> 本表 `S` 一律取**总向量**（不是 §2.2 的“每 rank 向量字节数”，也不是 `S/N`）；这些是“每 rank 发送量”的口径，全网总流量再乘 `N`。面试先说口径，否则数字会差 `N` 倍。
 
 ### 2.4 ring vs tree
 
@@ -235,11 +240,11 @@ graph TD
 > 选型直觉：**TP 要低延迟、高带宽 → 放 NVLink 域；PP/DP 可跨节点；EP 的 all-to-all
 > 要对齐 rail**。拓扑不是“画得好看”，它直接决定集合通信走几条链路、会不会拥塞。
 
-**万卡拓扑算例**：1024 卡 = 128 节点 × 8 卡，每节点 8 个 400 Gb/s 网卡（8 rail）。
+**千卡拓扑算例**：1024 卡 = 128 节点 × 8 卡（万卡约 1250 个这样的节点，leaf/spine 数量和链路数要按 10× 推），每节点 8 个 400 Gb/s 网卡（8 rail）。
 
 - 全 bisection：每节点 8 条上行 = `128×8=1024` 条 400G 链路；leaf 层需要能同时承载
-  这 1024 条链路，spine 层再按收敛比配置。
-- `1:1` 收敛：spine 侧带宽 = leaf 侧带宽，最贵；`3:1` 收敛：上行只需 1/3 带宽，
+  这 1024 条链路；全 bisection 的定义就是 spine 侧上行 = leaf 侧下行（1:1、无收敛），所以这里只能配成 1:1（即“无收敛”）——一旦改成 3:1，它就不再是全 bisection，而是下面那条收敛拓扑。
+- `1:1`（即上面的无收敛 / 全 bisection）：spine 侧带宽 = leaf 侧带宽，最贵；`3:1` 收敛：上行只需 1/3 带宽，
   跨 spine 流量会排队，适合 PP/DP 为主、EP 不跨 rail 的负载。
 - rail-optimized：每个节点的第 `r` 张网卡接第 `r` 台 leaf；同一 rail 的 all-to-all
   只过一层 leaf，跨 rail 才走 spine。EP 的 token 路由要尽量让同一专家组的流量落在同一 rail。
@@ -273,7 +278,7 @@ RoCEv2 把 RDMA 跑在以太网上，需要“无损”语义：
 
 ![存储层级与 Checkpoint IO](../diagrams/24e_storage.landscape.png)
 
-### 5.1 四层存储
+### 5.1 三层存储 + 跨层缓存
 
 | 层 | 特点 | 典型系统 |
 |---|---|---|
@@ -293,7 +298,7 @@ RoCEv2 把 RDMA 跑在以太网上，需要“无损”语义：
 |---|---|---|
 | 原始容量开销 | 3× | 1.375×（11/8） |
 | 可容忍故障 | 2 份 | 3 个 shard |
-| 写放大 | 3× | 8 数据 + 3 校验 |
+| 写放大 | 3× | 1.375×（11/8） |
 | 重建 | 读 1 份 | 读 8 个 shard，CPU/网络开销大 |
 | 适用 | 热数据、低延迟 | 冷数据、大容量、成本敏感 |
 
@@ -310,7 +315,7 @@ RoCEv2 把 RDMA 跑在以太网上，需要“无损”语义：
 70B × 16 B = 1.12 TB / 次
 ```
 
-`1 TB/s` 聚合带宽下理论 `1.12 s`，但真实常慢 `10–100×`：元数据、小文件/小写入、客户端缓存、
+`1 TB/s` 聚合带宽下理论 `1.12 s`，但真实常慢 `10–100×`（同步写 + 所有 rank 打同一个文件 + 数千 rank 同时打元数据时接近 100×；改成每 rank 分片写、先落本地 NVMe 后通常回到 10× 量级，异步 Checkpoint 再把这段写盘藏到训练后面）：元数据、小文件/小写入、客户端缓存、
 straggler、同步屏障。优化：
 
 - **分片写**：每个 rank 写自己的 shard，避免所有 rank 写一个文件；
@@ -367,16 +372,20 @@ Young-Daly 的近似最优间隔：
 
 ![并行通信账本](../diagrams/24c_parallel_comm.landscape.png)
 
-先定义：`S_act = B × T × d_model × bytes`（一个激活张量），`S_grad = 参数字节`。
+先定义：`S_act = B × T × d_model × bytes`（一个激活张量），`S_grad = 本 rank 实际要同步的梯度字节数`（全局参数字节先按 TP×PP 分片，70B 例子里就是 `140/64 ≈ 2.2 GB`，不是完整 140 GB）。
+
+口径先说清：这里的 `B` 是**每个 rank 每个 micro-batch 的样本数**（3D 例子里 `B=1` = 每 rank 每个 micro-batch 1 条），`T` 是序列长度，`S_act` 是这样一个张量的字节数。micro-batch 是流水线把 global batch 切小后的一个批次，`global batch = B_micro × m × DP`（§6.1 展开）。若把 `B` 读成 global batch，整张账本会差 `m×DP` 倍。
 
 | 并行 | 传什么 | 每 rank 通信量（近似） | 放哪 |
 |---|---|---|---|
-| **DP** | 梯度 all-reduce；FSDP 用 reduce-scatter + all-gather | all-reduce `2S_grad`；reduce-scatter `S_grad`(FSDP 总 `2S_grad`) | 跨节点；可与反向重叠 |
-| **TP** | 每层 2 次 all-reduce（前向） | 前向 `4 S_act` / 层；反向再加 `4 S_act` | NVLink 域内，通常 ≤8 |
+| **DP** | 梯度 all-reduce；FSDP 用 reduce-scatter + all-gather | all-reduce `2S_grad`；reduce-scatter `S_grad`；FSDP/ZeRO-3 总 `3S_grad`（前向 all-gather 参数 + 反向 all-gather 参数 + reduce-scatter 梯度 ≈ 1.5× DP） | 跨节点；可与反向重叠 |
+| **TP** | 每层 2 次 all-reduce（前向） | 前向 `4 S_act` / 层（`2×2S_act` 是 N→∞ 上界；TP=8 按 `2×1.75S_act≈3.5S_act`）；反向再加同样一份 | NVLink 域内，通常 ≤8 |
 | **PP** | stage 边界 P2P 激活 | `2 S_act` / micro-batch | 跨节点；成本主要是 bubble |
 | **EP** | MoE 层 2 次 all-to-all | 每 rank 约 `2·k·S_act`（dispatch+combine） | 高带宽 rail；注意负载均衡 |
 
 > **为什么 TP 放节点内**：TP 每层都要 all-reduce，通信频繁且延迟敏感；跨节点会拖垮。
+
+> **“2 次”怎么来**：一层里有两处激活要跨 TP rank 归约——attention 输出投影（\(W_O\)）之后、FFN 输出投影（\(W_2\)）之后；每处每次 all-reduce 每 rank 约 `2 S_act`，所以前向 `2×2 S_act = 4 S_act`/层，反向再各一次共 `4 S_act`。3D 例子里 10 层 × 4S ≈ 2.7 GB 就是这么乘出来的。
 > **为什么 PP/DP 可跨节点**：PP 只在 stage 边界传激活，DP 每个 step 只同步一次梯度，
 > 通信/计算比更低。
 
@@ -384,17 +393,17 @@ Young-Daly 的近似最优间隔：
 
 ```
 S_act = 1 × 4096 × 8192 × 2 B ≈ 67 MB
-TP:PP=8 时每个 stage 10 层;前向 10×4S ≈ 2.7 GB / rank / step
-DP:梯度先按 TP×PP 分片 → 140/64 ≈ 2.2 GB;all-reduce 每 rank 2S ≈ 4.4 GB / step
-PP:每个 micro-batch 传 67 MB 激活;主要成本是 bubble
+TP:PP=8 时每个 stage 10 层;前向 10×4S ≈ 2.7 GB / rank / step（2S_act/次 是 N→∞ 上界;TP=8 按 2×1.75S_act 校正 ≈ 2.35 GB）
+DP:梯度先按 TP×PP 分片 → 140/64 ≈ 2.2 GB;all-reduce 每 rank 2S(N-1)/N = 1.75×2.2 ≈ 3.85 GB / step（2S 是 N→∞ 的上界，DP=8 时直接用 2S 会高估约 14%）
+PP:每个 micro-batch 传 67 MB 激活(单向 1×S_act;表中 2 S_act 是前向激活+反向梯度两份);主要成本是 bubble
 ```
 
-> 关键：**先分片，再 all-reduce**。3D 下 DP 的 `S_grad` 是“每 rank 分片后的梯度”，
+> 关键：**先分片，再 all-reduce**。全节只有一种口径（与开头定义一致）：`S_grad` = 本 rank 分片后实际同步的梯度字节数，表中 DP 行也按此代入（`140/64 ≈ 2.2 GB`）——
 > 不是完整 140 GB；TP 只计算本 stage 的 10 层，不是 80 层。面试时这两步最容易多乘。
 
 > **EP 口径**：表里的 `S_act` 是 **每 rank** 本层输入的激活量；`k` 是 top-k。
-> 若你手里是 EP 组内全局 token 数 `G`，每 rank 的 all-to-all 量约
-> `2·G·k/E·d_model·bytes`。两种写法只差“B 是全局还是每 rank”，面试时先声明口径，
+> 若你手里是 EP 组内的全局 token 数 `G`，且该 EP 组有 `E` 个 rank（`E` = 一个专家并行组内的 rank 数，`G` 是整个组一起处理的 token 数），则每 rank 的 all-to-all 量约
+> `2·(G/E)·k·d_model·bytes`——`G/E` 就是每 rank 的 token 数，和表中 `2·k·S_act` **完全等价**：`S_act = B×T×d_model×bytes`，而 `B×T` 就是每 rank 的 token 数，`G/E` 代入即同一式；只有把 `B` 误读成全局 batch 才会多出 `E` 倍，面试时先声明 `B` 是每 rank 口径，
 > 否则会差 `E` 倍。
 >
 > 这些是数量级，不是 benchmark。真实值还要乘协议效率、拓扑跳数、拥塞。
@@ -416,6 +425,23 @@ PP:每个 micro-batch 传 67 MB 激活;主要成本是 bubble
 
 ![集群调度与 GPU 虚拟化](../diagrams/24f_scheduling.landscape.png)
 
+### 7.0 先备名词（K8s 最小词汇）
+
+§7.3–§8.2 直接用下面这些词，先看一眼，后面就不必停下来查：
+
+| 名词 | 是什么 | 在本层对应什么 |
+|---|---|---|
+| Pod | K8s 最小调度单元，一个 Pod ≈ 一组共享网络/生命周期的容器；GPU 是 Pod 的资源 | 一个 worker/一个 rank 通常就是一个 Pod |
+| namespace / ResourceQuota | namespace 做逻辑隔离；ResourceQuota 限该空间可用的 GPU 数、并发任务数 | 多租户配额（§7.3） |
+| 准入（admission） | 对象写入 API server 前的校验/拦截环节；配额不足就在这里排队或拒绝 | 配额不足时排队/拒绝（§7.3） |
+| kube-scheduler | 决策“这个 Pod 放到哪个节点”的组件，产出绑定（bind）动作 | 决策延迟 / 绑定吞吐（§7.5） |
+| API server / etcd | API server 是所有读写的唯一入口；etcd 是它背后的分布式 KV，存全部对象状态 | 大规模集群的“状态存储”瓶颈（§7.5） |
+| Operator | 用自定义控制器把运维动作自动化的模式（声明期望状态，控制器去收敛） | GPU Operator 装驱动/运行时/DCGM（§7.1） |
+| cordon / drain | cordon 标记节点不再接新 Pod；drain 把节点上已有 Pod 驱逐出去 | 隔离坏节点（§8.2） |
+
+> 一句话：Pod 是**调度对象**，scheduler 决定放哪台，API server/etcd 记状态，namespace/Quota 管配额，cordon/drain 管退出。
+
+
 ### 7.1 K8s 的 GPU 抽象
 
 - **Device Plugin**：把 `nvidia.com/gpu` 这类资源暴露给 K8s；
@@ -436,11 +462,8 @@ PP:每个 micro-batch 传 67 MB 激活;主要成本是 bubble
 ### 7.3 拓扑感知与碎片治理
 
 - **拓扑感知**：把 TP 放进同一 NVLink 域，把 EP 对齐 rail，把 NUMA/网卡亲和性考虑进去。
-- **碎片**：大作业要 8 卡整机，但集群只剩零散 2 卡 → 利用率下降。
-  治理：整机预留、bin-packing、队列分级、可抢占的碎片作业。
-- **碎片算例**：1000 张卡、碎片率 20% ≈ 200 张卡无法组成整机；如果大作业都要 8 卡整机，
-  这部分卡就“看着空闲、实际不可用”。治理：整机预留、bin-packing、队列分级、允许小作业
-  填缝、坏节点及时 drain。
+- **碎片**：大作业要 8 卡整机，但集群只剩零散 2 卡 → 利用率下降；治理清单统一见 §7.5。
+- **碎片算例**：stranded 的定义、1000 卡 / 20% 的算例与完整治理清单统一放在 §7.5，本节不重复。
 - **在离线混部**：在线服务保 SLO，离线训练用剩余资源；需要资源隔离、优先级、
   动态配额和快速驱逐。混部不是“把空闲卡塞满”：在线 P99 一抖，离线任务就要让路。
 
@@ -472,7 +495,7 @@ PP:每个 micro-batch 传 67 MB 激活;主要成本是 bubble
 
 ### 7.5 调度器性能、仿真与碎片算例
 
-- **调度延迟**：队列里有 1 万个作业时，调度器要在一秒内做出决策；常见优化是增量调度、
+- **调度延迟**：单次调度决策的延迟（P99）通常在毫秒到百毫秒量级；队列深度的代价体现在排空时间——积压 1 万个作业、按本节 120 jobs/s 的处理能力，排空就要约 83 s；常见优化是增量调度、
   只重算受影响节点、缓存拓扑/配额、批量绑定。
 - **吞吐**：调度次数/秒、Pod 绑定次数/秒、API server 压力；大规模集群里 etcd 和
   kube-scheduler 都可能成为瓶颈。
@@ -482,7 +505,7 @@ PP:每个 micro-batch 传 67 MB 激活;主要成本是 bubble
   碎片率 = stranded GPU 数 / 总 GPU 数。
   例：32 卡集群，空闲是 `2+2+4` 三块，8 卡整机作业无法启动 → stranded = 8，
   碎片率 `8/32=25%`。若 1000 卡里 200 卡 stranded，就是 20% 碎片率。
-  治理：整机预留、bin-packing、队列分级、可抢占碎片作业。
+  治理：整机预留、bin-packing、队列分级、允许小作业填缝、坏节点及时 drain、可抢占碎片作业。
 
 > 面试问“调度器瓶颈在哪”：先分**决策延迟**、**绑定吞吐**、**状态存储**、**碎片**四层，
 > 再给一个可观测指标（queue latency / scheduling throughput / fragmentation / utilization）。
@@ -526,7 +549,7 @@ PP:每个 micro-batch 传 67 MB 激活;主要成本是 bubble
 3. **看拓扑/网卡**：`nvidia-smi topo -m`、`ibstat`、`ibv_devinfo`、`ping`；
 4. **看进程**：`py-spy dump`、`gdb`、`strace`，确认是等通信还是等锁；
 5. **缩小规模**：`nccl-tests` 从 2 卡到 8 卡逐级复现；换节点/换网卡做二分；
-6. **超时**：`NCCL_TIMEOUT`/`TORCH_NCCL_TIMEOUT` 只用于暴露问题，不要用它“解决” hang。
+6. **超时**：超时由框架设：PyTorch 用 `init_process_group(timeout=)`、`TORCH_NCCL_HEARTBEAT_TIMEOUT_SEC`（NCCL 本身没有 `NCCL_TIMEOUT`/`TORCH_NCCL_TIMEOUT` 这类变量），只用于暴露问题，不要用它“解决” hang。
 
 > 分层定位：单机内 → NVLink/PCIe；跨机 → IB/RoCE/交换机；框架 → 进程组/collective 顺序；
 > 存储 → Checkpoint/数据加载。不要一上来就重启整个集群。
@@ -535,7 +558,7 @@ PP:每个 micro-batch 传 67 MB 激活;主要成本是 bubble
 
 - **straggler**：某张卡/某个 reader 慢，拖住整个同步 step；
 - **silent data corruption**：ECC 没报错但结果错，靠校验/对比/重复实验发现；
-- **loss spike/NaN**：可能是数据、精度、通信、优化器或框架 bug，按 M2-2 §9 排查；
+- **loss spike/NaN**：可能是数据、精度、通信、优化器或框架 bug；排查流程在 M2-2 §6.3「loss spike / NaN 排查」，五步是数据 → 精度 → 通信 → 优化器 → 框架（M2-2 §9 只是常见坑清单，没有步骤）；
 - **弹性训练**：节点故障后重新组网、恢复 Checkpoint；代价是复杂度和性能波动。
 
 ## 9. 面试要点
@@ -583,9 +606,9 @@ PP:每个 micro-batch 传 67 MB 激活;主要成本是 bubble
 > 环境：至少 2 张 NVIDIA GPU；没有多卡时用 `nccl-tests` 的单机多进程模式。
 
 1. **ring all-reduce 账本**：写一个函数，输入 `N, S, BW`，输出每 rank 通信量、总流量、
-   理论时间；扫 `N=2..64`，画曲线并解释为什么大 `N` 下时间近似线性。
+   理论时间；扫 `N=2..64`，画曲线并解释为什么大 `N` 下时间趋于饱和：每 rank 通信量 `2S(N-1)/N` 只从 `1.0S`(N=2) 涨到 `1.75S`(N=8)、`1.97S`(N=64)，全程不到 2 倍；随 `N` 线性增长的是全网总流量 `2S(N-1)`，不是时间。
 2. **nccl-tests**：跑 `all_reduce_perf -b 8M -e 1G -f 2 -g <GPU 数>`，记录不同消息大小的
-   bus bandwidth；对比 `NCCL_ALGO=Ring` 与默认，解释差异。
+   `algbw` 与 `busbw`：`algbw` = 消息字节 ÷ 时间（只按用户缓冲 `S` 计时，N=8 时约 57 GB/s，只有链路带宽的 4/7；与 §2.2 每 rank 单向带宽同口径的是后面的 `busbw`）；`busbw` = `algbw × 2(N-1)/N`（nccl-tests 按 ring 折算的链路带宽，`N` 越大越趋近 `2×algbw`）。对比 `NCCL_ALGO=Ring` 与默认，解释差异。
 3. **拓扑检查**：`nvidia-smi topo -m`、`ibstat`、`ibv_devinfo`，画出本机/本集群的
    GPU–网卡–交换机路径；标出 TP/PP 应该放哪。
 4. **Checkpoint 账本**：用 7B/70B 参数，算 FP16/Adam 的 Checkpoint 大小；
