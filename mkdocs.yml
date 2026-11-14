@@ -1,5 +1,5 @@
 site_name: AI Infra 讲义
-site_description: 从 Transformer 骨架到推理系统的 29 篇讲义
+site_description: 从 Transformer 骨架到推理系统的 AI Infra 讲义（篇目见首页，由发布清单生成）
 docs_dir: docs
 site_dir: site
 use_directory_urls: true
