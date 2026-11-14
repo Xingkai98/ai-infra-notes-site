@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="从 Transformer 骨架到推理系统的 29 篇讲义">
+        <meta name="description" content="从 Transformer 骨架到推理系统的 AI Infra 讲义（篇目见首页，由发布清单生成）">
       
       
       
@@ -305,10 +305,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+  <a href="#29" class="md-nav__link">
     <span class="md-ellipsis">
       
-        篇目
+        篇目（共 29 篇，按发布清单生成）
       
     </span>
   </a>
@@ -316,7 +316,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
+  <a href="#_2" class="md-nav__link">
     <span class="md-ellipsis">
       
         关于
@@ -1575,10 +1575,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+  <a href="#29" class="md-nav__link">
     <span class="md-ellipsis">
       
-        篇目
+        篇目（共 29 篇，按发布清单生成）
       
     </span>
   </a>
@@ -1586,7 +1586,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
+  <a href="#_2" class="md-nav__link">
     <span class="md-ellipsis">
       
         关于
@@ -1614,52 +1614,147 @@
 
 
 <h1 id="ai-infra">AI Infra 讲义<a class="headerlink" href="#ai-infra" title="Permanent link">&para;</a></h1>
-<p>从 Transformer 骨架一路到推理系统的 29 篇讲义，每篇含依赖图、数值例子、面试要点与常见坑。</p>
+<p>从 Transformer 骨架一路到推理系统的 AI Infra 讲义，每篇含依赖图、数值例子、面试要点与常见坑。
+篇目表由发布清单自动生成（见下），编号即阅读顺序。</p>
 <h2 id="_1">怎么读<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <ol>
-<li>左侧按编号顺序读（01 → 29），每篇开头的「依赖图」写明前置</li>
+<li>左侧按编号顺序读（编号即清单顺序），每篇开头的「依赖图」写明前置</li>
 <li>顶部搜索框直接搜术语（例如 <code>KV cache</code>、<code>PD 分离</code>、<code>roofline</code>）</li>
 <li>右上角可切深色，手机上同样可用</li>
 <li>配套的 <a href="worksheets/">手算卡</a> 是要打印出来动笔的</li>
 </ol>
-<h2 id="_2">篇目<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<!-- ENTRIES:BEGIN（以下篇目由 publish_notes.py 按 publish.yaml 生成，勿手改）-->
+
+<h2 id="29">篇目（共 29 篇，按发布清单生成）<a class="headerlink" href="#29" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
-<th>层</th>
+<th>#</th>
 <th>篇</th>
-<th>主题</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>基础</td>
-<td>01–05</td>
-<td>骨架 / 注意力 / Block / 组装 / 现代架构</td>
+<td>01</td>
+<td><a href="notes/01_skeleton/">第一层 · 骨架 —— 从文本到矩阵</a></td>
 </tr>
 <tr>
-<td>训练</td>
-<td>06–09</td>
-<td>训练 / 对齐 / 评测 / 数据</td>
+<td>02</td>
+<td><a href="notes/02_attention/">第二层 · 心脏 —— Self-Attention 的 Q/K/V</a></td>
 </tr>
 <tr>
-<td>推理</td>
-<td>10–13</td>
-<td>推理基础 / 解码 / 服务 / 并行</td>
+<td>03</td>
+<td><a href="notes/03_block/">第三层 · 加强 —— Multi-Head、残差、LayerNorm、FFN</a></td>
 </tr>
 <tr>
-<td>系统</td>
-<td>14–21</td>
-<td>长上下文 / PEFT / Agent RL / 数据工程 / 可解释性 / 多模态 / AI Infra 地图</td>
+<td>04</td>
+<td><a href="notes/04_architecture/">第四层 · 组装 —— Encoder / Decoder / 掩码 / Cross-Attention</a></td>
 </tr>
 <tr>
-<td>运维</td>
-<td>22–29</td>
-<td>单机运维 / 推理系统 / 训练系统 / 分布式基础 / 平台 SRE / 前沿 / Agent 工程 / vLLM 源码 / Agent 评测</td>
+<td>05</td>
+<td><a href="notes/05_modern/">第五层 · 现代变体 —— 从原论文到 LLaMA/GPT</a></td>
+</tr>
+<tr>
+<td>06</td>
+<td><a href="notes/06_inference/">第六层 · 跑起来 —— 训练/推理、KV Cache、完整 forward</a></td>
+</tr>
+<tr>
+<td>07</td>
+<td><a href="notes/07_pretraining/">第七层 · 预训练 —— 目标、数据与 Scaling Law</a></td>
+</tr>
+<tr>
+<td>08</td>
+<td><a href="notes/08_alignment/">第八层 · 对齐 —— SFT、RLHF、DPO 与安全</a></td>
+</tr>
+<tr>
+<td>09</td>
+<td><a href="notes/09_evaluation/">第九层 · 评测 —— benchmark、污染、judge 与可复现</a></td>
+</tr>
+<tr>
+<td>10</td>
+<td><a href="notes/10_decoding/">第十层 · 解码 —— 从 logits 到 token</a></td>
+</tr>
+<tr>
+<td>11</td>
+<td><a href="notes/11_applications/">第十一层 · 应用 —— Prompt、RAG、工具与 Agent</a></td>
+</tr>
+<tr>
+<td>12</td>
+<td><a href="notes/12_multimodal/">第十二层 · 多模态 —— VLM、扩散与语音</a></td>
+</tr>
+<tr>
+<td>13</td>
+<td><a href="notes/13_reasoning/">第十三层 · 推理模型 —— 测试时计算、长 CoT 与 RLVR</a></td>
+</tr>
+<tr>
+<td>14</td>
+<td><a href="notes/14_long_context/">第十四层 · 长上下文 —— 位置外推、注意力模式与 KV 账本</a></td>
+</tr>
+<tr>
+<td>15</td>
+<td><a href="notes/15_peft_lora/">第十五层 · PEFT 与 LoRA —— 用 0.1% 参数做微调</a></td>
+</tr>
+<tr>
+<td>16</td>
+<td><a href="notes/16_agent_rl/">第十六层 · Agent RL —— rollout、环境、奖励与异步训练</a></td>
+</tr>
+<tr>
+<td>17</td>
+<td><a href="notes/17_data_engineering/">第十七层 · 数据工程 —— 从原始语料到数据飞轮</a></td>
+</tr>
+<tr>
+<td>18</td>
+<td><a href="notes/18_interpretability/">第十八层 · 可解释性 —— 从探针到电路与 SAE</a></td>
+</tr>
+<tr>
+<td>19</td>
+<td><a href="notes/19_multimodal_deep/">第十九层 · 多模态深化 —— VLM、视频/音频与扩散</a></td>
+</tr>
+<tr>
+<td>20</td>
+<td><a href="notes/20_ai_infra_map/">M2-0 · 地图与坐标系</a></td>
+</tr>
+<tr>
+<td>21</td>
+<td><a href="notes/21_single_node_ops/">M2-1 · 单机与算子（地基）</a></td>
+</tr>
+<tr>
+<td>22</td>
+<td><a href="notes/22_inference_systems/">M2-3 · 推理系统</a></td>
+</tr>
+<tr>
+<td>23</td>
+<td><a href="notes/23_training_systems/">M2-2 · 训练系统</a></td>
+</tr>
+<tr>
+<td>24</td>
+<td><a href="notes/24_distributed_base/">M2-4 · 分布式底座</a></td>
+</tr>
+<tr>
+<td>25</td>
+<td><a href="notes/25_platform_sre/">M2-5 · 平台与稳定性</a></td>
+</tr>
+<tr>
+<td>26</td>
+<td><a href="notes/26_frontier_edge/">M2-6 · 前沿与端侧</a></td>
+</tr>
+<tr>
+<td>27</td>
+<td><a href="notes/27_agent_engineering/">第二十七层 · Agent 工程化：Context / Harness / Loop / Graph</a></td>
+</tr>
+<tr>
+<td>28</td>
+<td><a href="notes/28_vllm_source_trace/">第二十八层 · vLLM v1 源码 trace：一次请求怎么走</a></td>
+</tr>
+<tr>
+<td>29</td>
+<td><a href="notes/29_agent_eval_infra/">第二十九层 · Agent 评测 Infra：从打分到可复现的评测平台</a></td>
 </tr>
 </tbody>
 </table>
-<h2 id="_3">关于<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<!-- ENTRIES:END -->
+
+<h2 id="_2">关于<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>这些是我自己学习时写的讲义，内容会持续修订。有错欢迎在仓库里提 issue。</p>
 
 
