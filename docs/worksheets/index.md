@@ -2,9 +2,11 @@
 
 打印出来手算，算完对答案；答案不在本站。
 
+例外：`ws-attention-chain` 换成 **带数字的完整算例**（8 步全链，forwardviz 出图），拿来对答案用；其余仍是空白卡。
+
 | 卡 | 打开 |
 |---|---|
-| `ws-attention-chain` | [PNG](ws-attention-chain.png) |
+| `ws-attention-chain` | [PNG](ws-attention-chain.png) · 完整数值版（8 步全链，含 embed/pos/mask/多头/out_proj） |
 | `ws-attn-flops` | [PNG](ws-attn-flops.png) |
 | `ws-block-chain` | [PNG](ws-block-chain.png) |
 | `ws-causal-mask` | [PNG](ws-causal-mask.png) |
