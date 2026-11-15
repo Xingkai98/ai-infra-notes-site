@@ -4,9 +4,11 @@
 
 例外：`ws-attention-chain` 换成 **带数字的完整算例**（8 步全链，forwardviz 出图），拿来对答案用；其余仍是空白卡。
 
+`ws-attention-chain` 另有 **HTML 版**：公式是真排版（离线 KaTeX），可缩放、可搜索，手机上不用拖一张长图。
+
 | 卡 | 打开 |
 |---|---|
-| `ws-attention-chain` | [PNG](ws-attention-chain.png) · 完整数值版（8 步全链，含 embed/pos/mask/多头/out_proj） |
+| `ws-attention-chain` | [HTML 版](ws-attention-chain.html) · [手机 HTML](ws-attention-chain-mobile.html) · [PNG](ws-attention-chain.png) |
 | `ws-attn-flops` | [PNG](ws-attn-flops.png) |
 | `ws-block-chain` | [PNG](ws-block-chain.png) |
 | `ws-causal-mask` | [PNG](ws-causal-mask.png) |
