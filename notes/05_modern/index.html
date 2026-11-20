@@ -685,6 +685,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#7-softmax" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. 线性注意力:把 softmax 拆开
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#_1" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1774,6 +1785,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#7-softmax" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. 线性注意力:把 softmax 拆开
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#_1" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2081,6 +2103,66 @@ softmax 逐元素定义为 <code>p_e = e^{z_e} / Σ_j e^{z_j}</code>(本层第�
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>x = x + SwiGLU_FFN( RMSNorm(x) )       # 或 MoE 版 FFN
 </code></pre></div>
 <p>对比原论文:归一化换了、位置编码换成旋转、KV 共享了、激活换成门控——<strong>骨架没变</strong>,都是第二三层的那个 Block。</p>
+<h2 id="7-softmax">7. 线性注意力:把 softmax 拆开<a class="headerlink" href="#7-softmax" title="Permanent link">&para;</a></h2>
+<p><strong>问题:</strong> softmax attention 的每一步都要对<strong>整条前缀</strong>做加权:第 t 个 token 要读 t 个 key/value。总开销 <code>O(T²·d)</code>。把 T 从 4K 拉到 128K:序列长 32 倍,平方项涨 32²≈1000 倍,KV 缓存大小涨 32 倍。能不能让"看前面"这件事变成<strong>一个固定大小的状态</strong>?</p>
+<p><strong>做法:</strong> 把注意力写成三步,再把后两步换个结合顺序。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>softmax 版:  o_t = Σ_{i≤t} softmax(q_t·k_i) · v_i        ← 权重依赖 q_t,只能一个个算
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>线性版:      o_t = φ(q_t)ᵀ · S_t,   S_t = S_{t-1} + φ(k_t) v_tᵀ
+</code></pre></div>
+<p><code>φ</code> 是把 q/k 映到非负空间的映射(可以是恒等 + 非负激活,也可以是 elu+1、1+softplus 等)。关键在<strong>去掉 softmax 之后</strong>,<code>(φ(Q)φ(K)ᵀ)V</code> 可以重排成 <code>φ(Q)(φ(K)ᵀV)</code> —— 前者是 <code>T×T</code> 矩阵,后者是一个 <code>d×d</code> <strong>状态矩阵 S</strong>。于是每来一个 token 只做两件事:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>S ← S + φ(k_t) v_tᵀ        d×d 加一个秩 1 外积(只加当前 token,因果性天然成立,不需要掩码)
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>o_t ← φ(q_t)ᵀ S            d×d 乘一个向量
+</code></pre></div>
+<p><strong>一个 T=3、d=2 的完整数值</strong>(玩具里所有 q/k 分量都是非负数,所以 φ 取恒等就满足非负要求;真实实现里 φ 要保证非负,常取 elu(x)+1 或 1+softplus):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>k1=[1,0] v1=[1,2]   S1 = [[1,2],[0,0]]
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>k2=[0,1] v2=[3,1]   S2 = S1 + [[0,0],[3,1]] = [[1,2],[3,1]]
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>k3=[1,1] v3=[0,1]   S3 = S2 + [[0,1],[0,1]] = [[1,3],[3,2]]
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>第 3 步的 query q3=[1,1]:
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a>  未归一化: o3 = q3ᵀ·S3 = [1×1+1×3, 1×3+1×2] = [4, 5]
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a>  归一化: 分母 = Σ_j φ(q3)·φ(k_j) = q3·(k1+k2+k3) = [1,1]·[2,2] = 4
+<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a>  于是 o3 = [4,5] / 4 = [1.00, 1.25]
+</code></pre></div>
+<p>同一组 q/k/v 用 softmax attention 算第 3 个位置:分数 <code>[1,1,2]</code> → <code>exp=[2.718,2.718,7.389]</code>、和 <code>12.825</code> → 权重 <code>[0.212,0.212,0.576]</code> → 输出 <code>[0.848, 1.212]</code>。</p>
+<p><strong>两个数不一样,这正好是这张对照的意义</strong>:线性注意力不是"更快的 softmax",它是<strong>换了一种权重</strong>。softmax 的权重是指数型、会随分数差迅速饱和(最大项吃掉大部分权重);线性版把分数直接线性映射成权重:分数高一点只按比例增加,不会像 softmax 那样被指数放大成压倒性权重。长上下文里这意味着<strong>强对比容易被抹平</strong>。代价是「这一条比别的重要得多」这种强对比容易被抹平,检索类任务因此掉点——这是它掉点的机制来源(不是说它「均衡所以更公平」)。</p>
+<p><strong>成本对比</strong>(d=64、T=4K→128K):</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>每 token 计算</th>
+<th>整条前缀</th>
+<th>中间状态</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>softmax attention</td>
+<td>O(T·d)</td>
+<td>O(T²·d)</td>
+<td>KV 缓存 O(T·d)</td>
+</tr>
+<tr>
+<td>线性注意力</td>
+<td>O(d²)</td>
+<td>O(T·d²)</td>
+<td>固定 S, O(d²)</td>
+</tr>
+</tbody>
+</table>
+<p>只比「每 token 的乘加次数」这一个口径。T = 128K、d = 64:softmax 算分数要 <code>T·d</code> 次、加权求和再 <code>T·d</code> 次,合计 <code>2Td = 16.8M</code>;线性版更新状态要 <code>d²</code> 次、读出再 <code>d²</code> 次,合计 <code>2d² = 8192</code>。比值 <code>T/d = 2048</code> 倍。更关键的是状态从"随 T 增长"变成"常数"——推理时 KV 缓存这条显存账直接消失。</p>
+<p><strong>代价(面试必须说得出的三条):</strong>
+1. <strong>精度掉</strong>:线性权重摊薄,检索类任务(needle-in-a-haystack)、精确复制、长程依赖上明显输给 softmax。
+2. <strong>状态是固定的 d×d</strong>,信息压缩有上限;序列越长,早期 token 被"平均"得越厉害。
+3. <strong>数值范围要额外管</strong>:没有 softmax 那种指数归一化(线性版有归一化项,但它是线性的、压不住长尾),分母可能很小、分子随 T 线性增长,所以 φ 的设计与归一化项要一起兜住数值范围。</p>
+<p><strong>它和 RNN / Mamba 的关系</strong>(这是最容易被追问的一点):线性注意力本质是<strong>一个带矩阵状态的 RNN</strong> —— <code>S</code> 就是隐藏状态,递推式和 RNN 同构,只是状态的更新用外积、读用内积。Mamba 那类选择性状态空间模型把"更新和读的系数"做成<strong>随输入变化</strong>(selective),再配硬件友好的扫描实现;在线性注意力最基础的那一版里,状态更新的系数是固定的、不随输入变;带门控的变体(如 GLA)让系数也随输入变化,但状态大小仍然固定——「状态大小不随 T 增长」才是这一族的共同点,"系数是否随输入变"只是版本差异。所以面试里说"线性注意力 = 可以用 chunked 并行训练的 RNN"是准确的口径。</p>
+<p><strong>混合结构为什么流行</strong>:纯线性掉点,纯 softmax 太贵,常见的工程折中是<strong>大部分层用线性/滑窗、少数层保留全注意力</strong>(公开的混合结构里见过 3:1、7:1 这类配比),既拿到长上下文的线性成本,又保住关键层的精确检索能力。具体配比各家不同,不是定律。这一层是"结构换成本"的典型案例。</p>
+<p><img alt="线性注意力的递推状态:三个 token 依次更新 S,再用 q 读出" src="../../diagrams/linattn_state.landscape.png" /></p>
+<p><strong>面试口径一句话:</strong> 线性注意力去掉 softmax,把"对整条前缀加权"重排成"维护一个 d×d 状态 + 用 q 读",复杂度从 <code>O(T²d)</code> 降到 <code>O(Td²)</code>、KV 缓存消失;代价是权重线性化导致长程检索掉点,所以工程上多用线性层与全注意力层混合。</p>
+<p><strong>常见坑:</strong>
+- 把线性注意力说成"softmax 的近似"——它不是近似,是<strong>另一族权重</strong>;说"近似"会被追问"近似谁、误差界多少",答不上来。
+- 忘了归一化项:不除 <code>Σφ(k)</code>,输出会随序列长度线性膨胀,数值上根本不能用。
+- 把"KV 缓存消失"说成"不需要缓存":状态 <code>S</code> 仍要存,只是<strong>大小固定、不随 T 增长</strong>。</p>
 <h2 id="_1">面试要点<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <ol>
 <li><strong>Pre-LN 比 Post-LN 好在哪?</strong> → 残差恒等路径不被 Norm 打断,梯度直通,深层更稳。</li>
