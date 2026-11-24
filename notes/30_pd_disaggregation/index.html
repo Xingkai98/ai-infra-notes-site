@@ -1,0 +1,2283 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="从 Transformer 骨架到推理系统的 AI Infra 讲义（篇目见首页，由发布清单生成）">
+      
+      
+      
+      
+        <link rel="prev" href="../29_agent_eval_infra/">
+      
+      
+        <link rel="next" href="../../worksheets/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>第 30 篇 · PD 分离 —— 交接、配比与归因 - AI Infra 讲义</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#30-pd" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="../.." title="AI Infra 讲义" class="md-header__button md-logo" aria-label="AI Infra 讲义" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            AI Infra 讲义
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              第 30 篇 · PD 分离 —— 交接、配比与归因
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切到深色"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="切到深色" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切到浅色"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="切到浅色" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="AI Infra 讲义" class="md-nav__button md-logo" aria-label="AI Infra 讲义" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    AI Infra 讲义
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI Infra 讲义
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Notes
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Notes
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01_skeleton/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第一层 · 骨架 —— 从文本到矩阵
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02_attention/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二层 · 心脏 —— Self-Attention 的 Q/K/V
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03_block/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第三层 · 加强 —— Multi-Head、残差、LayerNorm、FFN
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04_architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第四层 · 组装 —— Encoder / Decoder / 掩码 / Cross-Attention
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05_modern/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第五层 · 现代变体 —— 从原论文到 LLaMA/GPT
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_inference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第六层 · 跑起来 —— 训练/推理、KV Cache、完整 forward
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_pretraining/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第七层 · 预训练 —— 目标、数据与 Scaling Law
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../08_alignment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第八层 · 对齐 —— SFT、RLHF、DPO 与安全
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09_evaluation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第九层 · 评测 —— benchmark、污染、judge 与可复现
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../10_decoding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十层 · 解码 —— 从 logits 到 token
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../11_applications/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十一层 · 应用 —— Prompt、RAG、工具与 Agent
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../12_multimodal/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十二层 · 多模态 —— VLM、扩散与语音
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../13_reasoning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十三层 · 推理模型 —— 测试时计算、长 CoT 与 RLVR
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../14_long_context/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十四层 · 长上下文 —— 位置外推、注意力模式与 KV 账本
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../15_peft_lora/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十五层 · PEFT 与 LoRA —— 用 0.1% 参数做微调
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../16_agent_rl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十六层 · Agent RL —— rollout、环境、奖励与异步训练
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../17_data_engineering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十七层 · 数据工程 —— 从原始语料到数据飞轮
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../18_interpretability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十八层 · 可解释性 —— 从探针到电路与 SAE
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../19_multimodal_deep/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第十九层 · 多模态深化 —— VLM、视频/音频与扩散
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../20_ai_infra_map/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模块二 · M2-0 地图与坐标系
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（2026-10-21 补全景图 20g）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../21_single_node_ops/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模块二 · M2-1 单机与算子
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（2026-10-21 补结构图 20h/20i/20j/20k）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../22_inference_systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模块二 · M2-3 推理系统
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（2026-10-21 补结构图 20l–20q）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../23_training_systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 2 层 · M2-2 训练系统
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../24_distributed_base/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 4 层 · M2-4 分布式底座
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../25_platform_sre/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 5 层 · M2-5 平台与稳定性
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../26_frontier_edge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 6 层 · M2-6 前沿与端侧
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--完成（首版；审阅记录见 PROGRESS）"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../27_agent_engineering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二十七层 · Agent 工程化：Context / Harness / Loop / Graph
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--v1"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../28_vllm_source_trace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二十八层 · vLLM v1 源码 trace：一次请求怎么走
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--v1"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../29_agent_eval_infra/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第二十九层 · Agent 评测 Infra：从打分到可复现的评测平台
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--v1"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 30 篇 · PD 分离 —— 交接、配比与归因
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    第 30 篇 · PD 分离 —— 交接、配比与归因
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        这篇补的是哪一块
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        依赖图
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        一句话直觉：PD 把"谁等谁"从时间轴上搬到了拓扑上
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1 干扰是怎么发生的，该看哪个指标
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-chunked-prefill-pd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2 同一个问题的两个解：Chunked Prefill 与 PD 分离
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-token-p" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3 交接三阶段：首 token 在 P 上产生
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4 资源配比与排队诊断
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-52-pd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5 归因纪律：5.2× 不能整笔记给 PD
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6 与缓存层的交互：少算和少传是两件事
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-pp-pd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7 PP 切层，PD 切阶段
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7 PP 切层，PD 切阶段">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#71" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.1 本篇数字的口径
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        面试要点
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        常见坑
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        动手清单
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        下一步
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../worksheets/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Worksheets
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Worksheets
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        这篇补的是哪一块
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        依赖图
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        一句话直觉：PD 把"谁等谁"从时间轴上搬到了拓扑上
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1 干扰是怎么发生的，该看哪个指标
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-chunked-prefill-pd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2 同一个问题的两个解：Chunked Prefill 与 PD 分离
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-token-p" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3 交接三阶段：首 token 在 P 上产生
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4 资源配比与排队诊断
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-52-pd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5 归因纪律：5.2× 不能整笔记给 PD
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6 与缓存层的交互：少算和少传是两件事
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-pp-pd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7 PP 切层，PD 切阶段
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7 PP 切层，PD 切阶段">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#71" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.1 本篇数字的口径
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        面试要点
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        常见坑
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        动手清单
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        下一步
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="30-pd">第 30 篇 · PD 分离 —— 交接、配比与归因<a class="headerlink" href="#30-pd" title="Permanent link">&para;</a></h1>
+<h2 id="_1">这篇补的是哪一块<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p>notes/22_inference_systems.md §7.2 已经把骨架给全了：两个池子的负载特性、KV 走 RDMA/NVLink、分开扩缩容与减少干扰的好处、传输与调度的代价，以及那份 70B GQA 传输账本。本篇一句都不重讲，只补它没往下钻的三处：「交接顺序」（谁先占坑、首 token 落在谁账上）、「配比算术」（三个排队信号各自指向加谁）、「归因纪律」（公开倍数为什么不能整笔记给 PD），以及两个最容易讲错的交叉面——PD 与缓存层（少算 ≠ 少传）、PD 与 PP（切阶段 ≠ 切层）。</p>
+<p><strong>delta 一句话</strong>：22 号回答"PD 值不值得上"，本篇回答"上了之后延迟记在哪、资源怎么分、收益归谁"。源章是 <code>course-material/ch/part3/第5章_PrefillDecode分离.md</code>（同章英文版 <code>course-material/eng/part3/Chapter5_Prefill-Decode-Disaggregation.md</code>，术语对照用），本篇按 commit bcf0cd8 对齐；本文只读了代码与文档、推了公式，本机无 GPU，任何"跑过"的说法都不成立。</p>
+<h2 id="_2">依赖图<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<pre class="mermaid"><code>graph TD
+    A["请求进 Router 选 P/D 配对"] --&gt; B["D 预分配目标 KV 槽位"]
+    B --&gt; C["P：算 KV 并采样出首 token"]
+    C --&gt; D["传输：KV + 首 token + 请求信息"]
+    D --&gt; E["D：用首 token 算第二个 token"]
+    C -.-&gt; F["P 命中前缀：少算"]
+    F -.-&gt; D
+    E -.-&gt; G["D 侧兼容前缀：才可能少传"]
+    D --&gt; H["配比：P:D 由 ISL/OSL 与命中率定"]
+    H --&gt; I["归因：先固定 batch/并行度/内核"]</code></pre>
+<h2 id="pd">一句话直觉：PD 把"谁等谁"从时间轴上搬到了拓扑上<a class="headerlink" href="#pd" title="Permanent link">&para;</a></h2>
+<p>同一组卡上的干扰，本质是两条请求共享一条时间轴；PD 没有消灭等待，只是把等待变成一段可以并行发生、也可以被计量的传输，于是"等多久"变成了"传多少字节、有效带宽多少、槽位什么时候腾出来"三个能算的问题。</p>
+<h2 id="1">1 干扰是怎么发生的，该看哪个指标<a class="headerlink" href="#1" title="Permanent link">&para;</a></h2>
+<p>一轮计算的成员是调度器选的。若这一轮里既有 B 的长 prefill、又有 A 的 decode，这一轮的耗时由 prefill 的算力需求决定，A 的那次前向被挤到后面。A 没做错任何事，它只是"下一轮"来得晚了。</p>
+<p>这个"晚"是一个<strong>间隔</strong>，不是一个均值。ch1 第 5 章把两件事分得很清楚：TPOT 是除首 token 外的平均每 token 时间，ITL 是相邻两个 token 的间隔、可逐次观测（<code>course-material/ch/part1/第5章_Benchmark入门.md</code>）。一次 60 ms 的额外阻塞放进 199 个间隔里，几乎看不见。</p>
+<p>算一遍最省事的版本。一条请求生成 200 个 token，正常 20 ms/token；中途被一次长 prefill 挡了 60 ms，那一个间隔变成 80 ms：</p>
+<ul>
+<li>199 个间隔里 198 个 20 ms、1 个 80 ms，TPOT = (198×20 + 80) / 199 = 20.30 ms，只涨 1.5%；</li>
+<li>同一个现场，被挡的那一个间隔是 20 ms 的 4 倍。用户"卡了一下"的全部体感在 4 倍里，不在 20.30 里。</li>
+</ul>
+<p>这种阻塞出现 10 次时 (189×20 + 10×80)/199 = 23.0 ms，TPOT 涨 15%，仍然把"十次明显停顿"描述成"整体慢了一点"。用 TPOT 排查抖动查不出来，不是因为它错了，是因为它按定义就在做平均。</p>
+<p><strong>采样口径</strong>：五条，缺一条结论就不可信。</p>
+<ul>
+<li>逐 token 打时间戳，客户端按流式 chunk 到达时间记，不靠服务端事后聚合；<strong>但一个 chunk 常含多个 token</strong>，此时只有 chunk 级时间戳，<strong>按 token 数均摊只能给近似值，不能用来判尖峰</strong>（均摊会把 chunk 内的不均匀抹平）。要判尖峰只能把 stream interval 压到一个 token 一个 tick；做不到就老老实实报"chunk 级间隔"，并说明它可能低估 max ITL；</li>
+<li>先按请求算、再按请求取分位：每条请求取 max ITL 与 p99 ITL，再对这些值取 P50/P95/P99。不要把全集群的 token 间隔倒进一个池子取分位，那会让长回答的请求权重被放大、短请求的尖峰被稀释；</li>
+<li>窗口要盖住尖峰成因：至少覆盖若干次长 prompt 到达。只截 30 秒平稳期，采到的永远是"没有 prefill 干扰"的分布；</li>
+<li>按 ISL 分桶再取分位：同一份看板里 512 token 与 8K token 的请求混在一起，尖峰会被短请求的样本量淹没。<strong>注意分桶只能回答"哪类请求的 SLO 余量更小"</strong>（受害方视角：一次阻塞给谁加的绝对延迟是一样多的；若各桶用的是同一个延迟上限，那么本来单轮 decode 就更久的请求余量更薄），回答不了"谁造成的"；</li>
+<li>同时报 goodput：在 TTFT/TPOT 上限约束下还剩多少有效吞吐（ch1 第 5 章的 goodput 口径）。否则"吞吐涨了、尾延迟炸了"会被记成一次优化。</li>
+</ul>
+<p>要归因就得换一个量：<strong>看阻塞源，不看受害方的 ISL</strong>。一次尖峰的幅度约等于插进来的那次 prefill 的计算时间，而 prefill 时间随<strong>那次请求自己的未缓存输入长度</strong>增长。所以判据是「尖峰时刻附近到达的长请求有多长」，而不是「被拖的那条请求有多长」：同一条短请求，撞上 8K 的 prefill 会尖，撞上 512 的不会。要验这条因果链，得在 trace 里同时记下每个间隔前后进入的 prefill 请求及其未缓存长度（<code>cached_len</code> / <code>extend_len</code> 两个量就能算出未缓存长度，见 §6）。反过来，若尖峰与相邻 prefill 长度无关、只与 running batch 大小相关，那更像是单轮 decode 变慢（§2 的另一种成因）：前者切预算或分离，后者调 batch 上限。用这一步先判成因，比直接换架构便宜得多。</p>
+<p>顺带一个反直觉的读数：PD 上线后 TTFT 变好、ITL 尾部却不一定变好。原因要按 §3 的两条路径分开说——首 token 在交接完成前就回传客户端时，交接里未隐藏的那部分时间落在"第 1 到第 2 个 token"；等交接完成才回传时，它先记进 TTFT，此时 TTFT 未必变好、ITL 反而干净。只报 TTFT、或只报 TPOT 的看板都会给出错误结论，必须两个指标并排看。</p>
+<h2 id="2-chunked-prefill-pd">2 同一个问题的两个解：Chunked Prefill 与 PD 分离<a class="headerlink" href="#2-chunked-prefill-pd" title="Permanent link">&para;</a></h2>
+<p>Chunked Prefill 不动设备，只动<strong>预算</strong>：给一轮 prefill 设一个尚未缓存 token 的上限，超出的部分留到下一轮。<code>course-material/ch/part2/第6章_ContinuousBatching与调度.md</code> §5.3 的例子是预算 1024、请求 2500 个未缓存 token，分 1024 / 1024 / 452 三轮走完。</p>
+<p>把量级放大到长文档：8192 token、预算 1024 → 8 轮。若一次算完要 480 ms，切完每轮约 60 ms，被阻塞的最长单块缩短 8 倍，而总工作量一点没少（8×60 = 480 ms）。代价在另一头：</p>
+<ul>
+<li>轮次从 1 变 8 意味着 8 次调度边界、8 次更小的 GEMM。ch6 §6.4 讲过合批提高算术强度的道理，反过来切碎就压低它，所以同样 8192 token 的 prefill 有效吞吐会掉；</li>
+<li>切得更碎不等于让路。ch6 §6.2 明文写了本版本 mini-sglang 把未完成的 prefill 放回队首继续 prefill 优先，只把预算调小并不会自动让 decode 请求获得执行机会。要降 ITL，得同时有块间让路策略，光调预算是不够的。</li>
+</ul>
+<p>预算还是整个 batch 共用的，不是逐请求的：ch6 §5.3 写明前一条请求用掉 800，后一条就只剩 224。并发一高，每条请求分到的块更小、轮次更多，chunked 的有效性随负载下降——它缓解的是单次阻塞的上限，不是总量。调度侧的预算检查落在 <code>PrefillAdder</code> 上：代码章（<code>course-material/ch/part2/第6章_ContinuousBatching与调度_代码.md</code>）里它逐条检查 KV 容量与 token 预算，超预算的请求只被批入一部分。</p>
+<p><strong>够用的判据</strong>：并发不高、ISL 中等、TTFT 有余量、两端不需要不同的 batch 形状和内核，先在同一个池子里调预算最便宜——它不改部署、不改显存预算，也不新增一次 KV 传输。</p>
+<p><strong>必须分离的判据</strong>：长 prompt 持续到达且 ITL 尾部有 SLO；或者两端要的调度/内核形态根本互斥。后者不是延迟问题而是能力问题，SGLang 团队 2025-05-05 的报告里写得很直接（链接见 §5）：DeepEP 的 normal dispatch 服务长输入、low-latency dispatch 服务逐 token 生成，两者无法在同一个通信组里同时成立，统一调度就与 DP attention 打架。这种冲突不是调预算能解的，只能把两个阶段放到不同的组里。</p>
+<p><strong>判断顺序</strong>：先量每请求 max ITL 的分位（§1）→ 再试 chunked 并记下 TTFT 与吞吐的损失 → 两者都不够再谈分离。反过来先上 PD，通常会把一个调度问题付成一次网络问题。</p>
+<h2 id="3-token-p">3 交接三阶段：首 token 在 P 上产生<a class="headerlink" href="#3-token-p" title="Permanent link">&para;</a></h2>
+<p>真正的顺序比"P 算完给 D"多一步前置。按 SGLang 官方文档（https://docs.sglang.io/docs/advanced_features/pd_disaggregation ）：</p>
+<ol>
+<li>Router 把请求配成一对 P 与 D，两端通过 P 的 bootstrap 端口握手；</li>
+<li>D 先在自己的 KV 池里预分配这条请求的目标槽位，再通知 P 开始前向；</li>
+<li>P 算完各层 KV，采样出<strong>首个 token</strong>；</li>
+<li>传输：KV、首 token 的 id、请求信息（采样参数、输出上限）一起交给 D；</li>
+<li>D 用这些状态算出第二个 token，之后逐 token 继续，新 KV 只加在 D 上。</li>
+</ol>
+<p>三个必须点明的细节：</p>
+<ul>
+<li><strong>首 token 在 P 上产生，不在 D 上</strong>。但"在 P 上产生"不等于"客户端立刻收到"：TTFT 按定义结束于<strong>客户端收到第一个 token</strong>，所以它包含 P 的算力与排队、D 的准入等待、以及首 token 到客户端的那一段路径。若首 token 由 P 直接回传（不待交接完成），交接里还没被隐藏的那部分时间才主要落进"第 1 到第 2 个 token"的间隔；若路由等交接完成才回传，传输与 D 侧等待会先记进 TTFT。<strong>SGLang 默认路由在这一点上究竟走哪条、首 chunk 由谁发出，本机没有核到源码，按"两种都可能"设计看板</strong>：TTFT 与每请求 max ITL 一起报，不要只报一个。</li>
+<li>传的是 prompt 位置的全部层 KV，不含首 token 自己的 KV。首 token 的 KV 由 D 的第一步前向顺带算出来，因为对 D 来说它是"要作为输入喂进去的那个位置"。</li>
+<li>硬约束只有一条：<strong>接收侧必须先有落点，KV 才能写进去</strong>。落点什么时候占是两个策略，不是"顺序反了就死锁"：<code>--disaggregation-decode-allocation-policy</code> 默认 early（P 开始算之前 D 就占住目标槽位），另一个取值 prefill_complete（P 算完、D 再占）。early 省延迟但长 prefill 会一直攥着槽位，prefill_complete 相反——代价见 §6。</li>
+</ul>
+<p><strong>bootstrap</strong>：P 侧开一个专用端口做注册与配对，D 通过它拿到对端信息；心跳间隔默认 5 秒（同文档的环境变量表）。握手、超时、取消都走这条控制面，它和数据面（RDMA 搬 KV）是两条独立的链路——控制面抖动和数据面拥堵的排查方法完全不同。</p>
+<p><strong>数据面</strong>：SGLang 用 Mooncake 或 NIXL 作传输后端，发送/接收放在后台线程，避免阻塞调度循环；RDMA 侧用 queue pair 建连、用 scatter-gather 元素处理非连续的显存块（这些细节出自上面那篇 2025-05-05 的报告）。"非连续"是关键：KV 页在显存里本来就是一页一页散着的。</p>
+<p>把时间账写成两行，谁承担什么就一目了然：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>记 ITL_1 = 第 1 个 token 到第 2 个 token 的间隔；T_decode,1 = 产出第 2 个 token 的那一步 decode
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>路径 A（首 token 交接前就回传客户端；early 策略下 D 已先占坑）：
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>  TTFT  = T_准入,P + T_准入,D + T_prefill,P
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>  ITL_1 = T_交接,剩余 + T_transfer,未隐藏 + T_decode,1
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>  E2E   = TTFT + ITL_1 + Σ_{i≥2} ITL_i
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>路径 B（等交接完成再回传）：
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>  TTFT  = T_准入,P + T_prefill,P + T_交接 + T_准入,D + T_transfer
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>  ITL_1 = T_decode,1（交接已完成）
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>  E2E   = TTFT + ITL_1 + Σ_{i≥2} ITL_i
+</code></pre></div>
+<p>三个符号先定义清楚，否则很容易两边都算一遍：T_准入,P / T_准入,D 是两端各自等可用槽位的时间（early 策略下 D 先占坑，准入发生在 P 之前，路径 A 里也计入 TTFT）；T_交接 是握手与状态传递；T_transfer 只出现一次，位置由路径决定——路径 A 在 ITL_1 里，路径 B 在 TTFT 里。两处都只计<strong>未隐藏的部分</strong>：传输若能按块与 P 侧计算重叠（§7 末条），只有没被覆盖的尾巴会变成等待；同理首 token 回传后若还有握手收尾，那点控制开销也记在 ITL_1 里，而不是消失。</p>
+<p>同池方案里 prefill 与 decode 抢同一条时间轴，T_prefill 的不确定性（排队、被打断）全落在 TTFT 上；PD 方案里 T_prefill 只受 P 侧队列影响，但 E2E 里多出一次 T_transfer，它落在哪里取决于路径——路径 A 落进 ITL_1，路径 B 落进 TTFT。所以"分离后首字更快、第一个字到第二个字更慢"只在路径 A 下成立，是账目搬家而不是凭空变快。这也是 §1 坚持按请求报 max ITL 的原因：路径 A 下那个最大值往往就是 ITL_1。P 侧的调度入口是 <code>PrefillManager</code>（同代码章），它决定这一轮接哪几条、每条算多少 token；D 侧则是常规的 decode 批调度，两边连 CUDA Graph 的 batch size 列表都要各配一份。</p>
+<h2 id="4">4 资源配比与排队诊断<a class="headerlink" href="#4" title="Permanent link">&para;</a></h2>
+<p>一阶模型只有两个式子：P 要吞掉 λ·L_in_eff 个输入 token/s，D 要吐出 λ·L_out 个输出 token/s，于是节点数之比是 (L_in_eff / R_p) : (L_out / R_d)。用报告给出的每节点速率 R_p = 54,543 input tok/s、R_d = 22,282 output tok/s（口径见 §7.1），三种负载算出来差别很大：</p>
+<table>
+<thead>
+<tr>
+<th>负载</th>
+<th>ISL / OSL</th>
+<th>P:D</th>
+<th>12 节点怎么切</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>通用对话</td>
+<td>2000 / 500</td>
+<td>1.63 : 1</td>
+<td>7 P + 5 D</td>
+</tr>
+<tr>
+<td>长文生成</td>
+<td>2000 / 2000</td>
+<td>1 : 2.45</td>
+<td>4 P + 8 D</td>
+</tr>
+<tr>
+<td>文档问答</td>
+<td>4096 / 256</td>
+<td>6.5 : 1</td>
+<td>10 P + 2 D</td>
+</tr>
+</tbody>
+</table>
+<p>同一批卡，只改输入输出的形状，P:D 就从 1:2.45 翻到 6.5:1。这就是"配比不能抄别人"的全部理由，也是为什么文档问答类负载要往 P 侧堆卡、长文生成要往 D 侧堆。</p>
+<p>配比还是稳态量，而卡是整数，<strong>取整不能按比例四舍五入，要按瓶颈最大化</strong>：12 节点上，长文负载按 1:2.45 解出 3.48 : 8.52，四舍五入得到 3 P + 9 D，可它只能跑到 min(3×54,543/2000, 9×22,282/2000) ≈ 81.8 req/s；换成 4 P + 8 D 是 min(109.1, 89.1) ≈ 89.1 req/s，反而多 9%。原因是四舍五入把 P 削成了瓶颈。通用对话那行同理：7 P + 5 D 得 190.9 req/s，8 P + 4 D 只有 178.0。所以报配比时要连"落到的整数比 + 该比下的瓶颈速率"一起报，只报一个比例会让人以为按秒扩缩容就能贴住最优。</p>
+<p><strong>三个排队信号</strong>：分别指向三种完全不同的动作。</p>
+<ul>
+<li>P 前面等 prefill 的请求在涨、D 的 running batch 没顶满 → 输入处理跟不上，加 P；</li>
+<li>D 的 running batch 顶到 <code>--max-running-requests</code> 上限、等 decode 的请求在涨、P 侧反而空 → 生成侧跟不上，加 D；</li>
+<li>两端队列都不长、但端到端延迟高 → 请求卡在中间，这时<strong>不能直接判"网络问题"</strong>，要再分三种（见下）。</li>
+</ul>
+<p>第三种是最容易误诊的。文档讲得很清楚：默认 early 策略下，D 会在 P 算完之前就把目标槽位占住，而长 prefill 会把槽位一直攥在手里，于是"看起来在等传输"其实是"在等 D 腾显存"。三条线索要<strong>逐条排除</strong>，任何一条单独都不足以定案（三条都能各自把端到端延迟拉高，也可能同时成立）：</p>
+<ol>
+<li>先看 D 的 KV 池水位与未完成请求数：高水位能解释"等槽位"，但高水位本身可能是前面的慢请求堆出来的，所以要连<strong>未完成请求的年龄分布</strong>一起看，确认它在等槽位而不是在等别的；</li>
+<li>再看网卡吞吐与传输队列：占满有效带宽说明链路是瓶颈之一，但也可能只是上游 P 算得太快、把流量打满；</li>
+<li>最后看 bootstrap 的握手/超时/取消计数：这些计数干净只能说明控制面此刻没有失败，不能反推"问题一定在控制面"——第 1、2 步都正常时，才把控制面列为主嫌。</li>
+</ol>
+<p>文档为第 1 种情况给了开关：把 <code>--disaggregation-decode-allocation-policy</code> 改成 prefill_complete，P 先算、算完再让 D 占坑。但文档同时说清了两条限制——它保留 P 侧 KV 更久，并且<strong>取消了 chunked prefill 与 KV 传输的重叠</strong>；它也不是通用吞吐优化，要按负载对比。§6 还有第三条限制，那条最容易踩。</p>
+<p><strong>前缀缓存会改 P 的实际工作量</strong>：命中率 h 让 P 只需算 (1−h)·L_in。h = 87.5% 时 P 的算力需求降到 1/8，配比要按 (1−h)·L_in 重算，而不是按请求里的 token 数算。这一条经常被漏：配比表按原始 ISL 算，上线后发现 P 长期空转。</p>
+<p>还有一层常被忽略：两端的弹性不对称。P 与 D 各持一份完整权重，任何一侧扩容都要重新加载模型；而 D 侧还有一批长驻的生成中请求，扩出来的新实例接不了它们，只能接新请求。所以"P 不够就加 P"在秒级并不成立，§4 的比更接近一个规划量，而不是一个可实时调节的旋钮。</p>
+<p>最后一个容易错的观察口径：两端的容量参数本来就不是一个量纲。文档给的 DeepSeek 多机示例里，P 端 <code>--max-running-requests</code> 取 32、D 端取 448（同一份配置里的两个值，差 14 倍）。拿"并发数"这一个数去比两端谁忙，比不出来。</p>
+<h2 id="5-52-pd">5 归因纪律：5.2× 不能整笔记给 PD<a class="headerlink" href="#5-52-pd" title="Permanent link">&para;</a></h2>
+<p>先把原始数字摆清（SGLang 团队 2025-05-05 的大规模部署报告，https://www.lmsys.org/blog/2025-05-05-large-scale-ep/ ，12 节点 × 8×H100 = 96 卡，节点间 IB）：</p>
+<ul>
+<li>Prefill：4 节点、EP32、输入 2K → 每节点 54,543 input tok/s，相对 TP16 基线最高 3.3×；</li>
+<li>Decode：9 节点、EP72、输入 2K → 每节点 22,282 output tok/s，相对 TP16 基线 5.2×。</li>
+</ul>
+<p>原文对这两个倍数的归因写得很具体，而且是两套不同的原因：prefill 的 3.3× 主要归于 GroupedGEMM 内核（DeepGEMM）与两批重叠；decode 的 5.2× 主要归于 EP 带来的约 4× 更大 batch——EP 把权重显存摊薄，同样显存能装下更多序列。也就是说，5.2× 里最大的那一块是 batch 和 EP，不是 PD。</p>
+<p>还有两处更隐蔽的误读：</p>
+<ul>
+<li>4 节点和 9 节点是<strong>两组独立实验</strong>，各自测量时假设另一端资源充足，不是一次 4:9 的部署；12 节点是全篇的规模，不是 4+9 = 13。把它读成"推荐的 P:D"，方向就错了——按 §4 的算法（并按瓶颈取整），2000/2000 的长文负载是 4:8，2000/500 的对话是 7:5。</li>
+<li>报告自己的"局限"一节写着当时 TTFT 在 2–5 秒、ITL 约 100 ms。也就是说那 22,282 tok/s 是吞吐优先的读数，不能拿来当"低延迟已解决"的证据。</li>
+</ul>
+<p><strong>要单独判 PD 的收益，得固定这些条件</strong>（缺一条，差值就不是 PD 的）：</p>
+<ol>
+<li>同一批 GPU 数量与拓扑（同 IB 域、同 NVLink 域），否则带宽与 EP 规模都在变；</li>
+<li>同一并发与 batch 上限（同 max-running-requests、同 ISL/OSL 分布），这是 5.2× 里最大的混淆项；</li>
+<li>同一并行度：TP/EP/PP 度数完全一致；</li>
+<li>同一内核与 dispatch 模式（DeepEP normal 与 low_latency 是两种形态）；</li>
+<li>同一前缀缓存命中率 h，否则 P 干的活根本不一样；</li>
+<li>同一测量口径：TTFT、ITL 分位、吞吐三者分开报，且注明分位。</li>
+</ol>
+<p>固定完这些，PD 的净收益通常不是"节点吞吐翻几倍"，而是两件更朴素的事：ITL 尾部分位变好，以及两端能按 §4 的比独立扩缩容。把公开倍数当 PD 的收益，等于把一次"整套方案 vs 朴素 TP"的对照读成了单变量实验。</p>
+<p>还有一种更便宜的归因法：不动并行度，只把 P 与 D 合回一个池、保留同一套 EP 与 batch 上限，跑同一份 trace。但要写清它测的<strong>不是"PD"这个单变量</strong>：单池无法同时保留 P 侧的 normal dispatch 与 D 侧的 low_latency dispatch（§2 说过两者互斥），所以差值里必然混着调度与 dispatch 的差异。它只能当<strong>一次便宜的 sanity check</strong>，不能定论：差值里同时混着两种 dispatch 与两套调度的差异，方向不确定，赢或输都不能单独说明 PD 有没有收益。要报净收益仍得靠下面那套对照。</p>
+<p>如果非要单测 PD，一个能落地的对照设计是这样：同样 96 张卡，A 组单池 + chunked prefill（预算压到 SLO 允许的最小值），B 组按 §4 的比切成 P/D；两组喂同一份请求 trace（同 ISL/OSL 分布、同到达时刻、同命中率 h），并行度、内核、并发上限全部一致；然后只比三件事——max ITL 的 P99、TTFT 的 P99、满足 SLO 的 goodput。这样得到的差值才接近 PD 的净收益（残余偏差来自单池无法同时保住两套 dispatch，见上一段），而且它只在这个 trace 上成立，换负载要重测。</p>
+<h2 id="6">6 与缓存层的交互：少算和少传是两件事<a class="headerlink" href="#6" title="Permanent link">&para;</a></h2>
+<p>P 命中前缀缓存（<code>RadixCache</code> / <code>HiCache</code>）时发生的是<strong>少算</strong>：只需为后缀算 KV，TTFT 与 P 的负载一起降。但 D 要生成第二个 token，必须对 prompt 的全部位置做注意力，所以它需要整段 KV。</p>
+<p>于是 4096 token、命中率 87.5%（D 侧没有这份前缀）的现场是这样：P 只算 512 个 token（省 8 倍算力），而传输量仍是 4096 token 的 1.34 GB，在 50 GB/s 下仍是 26.8 ms（账本复用 notes/22_inference_systems.md §7.2）。少算一点没让少传。</p>
+<p>P 侧"到底少算了多少"在代码里有两个明确的量：<code>cached_len</code> 是命中的前缀长度，<code>extend_len</code> 是这一轮仍需计算的部分（<code>course-material/ch/part2/第4章_KVCache优化_代码.md</code>）。少算的边界就是 extend_len；而传输的字节数按 L_in 算，与 extend_len 无关。这两个量分属两条账，混起来就会得出"命中率越高、传输越便宜"的错误结论。</p>
+<p><strong>才能少传的条件</strong>：D 侧也保留了这段前缀的 KV（D 的 radix cache 或 D 侧 HiCache），且两端的页布局兼容、传输协议支持按页复用。这时只传缺失的 512 个 token——0.167 GB（512×320 KiB），50 GB/s 下 3.35 ms，比整段传省下 23.5 ms。三个条件缺一个，就退回整段传。D 侧命中长度与本例不同的，按 (L_in − D 侧命中长度) 重算，别套 512 这个数。</p>
+<p><strong>最容易错的互斥</strong>：文档明确列出 prefill_complete 策略不支持 decode 侧的 radix cache 与 decode HiCache（同 §4 引的那页）。也就是说"让 D 提前留前缀以便少传"和"让 D 延迟占槽位以免攥住显存"这两个优化在配置上互斥。想做前者，就得接受 early 策略下长 prefill 攥住槽位的代价；反过来也一样。这一条在文档里只有一行，但它决定了两条优化路线只能选一条。</p>
+<p>这还不是唯一一处互斥。同一页文档列了 prefill_complete 的一串不支持项，其中与缓存相关的是：P 侧 HiCache 被限制在 L2、必须 write_back、且不能挂外部存储后端。也就是说选了"延迟占槽位"，不只是失去 D 侧复用，连 P 侧的 L3 也一起没了。这类"策略 × 缓存"的交叉约束文档只给一行，但每一条都能改变容量规划，读配置时要把不支持项逐条对照自己的部署。</p>
+<p>还有一层常被当成免费：P 侧 HiCache 的 L2/L3 命中不等于免费。<code>course-material/ch/part3/第3章_分层缓存.md</code> §3.2 说得很准确——查到副本只说明"有地方可以取"，KV 仍要从 Host 或外部存储搬回 GPU 才能参与计算。所以 L3 命中是把"重复算"换成了"搬一次"，两者都要进时间账；在 PD 里这一次搬运还叠在 TTFT 上。</p>
+<p><strong>口径上的收束</strong>：前缀缓存带来的收益要拆成两个数报——省下的 P 侧计算时间、省下的传输字节。只报前一个，读者会以为 KV 传输也跟着变便宜了。</p>
+<h2 id="7-pp-pd">7 PP 切层，PD 切阶段<a class="headerlink" href="#7-pp-pd" title="Permanent link">&para;</a></h2>
+<p>两者的划分对象不同，这是最容易被一句话说混的地方：</p>
+<ul>
+<li><strong>PP</strong>：切模型层。每个 stage 持有一部分层，激活值在 stage 边界上传，单卡显存随 stage 数下降；</li>
+<li><strong>PD</strong>：切推理阶段。P 与 D 都要跑完整模型，所以两端各需一份完整权重。</li>
+</ul>
+<p>推论有三条。其一，PD 的显存代价是双份权重（相对同并行度的单池），PP 不是；模型勉强装进现有卡时，PD 直接出局。其二，两端内部仍然可以各自上 TP/EP/PP（<code>course-material/ch/part3/第4章_横向扩展.md</code>），所以两端的并行度不必一致，EP 度数按各自的显存与 batch 需要各定一份，不是错误。其三，异构 PD（P/D 用不同型号的卡甚至 NPU）只是适配问题，但要额外解决 KV 的内存布局差异。</p>
+<p>布局差异不是小事，而且它不是改个启动参数能解决的。两端 TP 不同时，KV head 的切片方式不同、页布局也不同，没法直接对拷。文档给的解法是 GPU staging buffer：P 侧把 KV head 切片先 gather 成一段连续缓冲，做一次批量 RDMA，D 侧再 scatter 回自己的 KV 页；文档称高并发下比逐 token 切片快 2–5×，与同构基线差距约 5%，两端 TP 相同时自动绕过。这条同时解释了"为什么异构 PD 不是改个启动参数"。</p>
+<p>两端的失败面不对称，但要分两个问题问，别合成一个。<strong>问题一：这条请求还能不能继续？</strong> 看交接是否完成、继续生成所需的状态是否还活着——交接完成后 KV 与状态已在 D 侧，P 之后再挂通常不影响这条请求；交接完成前挂，要先看存活那一端手里有没有完整且可确认的续算状态：传输已经落到 D、只丢了完成确认的，可以尝试接着走或重传补齐；确认不了也没有可用副本的，才从输入重算。<strong>问题二：如果重试，能不能对用户透明？</strong> 看客户端有没有已经看见输出——看见了就得从零重来（或做状态恢复），没看见才能静默重排。两个问题的答案组合起来才是重试成本，所以不能简单写成"P 失败便宜、D 失败贵"。"请求卡在中间"这类现象多发生在 D 一侧的槽位与显存上（§4 第三种信号），这属于问题一里的"状态还在但走不动"。</p>
+<p>还有一条只在 PD 里出现的资源问题：请求在传输途中被取消或被超时打断时，P 侧已经算好的 KV 与 D 侧已经占住的槽位要各自回收，回收不干净就会表现为"池子越跑越满、但队列不长"。文档里 bootstrap 的成功/失败/取消记录各有自己的超时窗口，取消后同一间 bootstrap room 还能被下一次重试复用。排障时它属于第三种信号（§4）的细分之一，而不是网络问题。</p>
+<p>顺带一个反证：分离之后 P 侧往往干脆把 chunked prefill 关掉（文档的 DeepSeek 多机示例里 P 用 chunked-prefill-size 取 -1，同时给 max-prefill-tokens 一个较大的值）——<strong>因为 P 上没有正在 decode 的请求需要让路</strong>，切块换来的"让路"收益在 P 侧不存在。但这不是"只剩坏处"：切块仍有两个用处，降低单次执行的显存峰值、以及让计算与 KV 传输按块重叠（§7 末条）。所以关不关是取舍，判据不是"要不要低延迟"，而是<strong>单请求的瓶颈在算力还是在传输</strong>：传输是瓶颈、且分块能与传输重叠时留（否则暴露尾部等待）；显存峰值不是问题时关（少一次分块调度开销）。文档那个 -1 只是该示例的选择，不是通用最优。D 侧另配一份 CUDA Graph batch 列表。两端参数是两套，这本身就是"PD 不是同一个进程换个角色"的证据。</p>
+<p><strong>传输优化的三条路</strong>，各自的作用点不同：</p>
+<ul>
+<li>少传字节：KV 量化。FP16 → FP8 让 1.34 GB 变 0.67 GB，50 GB/s 下 26.8 ms 变 13.4 ms（未计量化/反量化的算力开销）；</li>
+<li>提高有效带宽：RDMA/IB 直连、按拓扑选链路。25 → 50 GB/s 就是时间减半（53.7 → 26.8 ms）；</li>
+<li>重叠计算与传输：P 算完一块就发一块，收发在后台线程里跑，不阻塞调度循环。</li>
+</ul>
+<p><strong>重叠的边界要写清</strong>：它摊薄的是最后那次集中等待，不是总传输量。4 块流水、累计 26.8 ms 传输摊在 480 ms 计算里，暴露出来的只剩最后一块的 6.7 ms；但链路上跑的字节一个没少。高并发时链路是共享资源，重叠改善的是单请求延迟，不会凭空多出带宽——把它当"省带宽"的手段，是这一节最常见的错。</p>
+<h3 id="71">7.1 本篇数字的口径<a class="headerlink" href="#71" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>数字</th>
+<th>值</th>
+<th>口径</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>每 token KV</td>
+<td>320 KiB</td>
+<td>本文假设值（70B GQA：80 层 × 2 × 8 KV 头 × 128 维 × 2 B；账本复用 notes/22 §7.2）</td>
+</tr>
+<tr>
+<td>4K prompt KV</td>
+<td>1.25 GiB ≈ 1.34 GB</td>
+<td>本文假设值（320 KiB × 4096，同 notes/22 §7.2）</td>
+</tr>
+<tr>
+<td>传输 @25/50/300 GB/s</td>
+<td>53.7 / 26.8 / 4.5 ms</td>
+<td>本文假设值（1.34 GB ÷ 有效带宽，复用 notes/22 §7.2）</td>
+</tr>
+<tr>
+<td>FP8 KV</td>
+<td>0.67 GB → 13.4 ms</td>
+<td>本文假设值（字节减半，未计量化开销）</td>
+</tr>
+<tr>
+<td>Prefill 每节点吞吐</td>
+<td>54,543 input tok/s</td>
+<td>未核到（官方博客自述，本机无 GPU 无法复现）</td>
+</tr>
+<tr>
+<td>Decode 每节点吞吐</td>
+<td>22,282 output tok/s</td>
+<td>未核到（同上）</td>
+</tr>
+<tr>
+<td>相对 TP16 基线</td>
+<td>prefill ≤3.3×，decode 5.2×</td>
+<td>未核到复现（原文归因：DeepGEMM+两批重叠 / EP 的 4× batch）</td>
+</tr>
+<tr>
+<td>反推 TP16 基线</td>
+<td>≈4,285 output tok/s/节点</td>
+<td>本文假设值（22,282 ÷ 5.2，非原文报告值）</td>
+</tr>
+<tr>
+<td>ITL 示例</td>
+<td>20 → 80 ms，TPOT 20.30 ms</td>
+<td>本文假设值（199 个间隔，1 次 60 ms 额外阻塞）</td>
+</tr>
+<tr>
+<td>chunk 切分</td>
+<td>8 块 × 60 ms</td>
+<td>本文假设值（8192/1024，总 480 ms 均分）</td>
+</tr>
+<tr>
+<td>P:D 比</td>
+<td>1.63:1 / 1:2.45 / 6.5:1</td>
+<td>本文假设值（用上面两行速率 + 假设 ISL/OSL 推算）</td>
+</tr>
+<tr>
+<td>bootstrap 心跳</td>
+<td>5 s</td>
+<td>未核到（文档环境变量表默认值，未在仓内核对）</td>
+</tr>
+<tr>
+<td>staging buffer 收益</td>
+<td>2–5×</td>
+<td>未核到（文档自述，无本地复现）</td>
+</tr>
+</tbody>
+</table>
+<p>配套的 6 道手算题在 <code>worksheet.md</code>：题面里的参数与本节表格逐行对应，答案给出算式。建议先自己算 §1 的 TPOT、§4 的三个配比、§6 的少传字节，再回读正文——这三处的结论都是算出来的，不是记住的。</p>
+<h2 id="_3">面试要点<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>问：PD 之后 TTFT 变好，用户还是说卡，怎么回事？</strong> 答：首 token 在 P 上产生，但它到客户端的路径决定账记在哪：若首 token 在交接前就回传，未隐藏的交接等待落在第 1→2 个 token 的间隔里，TTFT 看不到；若等交接完成才回传，传输会先记进 TTFT。两种都要报，所以看板上 TTFT 与每请求 max ITL 的 P99 必须并排。</li>
+<li><strong>问：为什么不能用 TPOT 诊断 prefill 干扰？</strong> 答：TPOT 是均值，一次 60 ms 阻塞在 199 个间隔里只抬高 1.5%（20 → 20.30 ms），而那一个间隔本身是 4 倍。均值按定义抹平尖峰，ITL 才能逐次观测。</li>
+<li><strong>问：Chunked Prefill 和 PD 怎么选？</strong> 答：先量 ITL 分位，再试 chunked（它只改预算、不改部署，代价是轮次变多、算术强度下降）；chunked 不够或两端内核形态互斥（DeepEP normal vs low_latency）才分离。</li>
+<li><strong>问：P 排队、D 排队、卡传输怎么区分？</strong> 答：P 队列涨 D 未满 → 加 P；D 顶到 max-running-requests → 加 D；两端都不长却延迟高 → 先查 D 的 KV 池水位（early 策略下长 prefill 会攥住目标槽位），再看网卡，最后看 bootstrap。</li>
+<li><strong>问：5.2× 能算 PD 的收益吗？</strong> 答：不能。它是"整套方案 vs 朴素 TP16"，原文把 decode 增益主要归给 EP 带来的 4× batch，prefill 的 3.3× 归给 DeepGEMM 与两批重叠；而且 4 节点与 9 节点是两组独立实验，不是一次 4:9 部署。</li>
+<li><strong>问：要单独测 PD，固定哪些条件？</strong> 答：GPU 数量与拓扑、并发与 ISL/OSL 分布、TP/EP/PP 度数、内核与 dispatch 模式、前缀命中率 h、以及 TTFT/ITL/吞吐分开报的分位口径。</li>
+<li><strong>问：P 命中前缀缓存，KV 能少传吗？</strong> 答：不能只凭这一点。少算是 P 侧的事，D 仍要整段 KV 才能 attend 全序列；只有 D 也保留兼容前缀且协议支持按页复用时，才只传缺失部分。</li>
+<li><strong>问：PP 和 PD 差在哪？</strong> 答：PP 切层，每 stage 一部分层；PD 切阶段，两端各一份完整权重。所以 PD 的显存代价是双份权重，两端内部仍可各上 TP/EP/PP。</li>
+</ul>
+<h2 id="_4">常见坑<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<ul>
+<li>用集群平均 TPOT 或 token/s/user 判抖动：前者按定义做平均，后者是吞吐的倒数，两者都看不见单次尖峰。要按请求取 max ITL 再取分位。</li>
+<li>把报告的 4 节点 / 9 节点读成一个部署的 P:D：它们是两组独立实验（另一侧假设资源无限），也超过全篇 96 卡 = 12 节点的规模。按 §4 算，长文负载该是 4:8、对话该是 7:5。</li>
+<li>把 5.2× 整笔记给 PD：混淆项至少有三个（EP 的更大 batch、DP attention 省显存、DeepGEMM/DeepEP 内核），且原文自己把主因写在 batch 上。</li>
+<li>以为 P 命中前缀缓存就等于少传：少算与少传是两个开关，第二个还要求 D 有兼容前缀，且与 prefill_complete 策略互斥。</li>
+<li>以为重叠计算与传输能省带宽：它只摊薄尾部等待（4 块 → 暴露 6.7 ms），链路上的字节一个没少，高并发时带宽仍是硬约束。</li>
+<li>以为 PD 是"每个模型切一半层"：那是 PP。PD 两端都要完整权重，这是它最硬的准入门槛。</li>
+</ul>
+<h2 id="_5">动手清单<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<ol>
+<li>拿任意一份逐 token 时间戳（线上日志或 bench_serving 输出），按请求算 max ITL 与 p99，再取分位，和你现在的 TPOT 均值并排放一次——先确认你的监控能不能看见尖峰。</li>
+<li>用你自己的 ISL/OSL 分布和前缀命中率 h，套 §4 的 (L_in_eff/R_p) : (L_out/R_d) 算一遍 P:D，再和现有池子的卡数比，看差几倍。</li>
+<li>用 §7.1 的账本给你自己的模型重算一遍 KV 字节（改层数、KV 头数、精度），再算 25/50/300 GB/s 三种带宽下的传输时间，判断这次传输在你的 TTFT 里占多少。</li>
+<li>读 <code>--disaggregation-decode-allocation-policy</code> 那一节，判断你的负载该用 early 还是 prefill_complete，并把"选了它就放弃了哪些特性"写进部署文档。</li>
+</ol>
+<h2 id="_6">下一步<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>往下走是这条链路的两个底面。第一个是数据面本身：RDMA 的 queue pair 怎么建、scatter-gather 怎么处理非连续页、多后端（Mooncake/NIXL）在什么拓扑下各自占优——这些在 notes/24_distributed_base.md 的 P2P 段落里有底子，但只到"用 send/recv"这一层，再往下要读传输库自己的文档。第二个是控制面：router 按什么信号选 P 与 D、配对失败怎么重试、超时预算怎么定，这决定 §4 的配比在运行时能不能真的被兑现。两条路的排障都回到 notes/25_platform_sre.md 的网络与超时口径：先分清是数据面堵、控制面抖，还是两端容量不够，再决定是加卡还是改配置。</p>
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.top", "navigation.indexes", "content.code.copy", "search.suggest", "search.highlight", "toc.follow"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+        <script src="../../javascripts/mathjax.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs" type="module"></script>
+      
+    
+  </body>
+</html>
