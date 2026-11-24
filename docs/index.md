@@ -12,7 +12,7 @@
 
 <!-- ENTRIES:BEGIN（以下篇目由 publish_notes.py 按 publish.yaml 生成，勿手改）-->
 
-## 篇目（共 29 篇，按发布清单生成）
+## 篇目（共 30 篇，按发布清单生成）
 
 | # | 篇 |
 |---|---|
@@ -45,6 +45,7 @@
 | 27 | [第二十七层 · Agent 工程化：Context / Harness / Loop / Graph](notes/27_agent_engineering.md) |
 | 28 | [第二十八层 · vLLM v1 源码 trace：一次请求怎么走](notes/28_vllm_source_trace.md) |
 | 29 | [第二十九层 · Agent 评测 Infra：从打分到可复现的评测平台](notes/29_agent_eval_infra.md) |
+| 30 | [30_pd_disaggregation](notes/30_pd_disaggregation.md) |
 
 <!-- ENTRIES:END -->
 
