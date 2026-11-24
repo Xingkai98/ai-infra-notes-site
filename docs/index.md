@@ -45,7 +45,7 @@
 | 27 | [第二十七层 · Agent 工程化：Context / Harness / Loop / Graph](notes/27_agent_engineering.md) |
 | 28 | [第二十八层 · vLLM v1 源码 trace：一次请求怎么走](notes/28_vllm_source_trace.md) |
 | 29 | [第二十九层 · Agent 评测 Infra：从打分到可复现的评测平台](notes/29_agent_eval_infra.md) |
-| 30 | [30_pd_disaggregation](notes/30_pd_disaggregation.md) |
+| 30 | [第 30 篇 · PD 分离 —— 交接、配比与归因](notes/30_pd_disaggregation.md) |
 
 <!-- ENTRIES:END -->
 

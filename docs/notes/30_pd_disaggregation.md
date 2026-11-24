@@ -4,6 +4,7 @@ repo: datawhalechina/zero-to-sglang @ bcf0cd82b9d1a058e5211d56431f14efd99eaf12
 date: 2026-11-20
 tags: [pd分离, kv传输, itl, 资源配比, 归因, 补丁层]
 ---
+# 第 30 篇 · PD 分离 —— 交接、配比与归因
 
 ## 这篇补的是哪一块
 
