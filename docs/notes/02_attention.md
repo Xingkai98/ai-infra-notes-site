@@ -137,7 +137,7 @@ Attention(Q, K, V) = softmax( Q Kᵀ / √d_k ) · V
 
 <!-- ws-ref:begin -->
 > 🧮 **手算卡**（打印出来在纸上算，算完拍照发我核对）
-> - `ws-attention-chain` ｜ §5.5 数值演算 ｜ 八步全链 embed→pos→QKV→QKᵀ→mask→softmax→多头+拼接→out_proj，B=1·T=3·2 头，带全部数字的完整算例（对答案用）
+> - `ws-attention-chain` ｜ §5.5 数值演算 ｜ X→Q/K/V→scores→softmax→out 七步走完整条链，L=3、能手算
 <!-- ws-ref:end -->
 
 
