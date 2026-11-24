@@ -517,17 +517,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        中文到底怎么切(实测)
-      
-    </span>
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -557,7 +546,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#_4" class="md-nav__link">
+  <a href="#_3" class="md-nav__link">
     <span class="md-ellipsis">
       
         为什么不能省
@@ -568,7 +557,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#_5" class="md-nav__link">
+  <a href="#_4" class="md-nav__link">
     <span class="md-ellipsis">
       
         怎么做(原论文:正弦位置编码)
@@ -579,7 +568,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#_6" class="md-nav__link">
+  <a href="#_5" class="md-nav__link">
     <span class="md-ellipsis">
       
         三个必须知道的设计点
@@ -656,7 +645,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_7" class="md-nav__link">
+  <a href="#_6" class="md-nav__link">
     <span class="md-ellipsis">
       
         面试要点(合上书能否讲出来)
@@ -667,7 +656,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_8" class="md-nav__link">
+  <a href="#_7" class="md-nav__link">
     <span class="md-ellipsis">
       
         常见坑
@@ -678,7 +667,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_9" class="md-nav__link">
+  <a href="#_8" class="md-nav__link">
     <span class="md-ellipsis">
       
         相关图
@@ -689,7 +678,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_10" class="md-nav__link">
+  <a href="#_9" class="md-nav__link">
     <span class="md-ellipsis">
       
         下一步
@@ -1857,17 +1846,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        中文到底怎么切(实测)
-      
-    </span>
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -1897,7 +1875,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#_4" class="md-nav__link">
+  <a href="#_3" class="md-nav__link">
     <span class="md-ellipsis">
       
         为什么不能省
@@ -1908,7 +1886,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#_5" class="md-nav__link">
+  <a href="#_4" class="md-nav__link">
     <span class="md-ellipsis">
       
         怎么做(原论文:正弦位置编码)
@@ -1919,7 +1897,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#_6" class="md-nav__link">
+  <a href="#_5" class="md-nav__link">
     <span class="md-ellipsis">
       
         三个必须知道的设计点
@@ -1996,7 +1974,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_7" class="md-nav__link">
+  <a href="#_6" class="md-nav__link">
     <span class="md-ellipsis">
       
         面试要点(合上书能否讲出来)
@@ -2007,7 +1985,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_8" class="md-nav__link">
+  <a href="#_7" class="md-nav__link">
     <span class="md-ellipsis">
       
         常见坑
@@ -2018,7 +1996,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_9" class="md-nav__link">
+  <a href="#_8" class="md-nav__link">
     <span class="md-ellipsis">
       
         相关图
@@ -2029,7 +2007,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_10" class="md-nav__link">
+  <a href="#_9" class="md-nav__link">
     <span class="md-ellipsis">
       
         下一步
@@ -2179,7 +2157,7 @@ Obsidian 手机端可直接渲染下图。</p>
 <td>BERT</td>
 <td>子词(<code>##</code> 表词内延续)</td>
 <td>仍有 <code>[UNK]</code></td>
-<td>英文中心;中文 BERT 实为<strong>字级</strong>(词表 21127 行/纯中文整词 0)</td>
+<td>英文中心,中文常被切碎</td>
 </tr>
 </tbody>
 </table>
@@ -2190,51 +2168,6 @@ Obsidian 手机端可直接渲染下图。</p>
 <li>还要预留 special token(<code>&lt;bos&gt;</code>、<code>&lt;eos&gt;</code>、<code>&lt;pad&gt;</code>、角色标记等),它们也占词表。</li>
 </ul>
 <p><strong>推理时遇到新词</strong>:不是"查不到就失败",而是按训练好的 merge 顺序把新词切成已知子词/字节。<strong>byte-level BPE 无 UNK</strong>;SentencePiece 通常能回退到字符/字节(需 <code>byte_fallback</code> 等配置),否则仍可能出 <code>&lt;unk&gt;</code>;WordPiece 则<strong>可能</strong>有 <code>[UNK]</code>(是否出现取决于是否切到未登录字符)。</p>
-<h3 id="_3">中文到底怎么切(实测)<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
-<p>「中文被切碎」这句老话说得太糙,得分路线看。三条路线对照如下(词表数字是本机直接统计的,统计脚本留在 workspace,词表版本一变就得重跑):</p>
-<table>
-<thead>
-<tr>
-<th>实现</th>
-<th>中文怎么切</th>
-<th>词表里有没有中文整词</th>
-<th>后果</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>字级 WordPiece</strong></td>
-<td>逐个汉字切,<code>##</code> 只用来标英文的词内延续</td>
-<td>没有(纯中文多字整词 0 个)</td>
-<td>1 字 ≈ 1 token;字表外<strong>直接 <code>[UNK]</code></strong>,没有子词可以退</td>
-</tr>
-<tr>
-<td><strong>byte-level BPE</strong></td>
-<td>UTF-8 字节起步,再按 merge 合成</td>
-<td>看词表规模:50k 级(GPT-2)几乎学不出,128k 级(Llama 3)有</td>
-<td>无 UNK;中文 token 数由词表规模决定,不能一概而论</td>
-</tr>
-<tr>
-<td><strong>SentencePiece + <code>byte_fallback</code></strong></td>
-<td>原文本上训练(空格记 <code>▁</code>),切不动就退字节</td>
-<td>有(BPE / Unigram 都能学出中文整词)</td>
-<td>覆盖最好;<code>byte_fallback</code> 保证不出 <code>&lt;unk&gt;</code>,代价是生僻字退化成多个字节 token</td>
-</tr>
-</tbody>
-</table>
-<p><strong>实测数字</strong>(逐行扫 <code>bert-base-chinese</code> 与 Qwen2.5 的词表):</p>
-<ul>
-<li><code>bert-base-chinese</code> 词表 21127 行,其中单汉字 7322 个,纯中文多字整词 <strong>0 个</strong> → 中文 BERT 实际是字级分词,不是子词。</li>
-<li>覆盖率:GB2312 一级常用字 99.5% 落在词表内,二级字只有 51.7%;表外字直接 <code>[UNK]</code>(没有字节回退这条后路)。</li>
-<li>Qwen2.5 词表:单汉字 8501 个 + 中文整词 16374 个 → 有整词,粒度比字级更接近「词」。</li>
-<li>同一句 24 个汉字 → 12 个 token,约 2 字/token。</li>
-<li>常用字 top 500 全部是单 token;生僻字平均 1.875 token/字(走 UTF-8 字节回退)。</li>
-</ul>
-<p><strong>两处修正</strong>(上面表里对应的格子已按此改):</p>
-<ul>
-<li><strong>修正一</strong>:原表 WordPiece 行写「中文常被切碎」不准确——中文 BERT 走的是字级(词表 21127 行、纯中文整词 0 个),压根没有「碎成子词」这回事;「切碎」这个说法只适用于英文形态学(<code>unhappiness</code> → <code>un ##hap ##pi ##ness</code>)。所以那格改成了「英文中心;中文 BERT 实为<strong>字级</strong>(词表 21127 行/纯中文整词 0)」。</li>
-<li><strong>修正二</strong>:byte-level BPE 那条「常用汉字 3 字节 → 多个 token」只是 50k 级词表(GPT-2)的结论;128k 词表(Llama 3)里大量常用汉字本身就是单 token。引用时必须带上词表规模,不能当成 byte-level BPE 的通则。</li>
-</ul>
 <h2 id="4-embeddingid">4. Embedding:id → 向量<a class="headerlink" href="#4-embeddingid" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span><span class="o">,</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
@@ -2250,7 +2183,7 @@ Obsidian 手机端可直接渲染下图。</p>
 <p>参数量体感(高频追问):嵌入层参数 = <code>vocab_size × d_model</code>。典型 <code>vocab=50000, d_model=768</code> → 约 <strong>3800 万</strong>,往往占小模型参数量的一大块。这也是为什么大模型常用<strong>权重共享</strong>:让最后的 LM Head 复用这个矩阵,省掉一份 <code>vocab × d_model</code>。</p>
 </blockquote>
 <h2 id="5">5. 位置编码(本层重点)<a class="headerlink" href="#5" title="Permanent link">&para;</a></h2>
-<h3 id="_4">为什么不能省<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<h3 id="_3">为什么不能省<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
 <p>self-attention 对输入是<strong>置换等变</strong>的:把输入的向量打乱顺序,输出只是跟着换位置,集合内部关系不变。</p>
 <p><img alt="为什么必须有位置编码" src="../../diagrams/04_position_encoding.landscape.png" /></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>attention 眼里:  {狗, 咬, 人}  和  {人, 咬, 狗}  是同一个东西
@@ -2260,7 +2193,7 @@ Obsidian 手机端可直接渲染下图。</p>
 <blockquote>
 <p>术语澄清(两个词挨着容易混):<strong>置换等变(equivariant)</strong> = 打乱输入,输出只跟着<strong>同样地</strong>打乱(内部关系不变);<strong>置换不变(invariant)</strong> = 输出完全不受打乱影响。注意力是<strong>等变</strong>——它照样"能算",但<strong>它不知道谁在前谁在后</strong>,语序信息在它眼里丢失了。所以缺的不是"能力",是"顺序信息"。</p>
 </blockquote>
-<h3 id="_5">怎么做(原论文:正弦位置编码)<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
+<h3 id="_4">怎么做(原论文:正弦位置编码)<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>PE(pos, 2i)   = sin( pos / 10000^(2i/d_model) )
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>PE(pos, 2i+1) = cos( pos / 10000^(2i/d_model) )
 </code></pre></div>
@@ -2276,7 +2209,7 @@ Obsidian 手机端可直接渲染下图。</p>
 <a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="n">x</span> <span class="o">=</span> <span class="n">tok_emb</span><span class="p">(</span><span class="n">ids</span><span class="p">)</span> <span class="o">+</span> <span class="n">positional_encoding</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">d_model</span><span class="p">)</span>    <span class="c1"># 相加,广播到 [B, T, d_model]</span>
 </code></pre></div>
 <p>直觉:每个位置叠一串<strong>不同频率的正弦波</strong>当"指纹"。低维频率高、区分相邻位置;高维频率低、编码大尺度位置。</p>
-<h3 id="_6">三个必须知道的设计点<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<h3 id="_5">三个必须知道的设计点<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>相加,不是拼接</strong>:不增维、不增计算;值域有界 <code>[-1,1]</code> 数值稳。论文只给了「位置编码与嵌入同为 <code>d_model</code>,故可相加」,并未论证拼接更差;sin/cos 的「可分离」是公式自身性质、拼接也保留,不能算作相加更优的理由。</li>
 <li><strong>为什么用 sin/cos</strong>:<code>PE(pos+k)</code> 可写成 <code>PE(pos)</code> 的固定线性变换 → 论文只是假设(§3.5:We hypothesize)这能让模型易学"相隔 k 位"这种相对关系(并未证明);无参数;理论上可外推更长序列。
@@ -2347,7 +2280,7 @@ pos=3: PE[3,0]=sin(3)=0.14   PE[3,1]=cos(3)=-0.99  PE[3,2]=sin(0.03)=0.03 PE[3,3
 <h2 id="6-block">6. 预告:一个 Block 长什么样<a class="headerlink" href="#6-block" title="Permanent link">&para;</a></h2>
 <p><img alt="一个 Transformer Block 内部(Pre-LN)" src="../../diagrams/03_block_internal.landscape.png" /></p>
 <p>每个 Block = <code>多头自注意力</code> + <code>前馈网络</code>,各自外套 <strong>残差连接</strong>与 <strong>LayerNorm</strong>(现代主流 Pre-LN:先归一化再进子层)。第二、三层细拆。</p>
-<h2 id="_7">面试要点(合上书能否讲出来)<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<h2 id="_6">面试要点(合上书能否讲出来)<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <ol>
 <li><strong>Transformer 相比 RNN 好在哪?</strong> → 可并行 + 任意位置路径长度恒为 1。</li>
 <li><strong>位置编码为什么必需?</strong> → self-attention 置换等变,不注入位置就分不清语序。</li>
@@ -2355,21 +2288,19 @@ pos=3: PE[3,0]=sin(3)=0.14   PE[3,1]=cos(3)=-0.99  PE[3,2]=sin(0.03)=0.03 PE[3,3
 <li><strong>sin/cos 的设计动机?</strong> → 相对位置可线性表示、无参数、可外推。</li>
 <li><strong><code>nn.Embedding</code> 是什么?</strong> → 可训练查表矩阵,等价于 one-hot × W。</li>
 <li><strong>BPE 怎么处理新词?词表大小怎么选?</strong> → 按已学 merge 顺序切成子词/字节,不依赖整词表;词表大省序列但 embedding/LM Head 变大,词表小则序列长、低频子词欠训练。</li>
-<li><strong>分词粒度影响什么?</strong> → 分词粒度决定 token 效率:中文在字级 BERT 下 1 字≈1 token,在 Qwen2.5 这类带中文整词的词表下≈2 字/token,同样长度文本的算力差近一倍。</li>
 </ol>
-<h2 id="_8">常见坑<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<h2 id="_7">常见坑<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <ul>
 <li>把 BPE 当成“按词频切词”:它合并的是<strong>相邻单元</strong>,不是统计整词频率;<code>&lt;/w&gt;</code>/byte-level 等边界处理会改变结果。</li>
 <li>以为子词一定没有 OOV:byte-level BPE 无 UNK;SentencePiece 需要 <code>byte_fallback</code> 等配置才能回退,否则仍可能 <code>&lt;unk&gt;</code>;WordPiece 则可能有 <code>[UNK]</code>。</li>
 <li>把位置编码“理论上可外推”当成“实践已解决”:正弦 PE 直接外推到训练长度之外通常会掉点,现代靠 RoPE 扩展(第五层)。</li>
 <li>把位置编码“相加”误解成“拼接”:相加不改变 <code>d_model</code>,拼接会加宽特征维,后续层都要改。</li>
 <li>以为 <code>nn.Embedding</code> 只是固定索引表:它是可训练参数,和 LM Head 共享时是同一份矩阵。</li>
-<li>别把「中文被切碎」当成 WordPiece 的锅——中文 BERT 是字级词表,压根没有中文整词;真正会碎的是生僻字走字节回退(1.875 token/字)。</li>
 </ul>
-<h2 id="_9">相关图<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<h2 id="_8">相关图<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
 <p><code>01_pipeline</code> · <code>01b_bpe</code> · <code>02_rnn_vs_transformer</code> · <code>03_block_internal</code> · <code>04_position_encoding</code>
 · <code>15a_embedding</code> · <code>15b_posenc</code> · <code>15c_pos_add</code>(均在 <code>diagrams/</code>,横竖双版本)</p>
-<h2 id="_10">下一步<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<h2 id="_9">下一步<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
 <p>第二层 · 心脏:<strong>Self-Attention 的 Q/K/V</strong> —— 缩放点积、为何除以 √d_k、注意力如何一步步算出。</p>
 
 

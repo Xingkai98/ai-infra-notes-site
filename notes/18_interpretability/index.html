@@ -1893,11 +1893,10 @@
 <p>本层回答:我们怎么从“模型输出看起来对”走到“知道模型内部哪部分在算什么”?探针、logit lens、attention、activation patching、circuit、SAE 各自能回答什么、不能回答什么?</p>
 <p><strong>前置(按节)</strong>
 - §1–§3:先看 <code>notes/02_attention.md</code>(attention)与 <code>notes/03_block.md</code>(残差/LayerNorm/FFN)。
-- §4–§6:先看 <code>notes/06_inference.md §4</code>(完整 forward 的 13 步文字流水线;06 §4 不含截取激活的 hook/缓存机制,<strong>本篇</strong>讲义 §5 会补一段最小说明(<code>run_with_cache</code> / <code>fwd_hooks</code>，连 <code>hook_resid_post</code> 的形状都给了),不用先去外部文档翻)。
-- §3、§9:再补 <code>notes/13_reasoning.md §2</code>(长 CoT);§4–§6 用不到它。
+- §4–§6:先看 <code>notes/06_inference.md §4</code>(完整 forward)与 <code>notes/13_reasoning.md §2</code>(长 CoT)。
 - §7:只需基础线性代数;正文给数值例子。</p>
 <p><strong>建议路径(2 次 × 45 分钟)</strong>
-- 第 1 次(必学):§1 行为 vs 机制 + §2 probing + §3 logit lens + §4 attention(54c)。
+- 第 1 次(必学):§1 行为 vs 机制 + §2 probing + §3 logit lens + §4 attention(54a)。
 - 第 2 次(必学):§5 patching(54b)+ §6 circuit(54c)+ §7 SAE/steering(54d)。</p>
 </blockquote>
 <h2 id="0">0. 依赖图(学习顺序)<a class="headerlink" href="#0" title="Permanent link">&para;</a></h2>
@@ -1909,11 +1908,7 @@
   F["激活可稀疏分解"] --&gt; G["SAE / steering"]
   G --&gt; E
   E --&gt; H["有证据的机制解释"]</code></pre>
-<p>无入边的起点有三个:A「可以把模型当函数分析、可以做干预」、C「行为实验可重复」、F「激活可稀疏分解」;它们是三条证据链各自的前提,不是学习顺序(起点仍按上方建议路径)。</p>
-<blockquote>
-<p><strong>读图注意</strong>:这张图表示「证据汇入关系」,不是严格章节顺序。§4 attention analysis 不在图上——它是 §5 patching 的动机(先看权重线索,再用干预验证),建议读完 §2–§3 就读它;G → E 表示 SAE 能给 circuit 提供<strong>独立交叉证据</strong>,不表示要先学完 §7 才能读 §6(正文顺序 §5 → §6 → §7,§8 再把两者并列比较)。
-同理 B → E 是<strong>弱边、不是因果边</strong>:probe / logit lens 只给「这个信息在某层线性可读」的<strong>相关/读出证据</strong>,单独不能支撑因果结论;它在图上汇入 E,意思是这些读出结果可以用来<strong>提出组件假设</strong>(例如「第 l 层能读出这个属性」),随后必须回 §5/§6 用 ablation、patching 验证。这与 §8 的口径一致:probe/logit lens 只算相关证据,§4 的 attention analysis 同理只是线索。;汇点是“机制解释”,不是“一张好看的热图”。</p>
-</blockquote>
+<p>根节点是“可以把模型当函数分析、可以做干预”;汇点是“机制解释”,不是“一张好看的热图”。</p>
 <h2 id="1-vs">1. 为什么需要可解释性:行为解释 vs 机制解释<a class="headerlink" href="#1-vs" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>行为解释(behavioral)</strong>:只描述输入-输出关系。例如“给 few-shot 例子,准确率上升”“加 CoT,数学题更好”。它有用,但不知道内部为什么。</li>
@@ -1946,16 +1941,12 @@
 </tr>
 </tbody>
 </table>
-<p>用途:安全审计(找拒答/越狱路径)、调试(定位幻觉/复制)、科学理解(电路/特征)、模型编辑(ROME = Rank-One Model Editing，秩一模型编辑:给某个事实换一条秩一权重更新;以及 steering)。</p>
+<p>用途:安全审计(找拒答/越狱路径)、调试(定位幻觉/复制)、科学理解(电路/特征)、模型编辑(ROME/steering)。</p>
 <h2 id="2-probing">2. Probing:信息在不在?<a class="headerlink" href="#2-probing" title="Permanent link">&para;</a></h2>
 <p><strong>做法</strong>:冻结模型;取第 <code>l</code> 层的 hidden <code>h_l</code>;训练一个<strong>小分类器</strong>(常用线性层)预测标签(词性、实体、情感、真值)。</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>h_l [T, d_model] → 线性探针 W [d_model, C] → logits [T, C] → softmax
 </code></pre></div>
 <p>只训练 <code>W</code>(和 bias),不更新模型。<strong>layer-wise</strong>:对每一层都训一个探针,看准确率随层数怎么变。</p>
-<blockquote>
-<p><strong>C=1 的退化</strong>:上面管线写的是 <code>W [d_model, C]</code> + softmax;做二分类时 <code>C=1</code>,<code>W</code> 退化成 <code>[d_model]</code>、<code>W @ h</code> 是标量,softmax 不能当概率用:只有一个 logit 时 softmax 恒等于 1(与 z 取值无关)。二分类要么直接换成 sigmoid 输出,要么用「两个 logit 之差 = z」的 softmax——σ(z) 对应后者;下面的数值例子用的是前者。
-这里的 <code>p</code> 一律指<strong>类别 1 的概率</strong>(P(y=1))，所以 p = 0.2689 &lt; 0.5 就判成类别 0;另外「C=1 时 <code>W</code> 退化成向量」是形状问题，和「选 sigmoid 还是两 logit softmax」是两件独立的事，别混着记。</p>
-</blockquote>
 <p><img alt="线性探针:冻结模型,只训小分类器;右图是按层的准确率示意" src="../../diagrams/54a_probing.landscape.png" /></p>
 <p><strong>数值例子</strong>:<code>h=[1.0, 2.0]</code>,<code>W=[1.0, -1.0]</code>,<code>b=0</code>:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>z = 1×1 + 2×(-1) + 0 = -1.0
@@ -1975,8 +1966,8 @@
 <p>常见误区:把探针准确率 95% 说成“模型 95% 依赖这个特征”。探针是<strong>相关</strong>,不是因果。</p>
 </blockquote>
 <h2 id="3-logit-lens">3. Logit lens:中间层“想说什么”<a class="headerlink" href="#3-logit-lens" title="Permanent link">&para;</a></h2>
-<p>把第 <code>l</code> 层的 residual <code>h_l</code> 先过模型末端的 final LayerNorm <code>LN_f</code>,再乘输出投影 unembedding <code>W_U</code>(形状 <code>[d_model, vocab]</code>,就是把 hidden 变成词表 logits 的那个矩阵),得到词表分布:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>logits_l = LN_f(h_l) · W_U   # [T, vocab]
+<p>把第 <code>l</code> 层的 residual <code>h_l</code> 直接乘 unembedding <code>W_U</code>,得到词表分布:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>logits_l = h_l · W_U        # [T, vocab]
 </code></pre></div>
 <p>看 top-k token 随层数怎么变化。<strong>tuned lens</strong> 会为每层学一个小变换再 unembed,缓解“中间层表示不在最终基”的问题。</p>
 <p><strong>能回答</strong>:哪一层开始出现答案候选;模型是否“早就知道”。
@@ -1989,7 +1980,7 @@
 <ul>
 <li>看 attention 热力图:行=query,列=key;</li>
 <li>head ablation:去掉一个 head,看任务指标;</li>
-<li>attention rollout:把多层 attention 复合,追踪信息流;常见写法先用 <code>Ã_l = 0.5·A_l + 0.5·I</code>(单位阵代表残差直通)再按<strong>从深到浅</strong>的顺序连乘 <code>Ã_L·Ã_{L-1}·…·Ã_1</code>(递推式 <code>Ã_l = A_l·Ã_{l-1}</code>,展开与 <code>V_L = A_L···A_1·V_0</code> 同向;attention 矩阵不可交换,写成升序 <code>Ã_1·Ã_2·…·Ã_L</code> 得到的是另一个矩阵、另一组数值);不加 <code>I</code> 直接连乘 <code>A_L···A_1</code> 是另一种约定,两者结果不同,报结果时须写明用哪种;</li>
+<li>attention rollout:把多层 attention 复合,追踪信息流;</li>
 <li>找 induction head:<code>A B … A → B</code> 的复制模式。</li>
 </ul>
 <p><img alt="Circuit 与注意力模式:热图只是线索,要用 ablation/patching 验证" src="../../diagrams/54c_circuit.landscape.png" /></p>
@@ -1997,34 +1988,22 @@
 <ul>
 <li>attention 权重高 <strong>≠</strong> 因果重要(Jain &amp; Wallace 2019 等)。</li>
 <li>注意力权重是“混合比例”,不是“信息量”;FFN/残差也在写信息。</li>
-<li>
-<p>存在 attention sink、冗余 head、backup head;单个 head 去掉可能被补偿。</p>
-</li>
-<li>
-<p><strong>attention sink</strong>:很多 query 把权重倒向第一个(或极少数固定)token,该位置权重很高但几乎不携带任务信息,是「没处可看时的默认落点」;判定看「多个 head/多层是否都把大权重给同一位置」,而不是单看一次热图。</p>
-</li>
-<li><strong>backup head</strong>:与主 head 功能重叠,单独 ablation 指标基本不掉,成对/成组 ablation 才掉——这就是「被补偿」在实验上的长相。</li>
+<li>存在 attention sink、冗余 head、backup head;单个 head 去掉可能被补偿。</li>
 </ul>
 <p><strong>能回答</strong>:模型在哪些位置/头上有可读的模式。
 <strong>不能回答</strong>:这个 head 是否必要、是否唯一。</p>
 <h2 id="5-activation-patching-causal-tracing">5. Activation patching / causal tracing:做干预<a class="headerlink" href="#5-activation-patching-causal-tracing" title="Permanent link">&para;</a></h2>
 <p><strong>固定一对 prompt</strong>:</p>
 <ul>
-<li>clean:<code>The Eiffel Tower is in</code> → 正确答案 Paris,logit 4.0(示意数值,非实测,未绑模型版本;下面的 1.0 / 3.2 / 0.733 同);</li>
+<li>clean:<code>The Eiffel Tower is in</code> → 正确答案 Paris,logit 4.0;</li>
 <li>corrupt:<code>The Colosseum is in</code> → Paris logit 1.0。</li>
 </ul>
-<blockquote>
-<p><strong>causal tracing 与 activation patching 是同一件事的两个名字</strong>:causal tracing(ROME,Meng et al. 2022)指「跑 clean 前向存下各层激活 → 跑 corrupt 前向,在某点把 clean 激活恢复(restore)进去 → 看输出恢复多少」这套流程,patching 是它的通用名;本节的 recovery 公式就是它的度量。后面 §8 对比表与面试要点只写 patching,指的都是这个方法;下面说的 noising/denoising 两向则是同一框架的两个方向(clean 打进 corrupt 得恢复率,corrupt 打进 clean 得破坏度)。</p>
-</blockquote>
 <p>把 clean 在 <code>(层 l, 位置 pos)</code> 的 hidden state <strong>替换</strong>进 corrupt 的前向,得到 patched logit。用<strong>恢复率</strong>衡量:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>recovery = (logit_patched - logit_corrupt) / (logit_clean - logit_corrupt)
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>         = (3.2 - 1.0) / (4.0 - 1.0) = 0.733
 </code></pre></div>
 <p><img alt="Activation patching:只替换一个 (层, 位置),看 logit 恢复多少" src="../../diagrams/54b_patching.landscape.png" /></p>
-<p><strong>读法</strong>:补回 73% 的 logit 差 → 这个 activation 携带关键信息。但它仍可能是<strong>多条路径之一</strong>;要做 head/neuron 级 patching、noising/denoising 两向(把 clean 的激活打进 corrupt 前向、按 (patched-corrupt)/(clean-corrupt) 得恢复率;把 corrupt 的激活打进 clean 前向、得到的是破坏度,两者方向相反别混)和 path patching(只允许特定边传递)。</p>
-<blockquote>
-<p><strong>hook 与缓存是什么</strong>:<code>run_with_cache(ids)</code> 跑一次完整前向,沿途把每个 hook 点的张量按 <code>hook.name</code> 存进字典;<code>fwd_hooks=[(名字, fn)]</code> 是在另一次前向跑到同名 hook 点时调用 <code>fn(act, hook)</code> 并用其返回值替换该点的激活继续往下。<code>hook_resid_post</code> 指「该 block 的残差加完之后」写回 residual stream 的那份张量,形状 <code>[batch, pos, d_model]</code>。两次前向用的是同一套模块名,所以 <code>clean_cache[hook.name]</code> 才能和这次 corrupt 前向的同名 hook 对上——这也是「按 hook 名取缓存」的全部依据。</p>
-</blockquote>
+<p><strong>读法</strong>:补回 73% 的 logit 差 → 这个 activation 携带关键信息。但它仍可能是<strong>多条路径之一</strong>;要做 head/neuron 级 patching、noising(把 clean 的激活换成 corrupt)和 path patching(只允许特定边传递)。</p>
 <p><strong>代码骨架</strong>(库名仅示意,不同框架 API 不同):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">clean_cache</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">run_with_cache</span><span class="p">(</span><span class="n">clean_ids</span><span class="p">)</span>
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">patch_pos</span><span class="p">(</span><span class="n">act</span><span class="p">,</span> <span class="n">hook</span><span class="p">):</span>
@@ -2042,19 +2021,13 @@
 <ul>
 <li>节点:attention head、MLP 神经元/方向、residual stream 位置;</li>
 <li>边:QK 组合(query 从某处读)、OV 写回、MLP 读出/写入;</li>
+<li>验证:ablation、patching、path patching,而不是只看权重。</li>
 </ul>
-<blockquote>
-<p><strong>QK / OV 是什么</strong>:一个 head 的四个矩阵可两两合成两个双线性映射:<code>W_QK = W_Q · W_K^T</code> 决定「位置 i 的 query 从位置 j 读多少」(读哪里),<code>W_OV = W_V · W_O</code> 决定「读到的内容怎么写回 residual」(写什么)。所以一个 head 就是一条「QK 选位置 + OV 定内容」的边;MLP 的边同理,由 <code>W_in</code> 的某一行(读出方向)和 <code>W_out</code> 的对应列(写入方向)构成。
-<strong>形状约定(与本节其余部分一致)</strong>:文中按 <code>x @ W</code> 的约定,取 <code>W_Q/W_K/W_V</code> 为 <code>[d_model, d_head]</code>、<code>W_O</code> 为 <code>[d_head, d_model]</code>,于是 <code>W_QK = W_Q·W_K^T</code>、<code>W_OV = W_V·W_O</code> 都是 <code>[d_model, d_model]</code>;若按 <code>nn.Linear</code> 的 <code>W x</code> 习惯存放(每个矩阵都转置一次),有效矩阵就要写成 <code>W_Q^T·W_K</code> 与 <code>W_O·W_V</code>(存法下 <code>W_V</code> 是 <code>[d_head, d_model]</code>、<code>W_O</code> 是 <code>[d_model, d_head]</code>,硬写 <code>W_V^T·W_O</code> 是 d_model 对 d_head 相乘,只有 d_head=d_model 才乘得起来;<code>W_O·W_V</code> 与 <code>W_V^T·W_O^T</code> 互为转置(<code>W_O·W_V = (W_V^T·W_O^T)^T</code>)、数值不同——按「每个矩阵都转置一次、相乘顺序不变」得到的是 <code>W_V^T·W_O^T</code>,要写成 <code>W_O·W_V</code> 得同时把相乘顺序反过来;两者形状都合法、不会报维度错,所以照「等价」任抄一个都会静默拿到另一个的转置),两种写法差一个转置,抄的时候别混。
-- 验证:ablation、patching、path patching,而不是只看权重。</p>
-<p><strong>为什么能这么读写</strong>:residual stream 是一条从 embedding 一路加到最后的主干,每个 head/MLP 都从<strong>同一份当前向量</strong>读(用自己的 <code>W_Q/W_K</code> 或 <code>W_in</code> 打分/投影),算完把结果<strong>加</strong>回主干而不是覆盖。于是 (1) 往主干加一个方向 <code>d</code>,近似等于给末端 logit 加 <code>d · W_U[:, token]</code> 这一项,方向对就能抬高某个 token;(2) 多个 head 的写回是<strong>相加</strong>,可以共存——这解释了「同类 head 有多份副本,去掉一份指标也不怎么掉」,但<strong>不能</strong>拿来解释 backup head。backup head 平时并不把这个 token 写进输出,只有在主 name mover 被敲除之后才接管这个角色(论文把它归因于训练期 dropout 带来的冗余,所以单独敲掉 backup head、主 name mover 还在时，logit difference 几乎不掉;反过来把 9.6/9.9/10.0 这三个 name mover 一起敲掉,logit difference 也只掉约 5%,因为 backup head 会接手——论文 §3.4 的原话是 the circuit still worked, only 5% drop in logit difference);它不是「别人的写回还在」,而是「换一组头来写」。FFN 那半句同理:第一层矩阵的每一行像一个 key,第二层对应的列是 value,激活大 = 命中并写回对应 value。</p>
-<p><strong>口径别混</strong>:本段的 <code>logit difference</code> 指<strong>同一 prompt 内两个候选 token 的 logit 之差</strong>,即 <code>logit(A) - logit(B)</code>(A = 正确答案,如 John;B = 句末重复的那个名字,如 Mary)——它是 IOI 论文的标准度量,不是 §5 那种「同一个 token 在 clean / corrupt 两段 prompt 之间的差」。§5 的 4.0 / 1.0 / 3.2 才是后者,并归一化成恢复率 0.733;两者不能直接换算。</p>
-</blockquote>
-<p>典型例子(IOI,Indirect Object Identification,arXiv:2211.00593 Fig.2;这是 <strong>GPT-2 small(12 层 × 12 头)</strong> 上验证的电路,下面所有层号/头号都是该模型专属编号,不是「IOI 电路」的通用结构):<code>A B … B → A</code>——句首出现 A、B,句末再出现一次 B,要填回靠前的那个 A。一个简化路径:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>L2/L4 previous-token head(2.2 在第 2 层、4.11 在第 4 层;两层各 12 个 head 里的 1 个):看前一个 token(这两个 head 只负责 previous-token;induction 功能在下一行的 L5–6)
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>L5–6 induction head:匹配“前一个 B 后面的位置”,产出 =「被重复的名字是 B」这个身份信号(它的活不是找答案 A)
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>L7–8 S-inhibition head:接过上一步的 B 身份,压低竞争名字(上面那句里的 B),A 因此成为唯一没被压的候选
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>L9–10 name mover head:在句末 attend 到 A 所在位置,把 A 写入 residual,提升 A 的 logit
+<p>典型例子(IOI,Indirect Object Identification,arXiv:2211.00593 Fig.2):<code>A B … A → B</code>。一个简化路径:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>L2 previous-token head:看前一个 token(L2 不是 induction head)
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>L5–6 induction head:匹配“前一个 A 后面的 token”
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>L7–8 S-inhibition head:压低竞争名字
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>L9–10 name mover head:把 B 写入 residual,提升 B 的 logit
 </code></pre></div>
 <blockquote>
 <p>层号按论文图示;不同模型/任务会有偏移。图 54c 是“简化 IOI 路径”示意,不是唯一电路。</p>
@@ -2070,11 +2043,8 @@
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>x_hat = W_d f + b_dec                 # 解码/重建
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>L = ||x - x_hat||² + λ ||f||_1        # 重建 + 稀疏(L1)
 </code></pre></div>
-<p><strong>参数绑定要看存法(这条最容易抄错)</strong>：本文「行=特征」把 <code>W_e</code>、<code>W_d</code> <strong>都</strong>存成 <code>[d_feature, d_model]</code>(编码 <code>(x-b_dec) @ W_e.T</code>、解码 <code>f @ W_d</code>)，这种存法下绑定写成 <code>W_d = W_e</code>;<code>W_d = W_e^T</code> 成立的是「<code>W_e</code> 存 <code>[d_feature, d_model]</code>、<code>W_d</code> 存 <code>[d_model, d_feature]</code>」那套(按 <code>nn.Linear</code> 各存各的转置，上面公式块的 <code>x_hat = W_d f</code> 用的就是这套)。两套只差一个转置，别混着抄。常见实现还把 <code>W_e</code> 与 <code>W_d</code> <strong>分开训练</strong>(绑定只是可选的省参/正则)。稀疏项除了 L1,也有 L0(L0 = f 中非零特征的个数)/其他稀疏惩罚;λ 控制“重建 vs 稀疏”的权衡。</p>
-<blockquote>
-<p><strong>形状别抄错</strong>:按行=特征存放时 <code>W_e</code> 和 <code>W_d</code> 都是 <code>[d_feature, d_model]</code>,编码写 <code>(x - b_dec) @ W_e.T</code>、重建写 <code>f @ W_d</code>。下面的玩具例子取 <code>W_e = W_d = I</code>,两个维度相等,转置前后一模一样,所以看不出这个约定;换成真实 SAE(<code>d_feature &gt;&gt; d_model</code>)抄错就立刻报维度错。</p>
-</blockquote>
-<p><strong>玩具数值</strong>(<code>W_e = W_d = I</code>,偏置 <code>b_e = b_dec = 0</code>,只保留正激活):</p>
+<p><code>W_d = W_e^T</code> 在部分实现里用作<strong>转置初始化/参数绑定</strong>;常见实现把编码 <code>W_e</code> 与解码 <code>W_d</code> <strong>分开训练</strong>(绑定只是可选的省参/正则)。稀疏项除了 L1,也有 L0/其他稀疏惩罚;λ 控制“重建 vs 稀疏”的权衡。</p>
+<p><strong>玩具数值</strong>(<code>W_e = W_d = I</code>,只保留正激活):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>x = [0.8, -0.2, 0.5, -0.1]
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>f = ReLU(x) = [0.8, 0, 0.5, 0]        # L0 = 2
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>x_hat = [0.8, 0, 0.5, 0]
@@ -2087,11 +2057,8 @@
 </code></pre></div>
 <p>看输出是否按预期变化。<strong>能回答</strong>:SAE 给“特征是否可分离”;steering/ablation 才能给“是否因果可控制”。
 <strong>不能回答</strong>:特征是否“单义”、是否覆盖所有概念;SAE 会有 feature splitting/absorption,steering 可能副作用。</p>
-<blockquote>
-<p><strong>feature splitting / absorption 是什么</strong>:<strong>splitting</strong> = 一个人类可辨的概念被拆成好几个特征(把 <code>d_feature</code> 调大往往拆得更细,单看每个都不完整);<strong>absorption</strong> = 反过来,一个特征把多个概念吃在一起(常见原因是稀疏惩罚过强,或高频特征把低频特征「吞」进自己的方向),于是它看起来多义。两者都说明「单义」不是 SAE 的保证,要靠 steering/ablation 交叉验证。</p>
-</blockquote>
 <p><strong>代码骨架</strong>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1"># 这里 W_e 存成 [d_feature, d_model](行=特征,列=d_model);若存成 [d_model, d_feature] 则写 (x - b_dec) @ W_e</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1"># 这里 W_e 存成 [d_model, d_feature];若存成 [d_feature, d_model] 则写 W_e @ (x-b_dec)</span>
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="n">f</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">relu</span><span class="p">((</span><span class="n">x</span> <span class="o">-</span> <span class="n">b_dec</span><span class="p">)</span> <span class="o">@</span> <span class="n">W_e</span><span class="o">.</span><span class="n">T</span> <span class="o">+</span> <span class="n">b_e</span><span class="p">)</span>
 <a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="n">x_hat</span> <span class="o">=</span> <span class="n">f</span> <span class="o">@</span> <span class="n">W_d</span> <span class="o">+</span> <span class="n">b_dec</span>
 <a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="n">loss</span> <span class="o">=</span> <span class="p">((</span><span class="n">x</span> <span class="o">-</span> <span class="n">x_hat</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="o">+</span> <span class="n">lam</span> <span class="o">*</span> <span class="n">f</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
@@ -2156,9 +2123,9 @@
 <ol>
 <li><strong>行为解释和机制解释的区别?</strong> → 行为只描述输入输出;机制给组件/因果路径。</li>
 <li><strong>linear probe 能证明什么?</strong> → 某层线性可读出属性;不能证明模型使用它。</li>
-<li><strong>logit lens 是什么?</strong> → 中间层 residual 先过 LN_f 再乘 unembedding 看词表分布;注意基不对齐。</li>
+<li><strong>logit lens 是什么?</strong> → 中间层 residual 直接乘 unembedding 看词表分布;注意基不对齐。</li>
 <li><strong>attention 权重能当解释吗?</strong> → 不能单独;权重≠因果,要 ablation/patching。</li>
-<li><strong>activation patching 怎么算恢复率?</strong> → <code>(patched-corrupt)/(clean-corrupt)</code>;示意数值例 0.733。</li>
+<li><strong>activation patching 怎么算恢复率?</strong> → <code>(patched-corrupt)/(clean-corrupt)</code>;数值例 0.733。</li>
 <li><strong>circuit 是什么?</strong> → 组件+边+因果实验;不是热图,也不保证完整/唯一。</li>
 <li><strong>SAE 的损失?</strong> → 重建误差 + L1 稀疏;<code>f=ReLU(W_e(x-b)+b_e)</code>,<code>x_hat=W_d f+b</code>。</li>
 <li><strong>SAE 特征一定单义吗?</strong> → 不;有 feature splitting/absorption,多义神经元问题仍在。</li>

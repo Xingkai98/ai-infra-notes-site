@@ -2041,9 +2041,7 @@
 - §1–§2:先看 <code>notes/08_alignment.md §1</code>(SFT)与 <code>notes/03_block.md</code>(线性层/Block 结构)。
 - §3 LoRA 数学:只需矩阵乘法与维度;正文给数值例子。
 - §4 QLoRA/DoRA:先看 §3;量化基础见 <code>notes/22_inference_systems.md §8</code>。
-- §5:rank/alpha/target 本层自洽,不需要外部笔记;唯一外链是末条「训练数据」用的 <code>notes/08_alignment.md §1</code>(SFT 数据/格式)。
-- §6:合并/多适配器本层自洽,不需要外部笔记。
-- §7:先看 <code>notes/22_inference_systems.md §3</code>(显存账本)。本层全节只算显存,不做 roofline/算术强度/带宽分析,所以 <code>notes/06_inference.md §5</code> 的 memory-bound 判据不必先读,留作 §7 之后对照推理瓶颈用。</p>
+- §5–§7:先看 <code>notes/06_inference.md §5</code>(memory-bound)与 <code>notes/22_inference_systems.md §3</code>(显存账本)。</p>
 <p><strong>建议路径(2 次 × 45 分钟)</strong>
 - 第 1 次(必学):§1 为什么 PEFT + §2 家族对比(51b)+ §3 LoRA 数学(51a)。
 - 第 2 次(必学):§4 QLoRA/DoRA + §5 rank/alpha/target + §6 合并/多适配器(51c)+ §7 显存账本(51d)。</p>
@@ -2057,11 +2055,7 @@
   D --&gt; F["DoRA&lt;br/&gt;幅度/方向分解"]
   D --&gt; G["合并 / 多适配器服务"]
   E --&gt; H["单卡微调大模型"]
-  G --&gt; I["多租户/多任务部署"]
-
-  D --&gt; J["rank / alpha / target modules&lt;br/&gt;(§5)"]
-  J --&gt; K["显存账本&lt;br/&gt;(§7, 51d)"]
-  E --&gt; K</code></pre>
+  G --&gt; I["多租户/多任务部署"]</code></pre>
 <h2 id="1-peft">1. 为什么需要 PEFT<a class="headerlink" href="#1-peft" title="Permanent link">&para;</a></h2>
 <p>全参数微调 7B 模型,显存不只是权重:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>BF16 权重 14 GB + BF16 梯度 14 GB + Adam m/v(FP32)56 GB + FP32 master 28 GB
@@ -2118,7 +2112,7 @@
 <tr>
 <td><strong>DoRA</strong></td>
 <td>把权重分解为幅度 + 方向,LoRA 调方向</td>
-<td>比 LoRA 多一个幅度向量(每个输出通道 1 个标量,共 <code>d_out</code> 个,即 +<code>d_out</code> 参数)</td>
+<td>比 LoRA 多一个幅度向量</td>
 <td>低 rank 下通常更好;实现更复杂</td>
 </tr>
 </tbody>
@@ -2136,7 +2130,7 @@
 <li><code>α/r</code> 是缩放:改变 rank 时保持增量尺度大致不变。</li>
 <li>初始化:<code>A</code> 随机(如 Kaiming),<code>B=0</code> → 初始 <code>ΔW=0</code>,不破坏底座。</li>
 <li>参数量:<code>r(d_in+d_out)</code>,远小于 <code>d_in·d_out</code>。</li>
-<li><strong>为什么低秩够用</strong>:LoRA 论文假设微调时的权重更新具有很低的 intrinsic rank(该术语溯源到 Aghajanyan 等人对 intrinsic dimension 的研究,LoRA 是借用这一观察,不是提出者),任务适配不需要改满秩空间;这不是定理,rank 太小/任务需要大幅改变表示时会欠拟合。</li>
+<li><strong>为什么低秩够用</strong>:LoRA 论文假设微调时的权重更新是低秩的(intrinsic dimension),任务适配不需要改满秩空间;这不是定理,rank 太小/任务需要大幅改变表示时会欠拟合。</li>
 </ul>
 <h3 id="32">3.2 数值例子<a class="headerlink" href="#32" title="Permanent link">&para;</a></h3>
 <p>取 <code>d_in=d_out=4, r=2, α=4</code>,缩放 <code>α/r=2</code>:</p>
@@ -2182,12 +2176,11 @@
 <p>7B 底座 4-bit 约 <code>7B×0.5 B ≈ 3.5 GB</code>(不含额外开销),加上 LoRA/激活,单卡 24GB 可以微调 7B–13B(取决于序列长度/batch)。</p>
 <h3 id="42-dora">4.2 DoRA<a class="headerlink" href="#42-dora" title="Permanent link">&para;</a></h3>
 <p>DoRA 把权重分解为<strong>幅度</strong>和<strong>方向</strong>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>W' = m · (W0 + BA) / ||W0 + BA||_c
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>W = m · (V / ||V||)
 </code></pre></div>
 <ul>
-<li><code>W0</code> 冻结,<code>BA</code> 是 §3 的 LoRA 低秩增量(rank <code>r</code>);DoRA 只用它更新「方向」;</li>
-<li><code>m</code> 是可训练的幅度向量:每个输出通道 1 个标量(论文的 column-wise,<code>m ∈ R^{1×k}</code>,k = 输出维);在 <code>W0 [d_out, d_in]</code> 布局下 <code>||·||_c</code> 就是沿 <code>dim=1</code> 的范数,<code>m</code> 长度 = <code>d_out</code>;</li>
-<li>参数量 = LoRA 的 <code>r(d_in+d_out)</code> + <code>d_out</code>;</li>
+<li><code>m</code> 是可训练的幅度向量(按列/行);</li>
+<li>LoRA 只更新方向部分 <code>V</code>;</li>
 <li>低 rank 时通常比 LoRA 更接近全参数微调,但前向更复杂、训练稍慢。</li>
 </ul>
 <blockquote>
@@ -2210,7 +2203,7 @@
 </code></pre></div>
 <ul>
 <li>合并后推理<strong>没有额外延迟</strong>,适合单任务部署;</li>
-<li>合并要在 FP32 做(在 FP16/BF16 里做加法会累积误差),合并后再存回 BF16/FP16 供部署;</li>
+<li>合并要在合适精度做(FP32/FP16),低精度合并会有误差;</li>
 <li>需要保留未合并底座,以便切换/回滚。</li>
 </ul>
 <h3 id="62">6.2 多适配器服务<a class="headerlink" href="#62" title="Permanent link">&para;</a></h3>
@@ -2244,31 +2237,28 @@
 <td>LoRA(BF16 底座)</td>
 <td>14 GB</td>
 <td>适配器 ~0.27 GB</td>
-<td><strong>≈14.3 GB</strong>(14 + 0.27)</td>
+<td><strong>~15–20 GB + 激活</strong></td>
 </tr>
 <tr>
 <td>QLoRA(4-bit 底座)</td>
 <td>~3.5 GB</td>
 <td>适配器 ~0.27 GB</td>
-<td><strong>≈3.8 GB</strong>(3.5 + 0.27)</td>
+<td><strong>~5–10 GB + 激活</strong></td>
 </tr>
 </tbody>
 </table>
 <blockquote>
-<p>激活显存随 <code>B·T·L·d</code> 增长(<code>B</code>=batch、<code>T</code>=序列长、<code>L</code>=层数、<code>d</code>=隐藏维),按每元素 2 B(BF16)、每层存十来个 <code>B·T·d</code> 张量粗估:7B(<code>L=32,d=4096</code>)、<code>B=4,T=2048</code> 时单个张量 ≈67 MB,单层 ≈0.7 GB,32 层 ≈20+ GB,长序列确实会超过 14 GB 权重;要配合梯度检查点(就是前置清单里的「激活重算」,用算力换激活显存)或序列并行(把序列维切到多卡,每卡只存 1/N 的激活分片;省激活、不省权重,可与激活重算叠加)。具体数字随实现/精度变化,报告时写清口径。</p>
-<p><strong>适配器口径</strong>:0.27 GB 是按 q/k/v/o 全加(16.78M 参数 × 16 B ≈ 268 MB)算的;若用 §3.3 的 q+v(8.39M),同一算法只有 ≈134 MB ≈ 0.13 GB,LoRA 总计随之 ≈14.1 GB。
-这 16 B/参数沿用 §1 的构成(权重 2 B + 梯度 2 B + Adam m/v 8 B + FP32 master 4 B):底座虽冻结,适配器自己的梯度、两个矩和 FP32 master 一样不能省,所以同一套 16 B 可以直接套到 LoRA 参数上。</p>
-<p><strong>复算口径</strong>:「总计」列 = 权重 + 梯度/优化器,逐列可加(全参 14+98=112;LoRA 14+0.27≈14.3;QLoRA 3.5+0.27≈3.8),不含激活。真实峰值 = 总计 + 激活 + 运行时开销约 1–6 GB(CUDA context、反量化临时缓冲、显存碎片、通信 buffer),所以 LoRA 实测常见 15–20 GB、QLoRA 常见 5–10 GB——那是 <code>B=1、T=512</code> 量级下的口径,激活只有几 GB;换成上一段的 <code>B=4、T=2048</code> 代入同一算法,则是 LoRA ≈14.3+21.5+1–6 ≈37–42 GB、QLoRA ≈3.5+0.27+21.5+1–6 ≈26–31 GB。两组数并不矛盾,差别只在 B/T(以及是否开梯度检查点);报告时必须把 B/T、精度、是否重算一起写清。</p>
+<p>激活显存随 <code>B·T·L·d</code> 增长,长序列时可能超过权重;要配合梯度检查点/序列并行。具体数字随实现/精度变化,报告时写清口径。</p>
 </blockquote>
 <h2 id="8">8. 面试要点<a class="headerlink" href="#8" title="Permanent link">&para;</a></h2>
 <ol>
 <li><strong>全参微调为什么贵?</strong> → 16 bytes/参数:权重+梯度+Adam m/v+FP32 master;7B 约 112GB。</li>
 <li><strong>LoRA 的公式?</strong> → <code>h=Wx+(α/r)BAx</code>;<code>A[r,d_in]</code>、<code>B[d_out,r]</code>,只训 <code>r(d_in+d_out)</code> 参数。</li>
-<li><strong>为什么 B 初始化为 0?</strong> → 初始 <code>ΔW=0</code>,不破坏底座;A 随机初始化是为了让 B 第一步就有非零梯度(破对称)。注意 <code>B=0</code> 时 <code>∂L/∂A = Bᵀ(∂L/∂h)xᵀ = 0</code>,A 首步收不到梯度;若 A、B 都置 0,两者梯度全为 0、训练不动。</li>
+<li><strong>为什么 B 初始化为 0?</strong> → 初始 <code>ΔW=0</code>,不破坏底座;A 随机提供梯度方向。</li>
 <li><strong>rank/alpha 怎么选?</strong> → r 8–64;α=r 或 2r;保持 α/r 尺度,按任务调。</li>
 <li><strong>target modules 选哪些?</strong> → q/v 最省;q/k/v/o 更好;MLP 对知识/风格有用但更贵。</li>
 <li><strong>QLoRA 省什么?</strong> → 底座 4-bit NF4 + double quant + paged optim;省权重显存,计算仍要反量化。</li>
-<li><strong>DoRA 和 LoRA 的区别?</strong> → DoRA 把权重拆成幅度 <code>m</code> 与方向,更新方向的是公式里的 <code>BA</code>(§4.2),<code>m</code> 是额外的可训向量;LoRA 没有这层分解,只学 <code>BA</code> 整体(§2 的说法是「DoRA 改的是权重参数化」,不是换个 loss)。低 rank 通常更好,但前向更复杂、训练稍慢。</li>
+<li><strong>DoRA 和 LoRA 的区别?</strong> → DoRA 分解幅度/方向,LoRA 调方向;低 rank 通常更好,但更复杂。</li>
 <li><strong>LoRA 能合并吗?</strong> → 能,<code>W'=W+(α/r)BA</code>;合并后无额外延迟,注意精度。</li>
 <li><strong>多适配器怎么服务?</strong> → 一个底座 + 多 adapter,按 adapter 分组 batch;支持 multi-LoRA 的引擎。</li>
 <li><strong>PEFT 的局限?</strong> → 不改变数据质量上限;rank 太小欠拟合;多 adapter 调度/显存有成本。</li>
@@ -2278,7 +2268,7 @@
 <li>以为 LoRA 一定比全参好:数据/任务不匹配时,LoRA 可能欠拟合;rank/模块要调。</li>
 <li>把 <code>α</code> 当独立超参:真正影响增量尺度的是 <code>α/r</code>。</li>
 <li>只加 q/v 却期待知识注入:知识/风格任务常需要 MLP 模块。</li>
-<li>合并时用低精度:FP16 合并误差会累积;用 FP32 完成合并、再存回 BF16/FP16,并抽样验证误差(≤1e-4)。</li>
+<li>合并时用低精度:FP16 合并误差会累积;用 FP32/FP16 谨慎验证。</li>
 <li>多 adapter 不做分组:每请求切 adapter 会拖垮吞吐。</li>
 <li>忽略激活显存:长序列微调时,激活可能比权重更大。</li>
 <li>把 QLoRA 当“免费”:反量化/分页有开销,训练速度可能下降。</li>
